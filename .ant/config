@@ -1,0 +1,30 @@
+# ant-mode settings for this repo (key=value, first match wins).
+# gate: the one command whose last line is the verdict; scripts/commit.sh runs it.
+gate=scripts/precommit.sh
+# deployed_sha_cmd: prints the deployed commit, for `ant stale` (empty = unknown).
+deployed_sha_cmd=
+# deps_layer: the gauntlet layer that audits dependencies; `ant evidence`
+# requires it when a manifest changed.
+deps_layer=deps
+# logs_dir: the one root every log and run record goes under (default
+# .ant/work/logs, which is ignored). A repo whose tooling reads another
+# directory sets it, e.g. logs_dir=logs; it must be ignored by git.
+# logs_dir=.ant/work/logs
+# Is approving a spec a human step? auto (default): the agent approves and the
+# commit says so; human: ant change approve needs --by "<their words>".
+# Switch with `ant approval auto|human`.
+approval=auto
+# Where EVIDENCE goes: trailer (default) = the commit carries the verdict, the
+# report stays in .ant/work; commit = also specs/evidence/, committed with the
+# change. Switch with `ant evidence-mode trailer|commit`.
+evidence=trailer
+# Feature specs (space separated directories), decisions, and the index
+# `ant spec lint` keeps current (index= empty: none).
+features=specs/features
+decisions=specs/decisions
+index=specs/README.md
+# The records `ant record` writes and lints.
+lessons=docs/LESSONS.md
+glossary=docs/GLOSSARY.md
+lessons_max_kb=64
+glossary_row_max=400

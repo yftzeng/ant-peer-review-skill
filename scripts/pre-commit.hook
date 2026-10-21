@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# ant-mode:install-hook
+# Part of the ant-mode kit. Installed by scripts/install-hook.sh.
+#
+# Admit a commit only when scripts/commit.sh has just run the gate for this
+# exact tree. Why a hook and not a habit: twice a commit ran on a red gate
+# because the gate and the commit were two commands joined by `| tail` and by
+# `;`. A rule written down did not stop the second time; this does.
+#
+# Deliberate escape hatch: `git commit --no-verify`. It is visible in the
+# command that ran it, which is the point.
+set -u
+
+tree="$(git write-tree)"
+# One pass file per tree, so two commits at once cannot overwrite each other's.
+MARK="$(git rev-parse --git-dir)/precommit-ok.$tree"
+
+if [[ -f "$MARK" ]]; then
+  rm -f "$MARK"
+  exit 0
+fi
+
+cat >&2 <<'EOF'
+commit refused: commit through scripts/commit.sh, which runs the gate first
+and commits only on a green verdict.
+
+  scripts/commit.sh -F <msg-file> -- <path>...          (or -F - with the message on stdin)
+  scripts/commit.sh --red -F <msg-file> -- <path>...    the failing-test commit; subject says (red)
+
+Only the named paths are committed; anything else staged stays staged.
+
+To bypass on purpose: git commit --no-verify
+EOF
+exit 1
