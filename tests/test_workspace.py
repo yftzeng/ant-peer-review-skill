@@ -45,7 +45,7 @@ def test_changed_input_marks_downstream_stale(tmp_path):
     run.path("00-intake.json").write_text("{}")
     (run.path("01-sources/normalized")).mkdir(parents=True)
     run.path("01-sources/manifest.json").write_text("[]")
-    run.path("01-sources/normalized/a.md").write_text("hello")
+    run.path("01-sources/segments.json").write_text("{}")
     run.path("02-rubric.json").write_text("{}")
     _done_through(run, "review")
     run.path("01-sources/manifest.json").write_text('[{"changed": 1}]')

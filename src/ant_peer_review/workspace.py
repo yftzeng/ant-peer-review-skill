@@ -28,12 +28,12 @@ PHASE_INPUTS: dict[str, list[str]] = {
     "intake": [],
     "sources": ["00-intake.json"],
     "rubric": ["00-intake.json", "01-sources/manifest.json"],
-    "review": ["02-rubric.json", "01-sources/normalized"],
+    "review": ["02-rubric.json", "01-sources/segments.json", "01-sources/injection-scan.json"],
     "factcheck": ["03-reviews"],
     "debate": ["03-reviews", "factcheck/ledger.jsonl"],
     "consensus": ["02-rubric.json", "03-reviews", "04-debate", "factcheck/ledger.jsonl"],
     "report": ["05-consensus.json"],
-    "revision": ["05-consensus.json", "01-sources/normalized"],
+    "revision": ["05-consensus.json", "01-sources/segments.json"],
     "decision": ["07-revision"],
 }
 
