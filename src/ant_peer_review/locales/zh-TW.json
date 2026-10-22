@@ -184,5 +184,8 @@
   "run.delete_which": "要刪除哪一個工作？",
   "run.delete_confirm": "刪除 {run} 及其中 {n} 個檔案？此動作無法復原。",
   "run.deleted": "已刪除 {run}。",
-  "run.banner_hint": "變更：ant-peer-review config models"
+  "run.banner_hint": "變更：ant-peer-review config models",
+  "ui.keys_radio": "↑↓ 移動 · Enter 選擇 · 數字鍵直接選 · Esc 取消",
+  "ui.keys_multi": "↑↓ 移動 · 空白鍵 勾選 · Enter 確認 · Esc 取消",
+  "ui.keys_custom": " · c 新增自訂"
 }

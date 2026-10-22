@@ -184,5 +184,8 @@
   "run.delete_which": "要删除哪一个任务？",
   "run.delete_confirm": "删除 {run} 及其中 {n} 个文件？此操作无法恢复。",
   "run.deleted": "已删除 {run}。",
-  "run.banner_hint": "变更：ant-peer-review config models"
+  "run.banner_hint": "变更：ant-peer-review config models",
+  "ui.keys_radio": "↑↓ 移动 · Enter 选择 · 数字键直接选 · Esc 取消",
+  "ui.keys_multi": "↑↓ 移动 · 空格 勾选 · Enter 确认 · Esc 取消",
+  "ui.keys_custom": " · c 新增自定义"
 }
