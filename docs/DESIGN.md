@@ -306,6 +306,7 @@ To be replaced with measured numbers from the prototype.
 | D-14 | Model calls run in an empty temp dir with `--system-prompt`, `--setting-sources ""`, `--no-session-persistence`, and only the tools a step names | Default `claude -p`: user hooks and CLAUDE.md would leak into every review |
 | D-15 | Grade thresholds default 85/70/60 (Excellent/Good/Needs revision/Fail), Style Guide proposal after 3 runs; both in config.toml | — |
 | D-16 | The crawler pins the TCP connection to the IP it checked | urllib with a redirect hook: re-resolves DNS on connect (rebinding window) |
+| D-0001 | Fetch fallback order: (1) the honest-UA crawler with bounded retries on 429/502/503/504 (Retry-After, capped at 30 s, within the deadline); (2) a headless browser (Playwright, optional extra `render`) only for thin or empty JS-rendered pages or `needs_js` site profiles, every browser request checked like the crawler's; (3) the page's AMP version, then the newest Wayback Machine snapshot, labelled with its date; (4) the user pastes the text or passes a saved file. robots, a site-profile block, internal addresses and a login or paywall never fall back; a bot challenge may use the archive but never the browser. Ported from ant-pr-review D-PR-15 | curl or a browser that spoofs a regular browser's User-Agent or TLS fingerprint, or a headless browser that solves a challenge: their only use is getting past a site's refusal. Archive copies of robots-denied or paywalled pages: same reason |
 
 `claude -p --json-schema` returns schema-valid output in `structured_output` (verified 2026-10-22); the CLI still validates and retries.
 
@@ -317,5 +318,7 @@ To be replaced with measured numbers from the prototype.
   - visually hidden HTML that uses tricks other than inline style, `hidden` or `aria-hidden`, such as CSS classes or off-screen positioning.
 - During fact-checks, text in the claim or its context can steer which URLs the checker fetches. Only the claim and one paragraph of context are in that prompt.
 - Claims are de-duplicated by anchor and exact normalized text, so the same fact worded differently is checked twice.
-- Pages that need JavaScript to render are not supported. A thin page is flagged `thin_page_maybe_js_rendered`, and the domain can be recorded in `site-profiles.json`.
+- Pages that need JavaScript are rendered only when the optional `render` extra is installed. Otherwise a thin page tries its AMP version and the archive, and is then flagged `thin_page_maybe_js_rendered; no_browser_installed`.
+- The headless browser's requests are fetched by Playwright, which resolves DNS itself after our check (a rebinding window the pinned crawler does not have).
+- WebSockets are refused by `route_web_socket`. With the current Chromium a socket from a fulfilled document does not connect anyway, so no test can show that guard failing (D-0001).
 - `anthropic-api` backend not built yet (interface reserved).

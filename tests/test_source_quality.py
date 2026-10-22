@@ -24,7 +24,7 @@ class Fake:
     def __init__(self):
         self.calls = []
 
-    def fetch(self, url):
+    def fetch(self, url, **kw):
         self.calls.append(url)
         base = url.split("?")[0]
         return FetchResult(url, url, 200, "text/html", PAGES[base].encode(), [url])
@@ -78,7 +78,7 @@ def test_report_sources_section(tmp_path):
     from ant_peer_review.rubric import propose
 
     class Mixed(Fake):
-        def fetch(self, url):
+        def fetch(self, url, **kw):
             if "a/3" in url:
                 raise FetchError("network", url)
             return super().fetch(url)

@@ -20,6 +20,7 @@ ant-peer-review --version
 
 环境要求：
 - Python 3.11 以上，无任何运行时依赖。
+- 可选（JavaScript 渲染的网页）：`uv tool install '.[render]'`，再执行 `playwright install chromium`。抓取失败时的顺序是：退避重试 → 无头浏览器 → AMP 版本 → 标注日期的 Wayback Machine 存档 → 请你粘贴正文。爬虫不会伪装成浏览器。
 - 已登录的 `claude` CLI（Claude Code）。默认通过 `claude -p` 调用模型，消耗的是你的 Claude Code 订阅额度。
 - 可选：如需读取 PDF，安装 `pip install 'ant-peer-review[pdf]'` 或 `pdftotext`。
 

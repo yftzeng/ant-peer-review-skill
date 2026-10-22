@@ -18,10 +18,11 @@ from .rubric import edit_rubric, propose
 from .schemas import DRAFT
 from .sources.acquire import failed_items, run_sources
 from .sources.crawler import Crawler
+from .sources.render import default_renderer
 from .sources.injection import scan
 from .sources.segments import prompt_view, segment
 from .store import Config, Store
-from .ui import IO, ask_text, phase_line, radio
+from .ui import IO, ask_text, collect_lines, phase_line, prompt, question, radio
 from .workspace import PHASES, Run
 
 MAX_DRAFT_ROUNDS = 2
@@ -70,11 +71,16 @@ def ph_intake(run: Run, ctx: Ctx) -> None:
 
 
 def ph_sources(run: Run, ctx: Ctx) -> None:
+    """D-0001: the crawler and its fallbacks run inside run_sources; what still fails can
+    be retried, pasted by the user, skipped, or left for later."""
     crawler = ctx.crawler or make_crawler(ctx.store)
+    renderer = ctx.options["renderer"] if "renderer" in ctx.options else default_renderer()
     while True:
-        manifest = run_sources(run, crawler, on_progress=lambda e: ctx.say(
+        manifest = run_sources(run, crawler, renderer=renderer, on_progress=lambda e: ctx.say(
             f"  {'✓' if e['status'] == 'ok' else '✗'} #{e['item']} {' '.join(e['value'].split())[:70]}"
             + (f" ({e.get('reason')})" if e["status"] != "ok" else "")
+            + (f" [{ctx.t('via.' + e['via'])}{' ' + e['archived_at'] if e.get('archived_at') else ''}]"
+               if e.get("via", "direct") != "direct" else "")
             + (f" ⚠ {e['warning']}" if e.get("warning") else "")))
         bad = failed_items(manifest)
         ok_count = len(manifest["items"]) - len(bad)
@@ -83,17 +89,39 @@ def ph_sources(run: Run, ctx: Ctx) -> None:
         for b in bad:
             if b.get("kind") == "url":
                 ctx.say(ctx.t("sources.lesson_hint", reason=b.get("reason")))
+        urls = [b for b in bad if b.get("kind") in ("url", "feed_item")]
         if not ctx.interactive:
+            if urls:
+                ctx.say(ctx.t("sources.paste_hint"))
             if ok_count:
                 return
             raise Stop("no source could be read")
-        act = radio(ctx.io, ctx.t, ctx.t("sources.failed", n=len(bad)), [
-            ("retry", ctx.t("sources.retry")), ("continue", ctx.t("sources.continue")),
-            ("stop", ctx.t("sources.stop"))], default="retry" if not ok_count else "continue")
+        opts = [("retry", ctx.t("sources.retry"))]
+        if urls:
+            opts.append(("paste", ctx.t("sources.paste")))
+        opts += [("continue", ctx.t("sources.continue")), ("stop", ctx.t("sources.stop"))]
+        act = radio(ctx.io, ctx.t, ctx.t("sources.failed", n=len(bad)), opts,
+                    default="retry" if not ok_count else "continue")
+        if act == "paste":
+            paste_texts(run, ctx, urls)
+            continue
         if act == "continue" and ok_count:
             return
         if act == "stop" or (act == "continue" and not ok_count):
             raise Stop("sources")
+
+
+def paste_texts(run: Run, ctx: Ctx, items: list[dict]) -> None:
+    """Replace each failed URL target by text the user pastes; the URL stays its origin."""
+    intake = read_json(run.path("00-intake.json"))
+    for it in items:
+        url = intake["targets"][it["item"] - 1]["value"]
+        ctx.say(question(ctx.t("sources.paste_for", url=it["value"])))
+        lines = collect_lines(ctx.io, ctx.t, prompt(""), lambda s: "")
+        if lines:
+            intake["targets"][it["item"] - 1] = {"kind": "text", "value": "\n".join(lines),
+                                                 "pasted_for": url}
+    write_json(run.path("00-intake.json"), intake)
 
 
 def ph_rubric(run: Run, ctx: Ctx) -> None:

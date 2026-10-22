@@ -44,6 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--weights", help="e.g. macro=30,accuracy=40,micro=10,impact=20")
     n.add_argument("--academic", action="store_true",
                    help="also verify DOIs and arXiv ids against doi.org, Crossref and arXiv")
+    n.add_argument("--no-render", action="store_true",
+                   help="never use the headless browser for JavaScript-rendered pages")
     n.add_argument("--feed-limit", type=int, default=None,
                    help="for an RSS/Atom target: review the newest N articles, one run each "
                         "(default 1 with --yes)")
@@ -199,10 +201,12 @@ def load_cfg(args, io: IO, store: Store) -> Config:
 def make_ctx(args, io: IO, store: Store, cfg: Config, *, models=None, backend=None,
              lang=None) -> Ctx:
     backend_name = backend or args.backend or cfg.backend
+    options = {"weights": parse_weights(getattr(args, "weights", None))}
+    if getattr(args, "no_render", False):
+        options["renderer"] = None  # D-0001: the user turned the browser off
     return Ctx(io=io, store=store, cfg=cfg, backend=get_backend(backend_name),
                models=models or effective_models(cfg, args.models), lang=lang or cfg.lang,
-               interactive=not args.yes,
-               options={"weights": parse_weights(getattr(args, "weights", None))})
+               interactive=not args.yes, options=options)
 
 
 def run_ctx(args, io: IO, store: Store, cfg: Config, run: Run) -> Ctx:

@@ -150,7 +150,7 @@
   "lessons.promote_hint": "建议改成 Style Guide 规则或默认值。",
   "lessons.promote": "要转成网站规则吗？",
   "lessons.promote.block": "在 site-profiles 屏蔽 {domain}",
-  "lessons.promote.ua": "为此网站设置 User-Agent",
+  "lessons.promote.ua": "为此网站在 User-Agent 加上联系信息（仍会表明是 ant-peer-review）",
   "lessons.promote.none": "暂不",
   "lessons.ua_prompt": "User-Agent：",
   "lessons.added": "已记录心得 {id}。",
@@ -218,5 +218,14 @@
   "feed.scale_confirm": "全部都要审吗？",
   "feed.nothing": "没有要审的内容，未建立任何任务。",
   "intake.fact_sources": "额外的事实核查来源（网页搜索始终会用）：",
-  "intake.fact_sources.academic": "学术标识符（DOI / arXiv）：通过 doi.org、Crossref、arXiv 核查引用的论文是否存在、标题是否相符、有无撤稿"
+  "intake.fact_sources.academic": "学术标识符（DOI / arXiv）：通过 doi.org、Crossref、arXiv 核查引用的论文是否存在、标题是否相符、有无撤稿",
+  "via.direct": "直接抓取",
+  "via.render": "以无头浏览器渲染",
+  "via.amp": "AMP 版本",
+  "via.archive": "Wayback Machine 存档",
+  "via.paste": "用户粘贴",
+  "sources.paste": "我自己粘贴正文",
+  "sources.paste_for": "请粘贴 {url} 的正文（以 /done 或连按两次 Enter 结束）：",
+  "sources.paste_hint": "  提示：可自行保存网页（你可能有爬虫没有的访问权限），用 --target <文件> 传入，或把正文直接作为 --target。",
+  "lessons.promote.needs_js": "{domain} 一律以无头浏览器渲染"
 }

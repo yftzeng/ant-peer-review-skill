@@ -65,7 +65,7 @@ def test_feed_item_prefers_article_page(tmp_path):
     from ant_peer_review.sources.crawler import FetchResult
 
     class Page:
-        def fetch(self, url):
+        def fetch(self, url, **kw):
             assert url == "https://ex.example/a/3"
             return FetchResult(url, url, 200, "text/html", (
                                "<nav>menu</nav><div class='post-content'><p>Gamma、page text.</p>"
@@ -79,7 +79,7 @@ def test_feed_item_prefers_article_page(tmp_path):
 
 def test_feed_item_falls_back_to_feed_html(tmp_path):
     class NoNet:
-        def fetch(self, url):
+        def fetch(self, url, **kw):
             raise FetchError("network", url)
     run, m = _feed_run(tmp_path, NoNet())
     assert m["items"][0]["status"] == "ok"

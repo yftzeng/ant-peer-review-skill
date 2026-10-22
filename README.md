@@ -15,6 +15,7 @@ ant-peer-review --version
 
 Requirements:
 - Python 3.11 or later; there are no runtime dependencies.
+- Optional, for JavaScript-rendered pages: `uv tool install '.[render]'`, then `playwright install chromium`. A failed fetch falls back to retries with backoff, then the headless browser, then the AMP version, then a dated Wayback Machine copy, and finally asks you to paste the text. The crawler never disguises itself as a browser.
 - The `claude` CLI (Claude Code), logged in. The default backend calls `claude -p` and uses your Claude Code plan.
 - Optional: PDF input needs `pip install 'ant-peer-review[pdf]'` or `pdftotext`.
 

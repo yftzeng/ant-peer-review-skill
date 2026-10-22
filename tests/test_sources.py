@@ -193,7 +193,13 @@ class CountingCrawler:
     def __init__(self, fail=()):
         self.calls, self.fail = [], set(fail)
 
-    def fetch(self, url):
+    def profile_for(self, url):
+        return {}
+
+    def fetch(self, url, **kw):
+        from ant_peer_review.sources.acquire import ARCHIVE_API
+        if url.startswith(ARCHIVE_API):
+            raise FetchError("network", url)  # no archive copy
         self.calls.append(url)
         if url in self.fail:
             raise FetchError("timeout", url)
@@ -222,18 +228,23 @@ def test_resume_retries_only_failed(tmp_path):
     assert set(segs) == {"D1", "D2", "D3"}
 
 
-# @S-source-acquisition-009
+# @S-source-acquisition-009 @N-source-acquisition-002
 def test_site_profiles(server):
+    from ant_peer_review.sources.crawler import DEFAULT_UA
     port = server.server_address[1]
     Handler.routes["/p"] = (200, {"Content-Type": "text/html"}, b"<p>ok</p>")
-    c = local_crawler(hosts=("ua.example", "blocked.example"), site_profiles={
+    mine = "ant-peer-review/0.1 (contact: ed@acme.example)"
+    c = local_crawler(hosts=("ua.example", "blocked.example", "spoof.example"), site_profiles={
         "blocked.example": {"blocked": True, "note": "paywall"},
-        "ua.example": {"user_agent": "MyUA/1.0"}})
+        "ua.example": {"user_agent": mine},
+        "spoof.example": {"user_agent": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0"}})
     with pytest.raises(FetchError) as e:
         c.fetch(f"http://blocked.example:{port}/p")
     assert e.value.reason == "site_profile_blocked"
     c.fetch(f"http://ua.example:{port}/p")
-    assert Handler.seen_ua[-1] == "MyUA/1.0"
+    assert Handler.seen_ua[-1] == mine
+    c.fetch(f"http://spoof.example:{port}/p")
+    assert Handler.seen_ua[-1] == DEFAULT_UA
 
 
 # @S-source-acquisition-010

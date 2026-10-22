@@ -88,6 +88,31 @@ def lint_report(cons: dict, md: str, flagged_excerpts: list[str]) -> list[str]:
     return problems
 
 
+def sources_rows(t: T, manifest: dict) -> list[str]:
+    """The sources table: each document, where it came from and how it was read (D-0001)."""
+    out = [f"| {t('report.doc')} | {t('report.origin')} | {t('report.chars')} | {t('report.quality')} |",
+           "|---|---|---:|---|"]
+    for it in manifest["items"]:
+        if it.get("status") != "ok":
+            out.append(f"| — | {cell(it.get('value', ''))[:120]} | — | ✗ {it.get('reason', '')} |")
+            continue
+        for d in it.get("docs", []):
+            via = it.get("via", "direct")
+            if it.get("warning") == "feed_content_maybe_lossy":
+                q = t("report.q.feed_copy")
+            elif via != "direct":
+                q = t("via." + via) + (f" {it['archived_at']}" if it.get("archived_at") else "")
+                if it.get("fell_back_from"):
+                    q += f" ← {cell(it['fell_back_from'])}"
+            elif it["kind"] in ("url", "feed_item"):
+                q = t("report.q.page") + (f" ⚠ {it['warning']}" if it.get("warning") else "")
+            else:
+                q = t(f"report.q.{it['kind']}")
+            out.append(f"| {d['doc']} | {cell(d.get('origin') or d.get('title') or '')[:120]} | "
+                       f"{d.get('chars', '')} | {q} |")
+    return out
+
+
 def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str]) -> str:
     t = T(lang)
     intake = read_json(run.path("00-intake.json"))
@@ -147,21 +172,7 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     L.append("")
     L.append(f"## {t('report.sources_title')}")
     L.append("")
-    L.append(f"| {t('report.doc')} | {t('report.origin')} | {t('report.chars')} | {t('report.quality')} |")
-    L.append("|---|---|---:|---|")
-    for it in manifest["items"]:
-        if it.get("status") != "ok":
-            L.append(f"| — | {cell(it.get('value', ''))[:120]} | — | ✗ {it.get('reason', '')} |")
-            continue
-        for d in it.get("docs", []):
-            if it.get("warning") == "feed_content_maybe_lossy":
-                q = t("report.q.feed_copy")
-            elif it["kind"] in ("url", "feed_item"):
-                q = t("report.q.page") + (f" ⚠ {it['warning']}" if it.get("warning") else "")
-            else:
-                q = t(f"report.q.{it['kind']}")
-            L.append(f"| {d['doc']} | {cell(d.get('origin') or d.get('title') or '')[:120]} | "
-                     f"{d.get('chars', '')} | {q} |")
+    L += sources_rows(t, manifest)
     rc = read_json(run.path("05b-recheck.json"), default=None)
     if rc:
         L.append("")

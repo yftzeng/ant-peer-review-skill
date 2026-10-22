@@ -150,7 +150,7 @@
   "lessons.promote_hint": "Consider turning it into a Style Guide rule or a default setting.",
   "lessons.promote": "Turn it into a site rule?",
   "lessons.promote.block": "Block {domain} in site profiles",
-  "lessons.promote.ua": "Set a user agent for this site",
+  "lessons.promote.ua": "Add contact details to our User-Agent for this site (it still says ant-peer-review)",
   "lessons.promote.none": "Not now",
   "lessons.ua_prompt": "User agent:",
   "lessons.added": "Recorded lesson {id}.",
@@ -218,5 +218,14 @@
   "feed.scale_confirm": "Go ahead with all of them?",
   "feed.nothing": "Nothing to review; no run was created.",
   "intake.fact_sources": "Extra fact-check sources (web search is always used):",
-  "intake.fact_sources.academic": "Academic identifiers (DOI / arXiv): verify cited papers exist, match their titles and are not retracted, via doi.org, Crossref and arXiv"
+  "intake.fact_sources.academic": "Academic identifiers (DOI / arXiv): verify cited papers exist, match their titles and are not retracted, via doi.org, Crossref and arXiv",
+  "via.direct": "direct",
+  "via.render": "rendered by headless browser",
+  "via.amp": "AMP version",
+  "via.archive": "Wayback Machine copy",
+  "via.paste": "pasted by the user",
+  "sources.paste": "Paste the text myself",
+  "sources.paste_for": "Paste the text of {url} (end with /done or two empty lines):",
+  "sources.paste_hint": "  tip: save the page yourself (you may have access the crawler does not) and pass it as --target <file>, or paste its text as --target.",
+  "lessons.promote.needs_js": "Always render {domain} with the headless browser"
 }

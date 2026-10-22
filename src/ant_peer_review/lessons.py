@@ -127,11 +127,17 @@ def promote_if_repeated(io, t, store: Store, lid: str, area: str) -> dict | None
     domain = area.split("/", 1)[1]
     act = radio(io, t, t("lessons.promote"), [
         ("block", t("lessons.promote.block", domain=domain)),
+        ("needs_js", t("lessons.promote.needs_js", domain=domain)),
         ("ua", t("lessons.promote.ua")), ("none", t("lessons.promote.none"))], default="none")
     if act == "block":
         return set_site_profile(store, domain, blocked=True, note=f"lessons {ids}")
+    if act == "needs_js":
+        return set_site_profile(store, domain, needs_js=True, note=f"lessons {ids}")
     if act == "ua":
         ua = io.ask(t("lessons.ua_prompt") + " ").strip()
+        if ua and "ant-peer-review" not in ua.lower():
+            from .sources.crawler import DEFAULT_UA
+            ua = f"{DEFAULT_UA} {ua}"  # contact details join our UA, never replace it (D-0001)
         if ua:
             return set_site_profile(store, domain, user_agent=ua, note=f"lessons {ids}")
     return None
