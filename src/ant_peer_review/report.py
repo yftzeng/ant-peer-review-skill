@@ -6,7 +6,7 @@ from datetime import datetime
 
 from .factcheck import read_ledger, snapshot
 from .i18n import T
-from .intake import LAYER_KEYS, audience_label
+from .intake import LAYER_KEYS, audience_label, normalize_audience
 from .jsonio import read_json, write_json, write_text_atomic
 from .workspace import Run
 
@@ -76,9 +76,9 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     L.append("")
     L.append(f"- {t('report.run')}: `{run.id}`  ·  {datetime.now():%Y-%m-%d %H:%M}")
     L.append(f"- {t('report.purpose')}: {t('intake.purpose.' + intake['purpose'])}")
-    aud = ", ".join(f"{t('aud.' + k).split(':')[0].rstrip('：')}: "
-                    f"{audience_label(t, k, intake['audience'].get(k))}"
-                    for k in LAYER_KEYS if intake["audience"].get(k))
+    audience = normalize_audience(intake.get("audience"))
+    aud = "; ".join(f"{t('aud.' + k).rstrip(':：')}: {cell(audience_label(t, k, audience[k]))}"
+                    for k in LAYER_KEYS if audience[k])
     L.append(f"- {t('report.audience')}: {aud or t('intake.skipped')}")
     L.append("")
     L.append(f"## {t('report.provenance')}")

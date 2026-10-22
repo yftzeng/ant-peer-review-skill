@@ -80,15 +80,24 @@ def radio(io: IO, t: T, title: str, options: Sequence[tuple[str, str]],
 
 def checkbox(io: IO, t: T, title: str, options: Sequence[tuple[str, str]],
              selected: Sequence[str], *, min_selected: int = 0,
-             validate: Callable[[list[str]], str | None] | None = None) -> list[str]:
-    """Toggle by number; empty line confirms. Keeps option order in the result."""
+             validate: Callable[[list[str]], str | None] | None = None,
+             allow_custom: bool = False) -> list[str]:
+    """Toggle by number; empty line confirms. Keeps option order in the result.
+    With allow_custom, 'c' adds a free-text option, returned as 'custom:<text>'."""
+    options = list(options)
     chosen = [v for v, _ in options if v in set(selected)]
     while True:
         io.say(title)
         for i, (val, label) in enumerate(options, 1):
             box = "[x]" if val in chosen else "[ ]"
             io.say(f"  {i}) {box} {label}")
-        ans = io.ask(t("ui.toggle") + " ").strip()
+        ans = io.ask(t("ui.toggle_custom" if allow_custom else "ui.toggle") + " ").strip()
+        if allow_custom and ans.lower() == "c":
+            txt = " ".join(io.ask(t("ui.custom_prompt") + " ").split())
+            if txt and f"custom:{txt}" not in chosen:
+                options.append((f"custom:{txt}", txt))
+                chosen.append(f"custom:{txt}")
+            continue
         if not ans:
             if len(chosen) < min_selected:
                 io.say(t("ui.min_selected", n=min_selected))

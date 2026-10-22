@@ -178,5 +178,6 @@
   "dim.macro": "結構與邏輯（Macro）",
   "dim.accuracy": "事實與論據（Accuracy）",
   "dim.micro": "語言與表達（Micro）",
-  "dim.impact": "傳播與轉換（Impact）"
+  "dim.impact": "傳播與轉換（Impact）",
+  "ui.toggle_custom": "輸入編號切換勾選（例如 1 3），c = 新增自訂，Enter 確認（全不勾 = 略過）："
 }

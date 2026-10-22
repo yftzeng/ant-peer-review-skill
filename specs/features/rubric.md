@@ -42,6 +42,17 @@ Feature: rubric
     When  the stage is "cannot_verify"
     Then  the final impact score is 80
     And   with a verified stage it is 0.75 x 80 + 0.25 x 20 = 65
+
+  @S-rubric-007
+  Scenario: several values in one audience layer average their weight shifts
+    Given an audience with expertise ["scholar", "public"]
+    When  weights are proposed
+    Then  each dimension shifts by the mean of the scholar and public shifts, and the total is 100
+
+  @S-rubric-008
+  Scenario: S-curve fit with several audience values uses the share of good and poor matches
+    Given stage "startup" and expertise ["scholar", "public"] with purpose ["trend"]
+    Then  the fit is 50 + 50 x (2 good - 1 poor) / 3 values = 66.7
 ```
 
 ## Must NOT
@@ -49,3 +60,4 @@ Feature: rubric
 
 ## Revisions
 - 2026-10-22 · +S-rubric-001..006 +N-rubric-001 · decision: none -- follows docs/DESIGN.md §3 P5
+- 2026-10-22 · +S-rubric-007 +S-rubric-008 · decision: none -- multi-select audience: shifts are averaged per layer, fit is a share so it cannot run away with many ticks

@@ -58,3 +58,20 @@ def test_validate_rejects_bad_sum():
     r["dimensions"][0]["weight"] += 1
     with pytest.raises(ValueError):
         validate_rubric(r)
+
+
+# @S-rubric-007
+def test_multi_values_average_shifts():
+    from ant_peer_review.rubric import ADJUST, DEFAULT_WEIGHTS, _rebalance
+    w = weights(propose(dict(SKIP, expertise=["scholar", "public"])))
+    exp = dict(DEFAULT_WEIGHTS)
+    for k in exp:
+        exp[k] += (ADJUST[("expertise", "scholar")].get(k, 0)
+                   + ADJUST[("expertise", "public")].get(k, 0)) / 2
+    assert w == _rebalance(exp) and sum(w.values()) == 100
+
+
+# @S-rubric-008
+def test_s_curve_fit_share():
+    fit = s_curve_fit("startup", dict(SKIP, expertise=["scholar", "public"], purpose=["trend"]))
+    assert fit == pytest.approx(66.7, abs=0.05)

@@ -17,14 +17,14 @@ Run `ant-peer-review --version`. If it is missing, install it from this skill's 
 - **Driven by you:** first collect the inputs with AskUserQuestion:
   - the purpose: audit or drafting;
   - the targets: URLs, paths or pasted text;
-  - the audience: five layers, each a value or skip. The values are listed under §5.
+  - the audience: five layers, each a multi-select (one or more values, or none to skip). The values are listed under §5.
   
   Then run the command below. Each run can take several minutes, so run it in the background and wait for it to finish.
 
   ```
   ant-peer-review new --yes --purpose audit \
     --target <url-or-path-or-text> [--target ...] \
-    --audience expertise=expert,role=senior_executive,purpose=trend \
+    --audience expertise=expert+scholar,role=senior_executive,purpose=trend \
     [--brand <name>] [--weights macro=30,accuracy=30,micro=20,impact=20] \
     [--models opus,sonnet] [--lang en|zh-TW|zh-CN]
   ```
@@ -74,7 +74,7 @@ Audience values:
 | trust | stranger, prospect, new_customer, regular, loyal_fan, churned |
 | purpose | emotional, problem_solving, trend |
 
-Any layer can also take `custom:<text>`.
+Join several values in one layer with `+`. Any layer can also take `custom:<text>`.
 
 ## Rules
 

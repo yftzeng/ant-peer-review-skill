@@ -37,7 +37,8 @@ def build_parser() -> argparse.ArgumentParser:
     n = sub.add_parser("new", parents=[common], help="start a new run (default command)")
     n.add_argument("--purpose", choices=["audit", "drafting"])
     n.add_argument("--target", action="append", default=[], help="URL, path or text (repeat)")
-    n.add_argument("--audience", help="e.g. expertise=expert,purpose=trend,lens=custom:regulators")
+    n.add_argument("--audience", help="e.g. expertise=expert+scholar,purpose=trend,lens=custom:regulators "
+                        "(several values per layer joined with +)")
     n.add_argument("--brand", help="brand name for the Style Guide")
     n.add_argument("--weights", help="e.g. macro=30,accuracy=40,micro=10,impact=20")
 

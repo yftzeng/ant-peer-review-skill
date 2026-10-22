@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from .i18n import T
-from .ui import IO, END_TOKENS, radio
+from .ui import IO, END_TOKENS, checkbox, radio
 
 PURPOSES = ["audit", "drafting"]
 
@@ -65,29 +65,38 @@ def collect_targets(io: IO, t: T) -> list[dict]:
         io.say(t("intake.need_target"))
 
 
-def audience_label(t: T, layer: str, value: str | None) -> str:
-    if value is None:
+def normalize_audience(aud: dict | None) -> dict[str, list[str]]:
+    """Every layer as a list; older runs stored one string or None per layer."""
+    aud = aud or {}
+    out = {}
+    for k in LAYER_KEYS:
+        v = aud.get(k)
+        out[k] = [] if v is None else ([v] if isinstance(v, str) else list(v))
+    return out
+
+
+def value_label(t: T, layer: str, value: str) -> str:
+    return value[len("custom:"):] if value.startswith("custom:") else t(f"aud.{layer}.{value}")
+
+
+def audience_label(t: T, layer: str, values) -> str:
+    vals = normalize_audience({layer: values})[layer]
+    if not vals:
         return t("intake.skipped")
-    if value.startswith("custom:"):
-        return value[len("custom:"):]
-    return t(f"aud.{layer}.{value}")
+    return "、".join(value_label(t, layer, v) for v in vals)
 
 
-def _ask_layer(io: IO, t: T, layer: str, options: list[str], current: str | None) -> str | None:
-    res = radio(io, t, t(f"aud.{layer}"),
-                [(o, t(f"aud.{layer}.{o}")) for o in options],
-                default=current if current in options else None,
-                allow_custom=True, allow_skip=True)
-    if res is None or res in options:
-        return res
-    return "custom:" + res
+def _ask_layer(io: IO, t: T, layer: str, options: list[str], current: list[str]) -> list[str]:
+    opts = [(o, t(f"aud.{layer}.{o}")) for o in options]
+    opts += [(c, c[len("custom:"):]) for c in current if c.startswith("custom:")]
+    return checkbox(io, t, t(f"aud.{layer}"), opts, current, allow_custom=True)
 
 
 def ask_audience(io: IO, t: T, initial: dict | None = None) -> dict:
-    aud = dict(initial) if initial else {}
+    aud = normalize_audience(initial) if initial else {}
     if not initial:
         for layer, options in AUDIENCE_LAYERS:
-            aud[layer] = _ask_layer(io, t, layer, options, None)
+            aud[layer] = _ask_layer(io, t, layer, options, [])
     while True:
         io.say(t("intake.card"))
         for layer in LAYER_KEYS:
@@ -100,15 +109,15 @@ def ask_audience(io: IO, t: T, initial: dict | None = None) -> dict:
             return aud
         if act == "redo":
             for layer, options in AUDIENCE_LAYERS:
-                aud[layer] = _ask_layer(io, t, layer, options, aud.get(layer))
+                aud[layer] = _ask_layer(io, t, layer, options, aud.get(layer, []))
             continue
         layer = act.split(":", 1)[1]
-        options = dict(AUDIENCE_LAYERS)[layer]
-        aud[layer] = _ask_layer(io, t, layer, options, aud.get(layer))
+        aud[layer] = _ask_layer(io, t, layer, dict(AUDIENCE_LAYERS)[layer], aud.get(layer, []))
 
 
 def parse_audience(spec: str | None) -> dict:
-    aud: dict[str, str | None] = {k: None for k in LAYER_KEYS}
+    """'expertise=expert+scholar,lens=custom:regulators' -> lists per layer."""
+    aud: dict[str, list[str]] = {k: [] for k in LAYER_KEYS}
     if not spec:
         return aud
     opts = dict(AUDIENCE_LAYERS)
@@ -120,12 +129,16 @@ def parse_audience(spec: str | None) -> dict:
         k, v = (x.strip() for x in part.split("=", 1))
         if k not in opts:
             raise ValueError(f"unknown audience layer {k!r}; choose from {LAYER_KEYS}")
-        if v.startswith("custom:") and v[7:].strip():
-            aud[k] = v
-        elif v in opts[k]:
-            aud[k] = v
-        else:
-            raise ValueError(f"unknown option {v!r} for {k}; choose from {opts[k]} or custom:<text>")
+        for item in (x.strip() for x in v.split("+")):
+            if item.startswith("custom:") and item[7:].strip():
+                val = item
+            elif item in opts[k]:
+                val = item
+            else:
+                raise ValueError(f"unknown option {item!r} for {k}; choose from {opts[k]} "
+                                 "or custom:<text>, joined with +")
+            if val not in aud[k]:
+                aud[k].append(val)
     return aud
 
 

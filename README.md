@@ -40,7 +40,7 @@ Non-interactive (scripts, CI, or driven by Claude):
 ```bash
 ant-peer-review new --yes --purpose audit \
   --target https://example.com/post --target ./drafts \
-  --audience expertise=public,purpose=trend --brand acme
+  --audience expertise=public+beginner,purpose=trend --brand acme
 ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 ```
 
@@ -50,7 +50,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 
 | Phase | What happens |
 |---|---|
-| intake | Purpose (audit / drafting). Targets, one per line, end with `/done` or two Enters. The audience card has five layers (expertise, decision role, industry/political lens, trust distance, reading purpose); each takes one option, a custom value or skip. |
+| intake | Purpose (audit / drafting). Targets, one per line, end with `/done` or two Enters. The audience card has five layers (expertise, decision role, industry/political lens, trust distance, reading purpose); each is a checkbox: tick any number of options or add custom values; ticking none skips the layer. |
 | sources | Safe crawler and converters produce Markdown with stable ids (`D1.P03.S2`). The prompt-injection scan flags suspect text and withholds it from reviewers. |
 | rubric | Four dimensions: Macro (structure), Accuracy (facts), Micro (language), Impact (reach, including the S-curve stage). Weights are proposed from the audience; you edit and confirm them. |
 | review | Each reviewer, blind to the others, gives scores, a macro → meso → micro audit, fact claims, a sensitivity scan, 6 red lines and the S-curve stage. |

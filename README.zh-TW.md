@@ -45,7 +45,7 @@ Peer reviewers：opus, sonnet   （變更：ant-peer-review config models）
 ```bash
 ant-peer-review new --yes --purpose audit \
   --target https://example.com/post --target ./drafts \
-  --audience expertise=public,purpose=trend --brand acme
+  --audience expertise=public+beginner,purpose=trend --brand acme
 ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 ```
 
@@ -55,7 +55,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 
 | 階段 | 內容 |
 |---|---|
-| intake | **目的**：撰寫或審核。**目標**：逐行輸入，單獨一行輸入 `/done` 或連按兩次 Enter 結束。**受眾卡**共五層：專業度、決策層、產業／政治視角、信任距離、閱讀目的。每層選一個選項、自訂或略過。 |
+| intake | **目的**：撰寫或審核。**目標**：逐行輸入，單獨一行輸入 `/done` 或連按兩次 Enter 結束。**受眾卡**共五層：專業度、決策層、產業／政治視角、信任距離、閱讀目的。每層都是 checkbox，可以多選，也可以加自訂值；全不勾就是略過。 |
 | sources | 用安全爬蟲和轉檔程式把目標轉成 Markdown，每段每句都有固定編號（例如 `D1.P03.S2`）。Prompt injection 掃描會標記可疑文字，並把它從 reviewer 看到的內容中隱藏。 |
 | rubric | 四個維度：結構邏輯（Macro）、事實論據（Accuracy）、語言表達（Micro）、傳播轉換（Impact，含 S 型曲線）。系統依受眾建議權重，你可以修改後再確認。 |
 | review | 各 reviewer 獨立審稿，產出：各維度評分、篇章 → 段落 → 字句三層診斷、待查證的事實主張、敏感度掃描、6 條紅線判定、S 型曲線階段。 |

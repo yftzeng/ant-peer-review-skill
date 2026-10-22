@@ -178,5 +178,6 @@
   "dim.macro": "Structure and logic (Macro)",
   "dim.accuracy": "Facts and evidence (Accuracy)",
   "dim.micro": "Language and expression (Micro)",
-  "dim.impact": "Reach and conversion (Impact)"
+  "dim.impact": "Reach and conversion (Impact)",
+  "ui.toggle_custom": "Toggle numbers (e.g. 1 3), c = add a custom value, Enter to confirm (nothing ticked = skip):"
 }

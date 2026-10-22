@@ -67,7 +67,8 @@ def rubric_block(rubric: dict) -> str:
 
 
 def audience_block(intake: dict) -> str:
-    aud = {k: v for k, v in intake.get("audience", {}).items() if v}
+    from .intake import normalize_audience
+    aud = {k: v for k, v in normalize_audience(intake.get("audience")).items() if v}
     return json.dumps(aud, ensure_ascii=False) if aud else "(not specified)"
 
 

@@ -93,10 +93,13 @@ def _rebalance(weights: dict[str, int], fixed: set[str] | None = None) -> dict[s
 
 
 def propose(audience: dict) -> dict:
+    from .intake import normalize_audience
     w = dict(DEFAULT_WEIGHTS)
-    for layer, value in audience.items():
-        for k, d in ADJUST.get((layer, value), {}).items():
-            w[k] += d
+    for layer, values in normalize_audience(audience).items():
+        known = [v for v in values if (layer, v) in ADJUST]
+        for v in known:  # several values in one layer: mean of their shifts
+            for k, d in ADJUST[(layer, v)].items():
+                w[k] += d / len(known)
     w = {k: max(MIN_WEIGHT, v) for k, v in w.items()}
     w = _rebalance(w)
     dims = [dict(d, weight=w[d["key"]]) for d in TEMPLATE]
@@ -183,10 +186,14 @@ def s_curve_fit(stage: str, audience: dict) -> float:
     table = S_FIT.get(stage)
     if not table:
         return 50.0
-    vals = {audience.get("expertise"), audience.get("purpose")}
+    from .intake import normalize_audience
+    aud = normalize_audience(audience)
+    vals = {v for v in aud["expertise"] + aud["purpose"] if not v.startswith("custom:")}
+    if not vals:
+        return 50.0
     good = len(vals & table["good"])
     poor = len(vals & table["poor"])
-    return float(max(0, min(100, 50 + 25 * good - 25 * poor)))
+    return round(max(0.0, min(100.0, 50 + 50 * (good - poor) / len(vals))), 1)
 
 
 def final_impact(reviewer_impact: float, fit: float | None, stage_status: str) -> float:

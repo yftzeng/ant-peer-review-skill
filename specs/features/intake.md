@@ -2,8 +2,8 @@
 
 Collects what a run is about: the purpose (drafting or audit), the targets
 (URLs, local paths, pasted text, one per line until the end key), and the
-audience in five layers, each answered with one option, a custom value or
-skip. The audience card is shown for confirmation or editing before the run
+audience in five layers, each a checkbox: any number of options plus custom
+values, none ticked meaning skip. The audience card is shown for confirmation or editing before the run
 continues.
 
 ```gherkin
@@ -31,20 +31,26 @@ Feature: intake
     Then  the user is told at least one target is needed and the final list has one url
 
   @S-intake-005
-  Scenario: each audience layer takes one option, a custom value or skip
-    When  the user picks "expert" for layer a, skips layer b, enters custom "regulators" for layer c, picks options for d and e
-    Then  the audience is {expertise: expert, role: null, lens: "custom:regulators", trust: ..., purpose: ...}
+  Scenario: each audience layer is a checkbox with custom values; none ticked is skip
+    When  the user ticks "expert" and "scholar" for layer a, ticks nothing for layer b, ticks "consumer" and adds custom "regulators" for layer c, and ticks one option each for d and e
+    Then  the audience is {expertise: [expert, scholar], role: [], lens: [consumer, "custom:regulators"], trust: [stranger], purpose: [trend]}
 
   @S-intake-006
   Scenario: the audience card can be edited before confirming
-    Given the audience card is shown with expertise "expert"
-    When  the user chooses to edit layer a and picks "beginner", then confirms
-    Then  the saved audience has expertise "beginner"
+    Given the audience card is shown with expertise ["expert"]
+    When  the user chooses to edit layer a, ticks "beginner" too, then confirms
+    Then  the saved audience has expertise ["beginner", "expert"]
 
   @S-intake-007
   Scenario: non-interactive intake from arguments
-    When  intake is built from --purpose audit --target URL --target "text" --audience expertise=expert,purpose=trend
-    Then  00-intake.json holds the same purpose, targets and audience without any prompt
+    When  intake is built from --purpose audit --target URL --target "text" --audience expertise=expert+scholar,purpose=trend
+    Then  00-intake.json holds the same purpose, targets and audience (expertise [expert, scholar]) without any prompt
+
+  @S-intake-008
+  Scenario: an audience saved by an older version is read as lists
+    Given 00-intake.json with audience {expertise: "expert", role: null}
+    When  the audience is normalized
+    Then  it reads {expertise: [expert], role: []}
 ```
 
 ## Must NOT
@@ -52,3 +58,4 @@ Feature: intake
 
 ## Revisions
 - 2026-10-22 · +S-intake-001..007 +N-intake-001 · decision: none -- follows docs/DESIGN.md §3 P1-P3
+- 2026-10-22 · ~S-intake-005 ~S-intake-006 ~S-intake-007 +S-intake-008 · decision: none -- user request: every audience layer is a multi-select checkbox
