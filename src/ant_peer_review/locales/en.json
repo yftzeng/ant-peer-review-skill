@@ -157,5 +157,21 @@
   "lessons.cause": "Cause (what happened):",
   "lessons.rule": "Rule (what to do from now on):",
   "lessons.enforced": "Enforced by (script, profile, or 'judgment'):",
-  "lessons.area": "Area (e.g. crawl/example.com, factcheck, rubric):"
+  "lessons.area": "Area (e.g. crawl/example.com, factcheck, rubric):",
+  "intake.brand": "Brand name for the Style Guide (Enter to skip):",
+  "sources.lesson_hint": "  tip: if this site keeps failing ({reason}), record it: ant-peer-review lessons new \"<title>\" --area crawl/<domain>",
+  "sources.failed": "{n} target(s) could not be read. What now?",
+  "sources.retry": "Retry now",
+  "sources.continue": "Continue without them",
+  "sources.stop": "Stop here (resume later)",
+  "review.failed": "These reviewers did not answer: {models}. What now?",
+  "review.without": "Continue without them (disclosed in the report)",
+  "review.continue_without": "Continuing without: {models} (disclosed in the report)",
+  "draft.again": "Draft not good enough yet: writing round {round} with the findings as feedback.",
+  "report.done": "Report: {path}  —  total {total}, grade {grade}",
+  "report.veto": "Red line confirmed (veto): {keys}",
+  "decide.hint": "Review done. To finish, run: ant-peer-review decide {run} --choice A|B|manual [--rule <red_line>=confirmed|dismissed]",
+  "run.resume_hint": "Resume with: ant-peer-review resume {run}",
+  "run.paused": "Paused ({reason}). Resume with: ant-peer-review resume {run}",
+  "run.interrupted": "Interrupted; progress saved. Resume with: ant-peer-review resume {run}"
 }

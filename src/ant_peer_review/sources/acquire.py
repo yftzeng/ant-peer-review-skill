@@ -87,7 +87,7 @@ def _path_item(run: Run, idx: int, value: str) -> dict:
 
 def _text_item(run: Run, idx: int, value: str) -> dict:
     doc_id = f"D{idx}"
-    first = value.strip().splitlines()[0][:60] if value.strip() else "text"
+    first = value.strip().splitlines()[0].lstrip("#").strip()[:60] if value.strip() else "text"
     return {"docs": [_doc_record(run, doc_id, "", first, value.strip(), value.encode("utf-8"),
                                  f"{doc_id}.txt", [])]}
 

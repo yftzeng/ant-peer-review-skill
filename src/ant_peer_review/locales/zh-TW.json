@@ -157,5 +157,21 @@
   "lessons.cause": "Cause（發生了什麼）：",
   "lessons.rule": "Rule（今後怎麼做）：",
   "lessons.enforced": "Enforced（由什麼強制：腳本、設定或 judgment）：",
-  "lessons.area": "領域（例如 crawl/example.com、factcheck、rubric）："
+  "lessons.area": "領域（例如 crawl/example.com、factcheck、rubric）：",
+  "intake.brand": "品牌名稱（用於 Style Guide，Enter 略過）：",
+  "sources.lesson_hint": "  提示：若此網站持續失敗（{reason}），可記錄心得：ant-peer-review lessons new \"<標題>\" --area crawl/<網域>",
+  "sources.failed": "有 {n} 個目標無法讀取，接下來？",
+  "sources.retry": "立即重試",
+  "sources.continue": "略過它們繼續",
+  "sources.stop": "先停在這裡（之後再續跑）",
+  "review.failed": "這些 reviewer 未回應：{models}，接下來？",
+  "review.without": "不含它們繼續（會在報告中揭露）",
+  "review.continue_without": "不含以下 reviewer 繼續：{models}（報告中揭露）",
+  "draft.again": "草稿尚未達標：以審稿發現為回饋撰寫第 {round} 輪。",
+  "report.done": "報告：{path} — 總分 {total}，等級 {grade}",
+  "report.veto": "紅線成立（否決）：{keys}",
+  "decide.hint": "審稿完成。定稿請執行：ant-peer-review decide {run} --choice A|B|manual [--rule <紅線>=confirmed|dismissed]",
+  "run.resume_hint": "續跑：ant-peer-review resume {run}",
+  "run.paused": "已暫停（{reason}）。續跑：ant-peer-review resume {run}",
+  "run.interrupted": "已中斷，進度已存。續跑：ant-peer-review resume {run}"
 }

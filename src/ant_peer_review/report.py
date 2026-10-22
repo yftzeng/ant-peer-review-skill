@@ -55,6 +55,9 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     manifest = read_json(run.path("01-sources/manifest.json"), default={"items": []})
     titles = [d.get("title") or d.get("origin") for it in manifest["items"]
               for d in it.get("docs", [])]
+    drafts = sorted(run.path("01-sources").glob("draft.v*.md"))
+    if drafts:
+        titles = [drafts[-1].read_text(encoding="utf-8").splitlines()[0].lstrip("# ")]
     L = []
     L.append(f"# {t('report.title')} — {cell(titles[0] if titles else run.id)} (v{version})")
     L.append("")

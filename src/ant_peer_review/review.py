@@ -24,6 +24,8 @@ def article_view(run: Run) -> str:
     manifest = read_json(run.path("01-sources/manifest.json"), default={"items": []})
     origins = {d["doc"]: d.get("origin") or d.get("title") or ""
                for it in manifest["items"] for d in it.get("docs", [])}
+    if run.path("01-sources/materials.json").exists():
+        origins = {"D1": "(draft)"}  # drafting: the piece is the draft, not the materials
     parts = []
     for doc, doc_segs in segs.items():
         parts.append(f"## Document {doc} {origins.get(doc, '')}".rstrip() + "\n\n"

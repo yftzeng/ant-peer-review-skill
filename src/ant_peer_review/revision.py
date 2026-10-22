@@ -52,7 +52,11 @@ def diff_text(paras: dict[str, dict], replaced: dict[str, str]) -> str:
         old = paras[pid]["text"]
         if old == new:
             continue
-        blocks.append(f"@@ {pid} @@\n- {old}\n+ {new}\n~ {char_diff(old, new)}\n")
+        block = f"@@ {pid} @@\n- {old}\n+ {new}\n"
+        # Inline marks help only for edits; a rewrite reads better as -/+ alone.
+        if SequenceMatcher(None, old, new, autojunk=False).ratio() >= 0.5:
+            block += f"~ {char_diff(old, new)}\n"
+        blocks.append(block)
     return "\n".join(blocks)
 
 
