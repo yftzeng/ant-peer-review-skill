@@ -16,6 +16,10 @@ BLOCK_TAGS = {"p", "div", "section", "article", "main", "header", "li", "blockqu
               "tr", "table", "ul", "ol", "figure", "figcaption", "dd", "dt", "h1", "h2", "h3",
               "h4", "h5", "h6", "br", "hr"}
 VOID = {"br", "hr", "img", "meta", "link", "input", "source", "wbr", "area", "base", "col"}
+# Class/id words that mark the article body when a page has no <article>/<main>.
+CONTENT_HINT = re.compile(r"(?:^|[\s_-])(?:markdown|article|post|entry|content|story|prose)"
+                          r"(?:$|[\s_-])", re.I)
+MIN_CANDIDATE_CHARS = 200
 HIDDEN_STYLE = re.compile(
     r"display\s*:\s*none|visibility\s*:\s*hidden|font-size\s*:\s*0(?![.\d]*[1-9])|"
     r"opacity\s*:\s*0(?:\.0*)?\s*(?:;|$)|color\s*:\s*(?:#fff(?:fff)?|white)\b", re.I)
@@ -40,6 +44,9 @@ class _Parser(HTMLParser):
         self.title = ""
         self._in_title = False
         self._hidden_depth = 0
+        self.textlen = 0                 # visible characters so far
+        self.open_cands: dict[int, tuple[int, int]] = {}   # stack index -> (block, textlen)
+        self.candidates: list[tuple[int, int, int, int]] = []  # (textlen, depth, start, end)
 
     # helpers
     def _flush(self):
@@ -78,6 +85,9 @@ class _Parser(HTMLParser):
             return
         if tag in BLOCK_TAGS:
             self._flush()
+            if tag in ("div", "section") and (CONTENT_HINT.search(a.get("class", ""))
+                                              or CONTENT_HINT.search(a.get("id", ""))):
+                self.open_cands[len(self.stack) - 1] = (len(self.blocks), self.textlen)
             if re.fullmatch(r"h[1-6]", tag):
                 self.prefix = "#" * int(tag[1]) + " "
             elif tag == "li":
@@ -91,8 +101,10 @@ class _Parser(HTMLParser):
         if tag in VOID:
             return
         # pop to the matching tag (tolerate unclosed children)
+        closed = []
         for i in range(len(self.stack) - 1, -1, -1):
             if self.stack[i][0] == tag:
+                closed = [j for j in self.open_cands if j >= i]
                 for t, hides in reversed(self.stack[i:]):
                     if hides:
                         self._hidden_depth -= 1
@@ -104,6 +116,9 @@ class _Parser(HTMLParser):
                 break
         if not self._hidden_depth and tag in BLOCK_TAGS:
             self._flush()
+        for j in closed:
+            start, t0 = self.open_cands.pop(j)
+            self.candidates.append((self.textlen - t0, j, start, len(self.blocks)))
 
     def handle_data(self, data):
         if self._in_title:
@@ -113,6 +128,7 @@ class _Parser(HTMLParser):
             self.hidden_buf.append(data)
         else:
             self.buf.append(data)
+            self.textlen += len(data.strip())
 
     def handle_comment(self, data):
         if data.strip():
@@ -167,5 +183,16 @@ def html_to_markdown(html: str) -> Converted:
         p.hidden += [h for h in outer.hidden if (h["kind"], h["text"]) not in seen
                      and h["kind"] != "chrome"]
     title = " ".join(html[t_hit[1]:t_hit[2] - len("</title>")].split()) if t_hit else ""
-    md = "\n\n".join(p.blocks)
+    blocks = p.blocks
+    if len(_main_region(html)) == len(html):
+        # No <article>/<main>: the innermost content-like container that still holds
+        # most (>= 80%) of the text of the largest one, so wrappers with share
+        # buttons and view counters lose to the article body inside them.
+        good = [c for c in p.candidates if c[0] >= MIN_CANDIDATE_CHARS and c[3] > c[2]]
+        if good:
+            top = max(c[0] for c in good)
+            _, _, start, end = max((c for c in good if c[0] >= 0.8 * top),
+                                   key=lambda c: (c[1], c[0]))
+            blocks = p.blocks[start:end]
+    md = "\n\n".join(blocks)
     return Converted(title=title, markdown=md, hidden=p.hidden)

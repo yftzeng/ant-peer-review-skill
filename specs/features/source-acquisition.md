@@ -107,6 +107,25 @@ Feature: source acquisition
     Given a FIFO named "pipe.txt" in the folder
     When  it is converted
     Then  it is skipped with reason "not_regular_file"
+
+  @S-source-acquisition-017
+  Scenario: RSS and Atom feeds are read, with full article text taken from the feed
+    Given an RSS feed whose items carry content:encoded, and an Atom feed whose entries carry content
+    When  each is fetched and parsed
+    Then  each item has its title, link, date and HTML body, in feed order
+
+  @S-source-acquisition-018
+  Scenario: a feed item is read from its article page; the feed copy is only a fallback
+    Given a target of kind "feed_item" with a link and the feed's HTML
+    When  the sources phase runs and the page can be fetched
+    Then  D1 is the page's article text
+    And   when the page cannot be fetched, D1 is the feed HTML and the item is marked "feed_content_maybe_lossy"
+
+  @S-source-acquisition-019
+  Scenario: without article or main, the largest content-like container is the article
+    Given a page whose text sits in a div with class "markdown__style" between navigation and footer blocks
+    When  it is converted
+    Then  the Markdown holds the article text and not the navigation text
 ```
 
 ## Must NOT
@@ -115,3 +134,5 @@ Feature: source acquisition
 ## Revisions
 - 2026-10-22 · +S-source-acquisition-001..010 +N-source-acquisition-001 · decision: none -- follows docs/DESIGN.md §3 P4
 - 2026-10-22 · +S-source-acquisition-011..016 · decision: none -- adversarial security review (sonnet) proved these by running
+- 2026-10-22 · +S-source-acquisition-017..018 · decision: none -- user: an iThome series RSS URL failed with content_type application/rss+xml
+- 2026-10-22 · ~S-source-acquisition-018 +S-source-acquisition-019 · decision: none -- the iThome RSS strips punctuation (、) from content:encoded, which reviewers would score as errors; and its article pages have no article/main tag

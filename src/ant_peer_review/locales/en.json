@@ -187,5 +187,7 @@
   "run.banner_hint": "change: ant-peer-review config models",
   "ui.keys_radio": "↑↓ move · Enter choose · number keys pick directly · Esc cancel",
   "ui.keys_multi": "↑↓ move · Space tick · Enter confirm · Esc cancel",
-  "ui.keys_custom": " · c add custom"
+  "ui.keys_custom": " · c add custom",
+  "feed.pick": "This is a feed with {n} articles. Which ones should be reviewed? (each becomes its own run)",
+  "feed.picked": "Feed: reviewing the newest {n} of {total} articles, one run each (change with --feed-limit)"
 }

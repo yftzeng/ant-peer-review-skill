@@ -64,6 +64,17 @@ Feature: cli
     Given an unfinished run "20261022-0923-run" holding only state.json
     When  the user picks "delete an unfinished run", chooses it, sees its file count and confirms
     Then  the folder is gone; declining the confirmation keeps it
+
+  @S-cli-011
+  Scenario: a feed URL lets the user tick articles, and each becomes its own run
+    Given a feed with 3 articles
+    When  "ant-peer-review" runs interactively with that URL and the user ticks articles 1 and 3
+    Then  two runs are created, each holding one article, named after the article titles
+
+  @S-cli-012
+  Scenario: non-interactive feeds take the newest N articles
+    When  "ant-peer-review new --yes --target <feed> --feed-limit 2" runs
+    Then  two runs are created from the first two feed items
 ```
 
 ## Must NOT
@@ -73,3 +84,4 @@ Feature: cli
 - 2026-10-22 · +S-cli-001..007 +N-cli-001 · decision: none -- follows docs/DESIGN.md §2
 - 2026-10-22 · +S-cli-008 · decision: none -- live run: a path target produced a slug of the temp directory
 - 2026-10-22 · +S-cli-009 +S-cli-010 · decision: none -- user saw an empty run left by an abandoned intake and stale dev runs in the start menu
+- 2026-10-22 · +S-cli-011..012 · decision: none -- user chose one run per ticked article (one report each) over one combined submission

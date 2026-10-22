@@ -187,5 +187,7 @@
   "run.banner_hint": "變更：ant-peer-review config models",
   "ui.keys_radio": "↑↓ 移動 · Enter 選擇 · 數字鍵直接選 · Esc 取消",
   "ui.keys_multi": "↑↓ 移動 · 空白鍵 勾選 · Enter 確認 · Esc 取消",
-  "ui.keys_custom": " · c 新增自訂"
+  "ui.keys_custom": " · c 新增自訂",
+  "feed.pick": "這是含 {n} 篇文章的 feed，要審哪幾篇？（每篇各開一個工作）",
+  "feed.picked": "Feed：審最新的 {n} 篇（共 {total} 篇），每篇一個工作（用 --feed-limit 調整）"
 }

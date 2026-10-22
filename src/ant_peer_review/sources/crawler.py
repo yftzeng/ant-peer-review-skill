@@ -21,7 +21,8 @@ from urllib.parse import urljoin, urlsplit
 
 DEFAULT_UA = "ant-peer-review/0.1 (+article review; respects robots.txt)"
 ALLOWED_TYPES = ("text/html", "application/xhtml+xml", "text/plain", "text/markdown",
-                 "application/pdf")
+                 "application/pdf", "application/rss+xml", "application/atom+xml",
+                 "application/xml", "text/xml", "application/rdf+xml")
 MAX_REDIRECTS = 5
 _V6_EMBEDDED_V4 = [ipaddress.ip_network(n) for n in ("64:ff9b::/96", "64:ff9b:1::/48", "::/96")]
 

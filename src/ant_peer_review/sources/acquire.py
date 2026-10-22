@@ -15,6 +15,7 @@ from ..jsonio import read_json, sha256_bytes, write_json, write_text_atomic
 from ..workspace import Run
 from .converter import ConvertError, convert_file, convert_folder, pdf_to_markdown
 from .crawler import Crawler, FetchError
+from .feeds import FEED_TYPES
 from .htmlmd import html_to_markdown
 from .injection import scan
 from .segments import segment
@@ -39,6 +40,8 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str) -> dict:
     doc_id = f"D{idx}"
     hidden: list[dict] = []
     title = ""
+    if res.content_type in FEED_TYPES:
+        raise FetchError("is_feed", "start a new run with this URL to pick its articles")
     if res.content_type in ("text/html", "application/xhtml+xml"):
         conv = html_to_markdown(res.body.decode("utf-8", "replace"))
         md, hidden, title = conv.markdown, conv.hidden, conv.title
@@ -85,6 +88,25 @@ def _path_item(run: Run, idx: int, value: str) -> dict:
                                  f"{doc_id}.{ext}", d.hidden)]}
 
 
+def _feed_item(run: Run, crawler: Crawler, idx: int, target: dict) -> dict:
+    """An article listed by a feed. Its page is the source of truth (feeds can be
+    lossy: iThome's strips punctuation); the feed's HTML is only the fallback."""
+    try:
+        item = _fetch_item(run, crawler, idx, target["value"])
+        if item["docs"][0]["chars"]:
+            item["docs"][0]["title"] = target.get("title") or item["docs"][0]["title"]
+            return item
+    except FetchError:
+        pass
+    conv = html_to_markdown(target.get("html", ""))
+    doc_id = f"D{idx}"
+    raw_name = f"{doc_id}.feed.html"
+    return {"docs": [_doc_record(run, doc_id, target["value"], target.get("title") or conv.title,
+                                 conv.markdown, target.get("html", "").encode("utf-8"),
+                                 raw_name, conv.hidden)],
+            "warning": "feed_content_maybe_lossy"}
+
+
 def _text_item(run: Run, idx: int, value: str) -> dict:
     doc_id = f"D{idx}"
     first = value.strip().splitlines()[0].lstrip("#").strip()[:60] if value.strip() else "text"
@@ -108,6 +130,8 @@ def run_sources(run: Run, crawler: Crawler, *, on_progress=None) -> dict:
         try:
             if target["kind"] == "url":
                 entry.update(_fetch_item(run, crawler, idx, target["value"]))
+            elif target["kind"] == "feed_item":
+                entry.update(_feed_item(run, crawler, idx, target))
             elif target["kind"] == "path":
                 entry.update(_path_item(run, idx, target["value"]))
             else:

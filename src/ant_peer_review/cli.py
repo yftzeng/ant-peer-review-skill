@@ -17,7 +17,7 @@ from .onboarding import banner, choose_backend, choose_lang, choose_models, effe
 from .pipeline import Ctx, run_pipeline
 from .refresh import factcheck_continue
 from .store import BACKENDS, LANGS, Config, Store
-from .ui import IO, ConsoleIO, ask_text, confirm, radio, section
+from .ui import IO, ConsoleIO, ask_text, checkbox, confirm, info, radio, section
 from .workspace import PHASES, Run, create_run, list_runs, unfinished_runs
 
 EXIT_OK, EXIT_PAUSED, EXIT_USAGE, EXIT_INTERRUPTED = 0, 3, 2, 130
@@ -42,6 +42,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "(several values per layer joined with +)")
     n.add_argument("--brand", help="brand name for the Style Guide")
     n.add_argument("--weights", help="e.g. macro=30,accuracy=40,micro=10,impact=20")
+    n.add_argument("--feed-limit", type=int, default=None,
+                   help="for an RSS/Atom target: review the newest N articles, one run each "
+                        "(default 1 with --yes)")
 
     r = sub.add_parser("resume", parents=[common], help="continue a run")
     r.add_argument("run")
@@ -104,6 +107,51 @@ def slug_for(target: str) -> str:
     if len(s) < 4096 and (looks_like_path or ("\n" not in s and Path(s).expanduser().exists())):
         return Path(s).stem or Path(s).name
     return first.lstrip("#").strip()[:40] or "run"
+
+
+def make_feed_crawler(store: Store):
+    from .pipeline import make_crawler
+    return make_crawler(store)
+
+
+def split_feeds(io: IO, t: T, intake: dict, store: Store, *, interactive: bool,
+                limit: int | None) -> list[dict]:
+    """Turn each RSS/Atom URL into chosen articles; every article becomes its own intake.
+    Non-feed targets stay together in one intake, as before."""
+    from .sources.crawler import FetchError
+    from .sources.feeds import FEED_TYPES, parse_feed
+    crawler = make_feed_crawler(store)
+    plain, articles = [], []
+    for tgt in intake["targets"]:
+        if tgt["kind"] != "url":
+            plain.append(tgt)
+            continue
+        try:
+            res = crawler.fetch(tgt["value"])
+        except FetchError:
+            plain.append(tgt)  # the sources phase reports the failure
+            continue
+        if res.content_type not in FEED_TYPES:
+            plain.append(tgt)
+            continue
+        try:
+            items = parse_feed(res.body)
+        except ValueError:
+            plain.append(tgt)
+            continue
+        if interactive:
+            opts = [(str(i), f"{it['title']}" + (f"  ({it['date']})" if it["date"] else ""))
+                    for i, it in enumerate(items)]
+            picked = [items[int(i)] for i in checkbox(io, t, t("feed.pick", n=len(items)), opts,
+                                                     [], min_selected=1)]
+        else:
+            picked = items[:max(1, limit or 1)]
+            io.say(info(t("feed.picked", n=len(picked), total=len(items))))
+        articles += [{"kind": "feed_item", "value": it["link"], "title": it["title"],
+                      "html": it["html"]} for it in picked]
+    out = [dict(intake, targets=plain)] if plain else []
+    out += [dict(intake, targets=[a]) for a in articles]
+    return out
 
 
 def parse_weights(s: str | None) -> dict | None:
@@ -199,13 +247,26 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
         brand = ask_text(io, ctx.t("intake.brand")).strip()
         if brand:
             intake["brand"] = brand
-    slug = slug_for(intake["targets"][0]["value"]) if intake["targets"] else "run"
-    run = create_run(store.runs_dir, slug, models=ctx.models, backend=ctx.backend.name,
-                     lang=ctx.lang)
-    io.say(ctx.t("run.created", path=str(run.root)))
-    write_json(run.path("00-intake.json"), intake)
-    run.mark("intake", "done")  # answered before the folder existed
-    return finish(run_pipeline(run, ctx))
+    intakes = split_feeds(io, ctx.t, intake, store, interactive=not args.yes,
+                          limit=args.feed_limit)
+    runs = []
+    for it in intakes:
+        first = it["targets"][0]
+        slug = first.get("title") or slug_for(first["value"])
+        run = create_run(store.runs_dir, slug, models=ctx.models, backend=ctx.backend.name,
+                         lang=ctx.lang)
+        io.say(ctx.t("run.created", path=str(run.root)))
+        write_json(run.path("00-intake.json"), it)
+        run.mark("intake", "done")  # answered before the folder existed
+        runs.append(run)
+    worst = "done"
+    for run in runs:
+        status = run_pipeline(run, ctx)
+        if status == "interrupted":
+            return finish(status)
+        if status == "paused":
+            worst = "paused"
+    return finish(worst)
 
 
 def cmd_resume(args, io, store, cfg) -> int:
