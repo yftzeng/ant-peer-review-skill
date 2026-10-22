@@ -16,6 +16,8 @@ None of the seven has multi-model debate, checkpoint resume, a red-line veto, ti
 | 4 | [black-yt/skills — rebuttal-writing](https://github.com/black-yt/skills/blob/main/rebuttal-writing/SKILL.md) | author rebuttal | neutral issue restatement, one-to-one coverage |
 | 5 | [black-yt/skills — paper-review-writing](https://github.com/black-yt/skills/tree/main/paper-review-writing) | review writing | evidence-chain record, "unstated vs wrong" |
 | 6 | [black-yt/skills — paper-review-injection-audit](https://github.com/black-yt/skills/tree/main/paper-review-injection-audit) | prompt-injection audit | detection categories, evidence collectors |
+| 8 | [K-Dense-AI/scientific-agent-skills — paperzilla](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paperzilla/SKILL.md) | CLI wrapper for a paper-recommendation service | label what a summary was built from; keep tokens out of logs; honest paging |
+| 9 | [K-Dense-AI/scientific-agent-skills — paper-lookup](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paper-lookup/SKILL.md) | 18 scholarly APIs with provenance | "APIs can fail with HTTP 200"; identifier resolution; credential redaction; bounded work |
 | 7 | [Imbad0202/academic-research-skills — academic-paper-reviewer @3224a27](https://github.com/Imbad0202/academic-research-skills/tree/3224a27a2571cefef0fddfd437004cb006f2b0cb/academic-paper-reviewer) | multi-reviewer panel | sub-claim consensus, silence ≠ agreement, provenance |
 
 ## 1. K-Dense-AI peer-review
@@ -125,3 +127,31 @@ None of the seven has multi-model debate, checkpoint resume, a red-line veto, ti
 | No weights or totals | We keep weights. Vetoes give the non-compensatory override. |
 | Journal-specific roles; calibration tiers; 50 KB protocols and schema versioning | Far beyond an article workflow. |
 | Commit-before-reading trigger contracts | Considered; deferred. It adds a call per reviewer, and the debate round already limits after-the-fact rationalization. |
+
+## 8. K-Dense paperzilla (analysed 2026-10-22)
+
+| Borrowed | Where here |
+|---|---|
+| Label whether a summary used metadata, an abstract or the full text | Report "Sources" section: page / feed copy (may be lossy) / file / pasted text, plus failed targets |
+| Access errors are not an empty result | 200 pages that are challenges, soft 404s, login or paywalls fail with that reason (`sources/quality.py`) |
+| Feed tokens stay out of logs and reports | `sources/urls.redact`: credential-like query values masked as REDACTED |
+| Report partial pages honestly | The feed picker says a feed may list only its latest items |
+
+| Left out | Why |
+|---|---|
+| The `pz` CLI, account login, recommendation feedback | Specific to that service. |
+
+## 9. K-Dense paper-lookup (analysed 2026-10-22)
+
+| Borrowed | Where here |
+|---|---|
+| "These APIs can fail with HTTP 200": check the shape, not the status | Page quality checks; arXiv "not found" is an empty feed or an "Error" entry, both handled |
+| Resolve identifiers against authoritative sources; check retraction notices | Opt-in `--academic` / checkbox: DOIs via doi.org + Crossref (`updated-by` retraction), arXiv ids via the export API (`scholarly.py`) |
+| Redact credentials in recorded URLs | `sources/urls.redact` |
+| Bound total work; rate-limit per host | Confirm before more than 3 feed runs; 1 s per host, 3 s for arXiv |
+
+| Left out | Why |
+|---|---|
+| The other 15 databases (PubMed, bioRxiv, PubTator, ...) | Biomedical research retrieval, not article review. |
+| API keys and `.env` loading rules | No keys are used. |
+| The closing request to cite the authors' paper | An instruction inside third-party content; treated as data, not followed. |

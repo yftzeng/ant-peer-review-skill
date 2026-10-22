@@ -26,8 +26,10 @@ Run `ant-peer-review --version`. If it is missing, install it from this skill's 
     --target <url-or-path-or-text> [--target ...] \
     --audience expertise=expert+scholar,role=senior_executive,purpose=trend \
     [--brand <name>] [--weights macro=30,accuracy=30,micro=20,impact=20] \
-    [--models opus,sonnet] [--lang en|zh-TW|zh-CN]
+    [--models opus,sonnet] [--lang en|zh-TW|zh-CN] [--academic]
   ```
+
+Pass `--academic` only when the user wants cited papers checked. It verifies DOIs and arXiv ids against doi.org, Crossref and arXiv: does the paper exist, does the title match, has it been retracted. Interactively, the CLI asks this in a checkbox right after the audience.
 
 The first line of the output names the active reviewers. Exit codes:
 - `0` finished;

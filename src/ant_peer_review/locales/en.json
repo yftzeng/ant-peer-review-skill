@@ -216,5 +216,7 @@
   "report.q.text": "pasted text",
   "feed.scale": "That is {n} runs with {m} reviewers each; every run makes about {calls} model calls plus its fact checks.",
   "feed.scale_confirm": "Go ahead with all of them?",
-  "feed.nothing": "Nothing to review; no run was created."
+  "feed.nothing": "Nothing to review; no run was created.",
+  "intake.fact_sources": "Extra fact-check sources (web search is always used):",
+  "intake.fact_sources.academic": "Academic identifiers (DOI / arXiv): verify cited papers exist, match their titles and are not retracted, via doi.org, Crossref and arXiv"
 }

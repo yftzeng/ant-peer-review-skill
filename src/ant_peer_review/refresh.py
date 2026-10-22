@@ -69,6 +69,8 @@ def factcheck_continue(run: Run, backend, models: list[str], thresholds: dict[st
     say = say or io.say
     reviews = load_records(run, "03-reviews")
     active = [m for m in models if reviews.get(m, {}).get("status") == "ok"]
+    from .scholarly import verify_identifiers
+    verify_identifiers(run, say=say)
     summ = run_checks(run, backend, pick_checker(models, active), lang, say=say)
     if summ["left"]:
         reasons = ", ".join(f"{k} {v}" for k, v in summ["reasons"].items())

@@ -142,18 +142,30 @@ def parse_audience(spec: str | None) -> dict:
     return aud
 
 
+FACT_SOURCES = ["academic"]
+
+
+def ask_fact_sources(io: IO, t: T) -> list[str]:
+    """Optional extra fact-check sources; nothing ticked means web search only."""
+    return checkbox(io, t, t("intake.fact_sources"),
+                    [(s, t(f"intake.fact_sources.{s}")) for s in FACT_SOURCES], [])
+
+
 def build_intake_from_args(purpose: str, targets: list[str], audience: str | None,
-                           *, lang: str) -> dict:
+                           *, lang: str, academic: bool = False) -> dict:
     if purpose not in PURPOSES:
         raise ValueError(f"purpose must be one of {PURPOSES}")
     if not targets:
         raise ValueError("at least one --target is needed")
     return {"purpose": purpose, "targets": [classify_target(x) for x in targets],
-            "audience": parse_audience(audience), "lang": lang}
+            "audience": parse_audience(audience), "lang": lang,
+            "fact_sources": ["academic"] if academic else []}
 
 
 def run_intake_interactive(io: IO, t: T, lang: str) -> dict:
     purpose = ask_purpose(io, t)
     targets = collect_targets(io, t)
     audience = ask_audience(io, t)
-    return {"purpose": purpose, "targets": targets, "audience": audience, "lang": lang}
+    fact_sources = ask_fact_sources(io, t)
+    return {"purpose": purpose, "targets": targets, "audience": audience, "lang": lang,
+            "fact_sources": fact_sources}

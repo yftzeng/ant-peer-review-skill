@@ -181,7 +181,7 @@ def run_checks(run: Run, backend: Backend, checker: str, lang: str, *,
     ledger = read_ledger(run)
     try:
         for i, c in enumerate(ledger):
-            if not is_retryable(c):
+            if not is_retryable(c) or c["type"] == "citation":  # citations: scholarly.py
                 continue
             say(f"  … {c['id']} {c['text'][:70]}")
             ledger[i] = check_claim(backend, checker, c, context_for(run, c["anchor"]), lang)

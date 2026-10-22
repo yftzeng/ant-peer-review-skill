@@ -51,6 +51,13 @@ Feature: intake
     Given 00-intake.json with audience {expertise: "expert", role: null}
     When  the audience is normalized
     Then  it reads {expertise: [expert], role: []}
+
+  @S-intake-009
+  Scenario: after the audience, a checkbox decides whether academic sources are used for fact-checking
+    When  the audience card is confirmed
+    Then  a checkbox offers "academic identifiers (DOI / arXiv)", unticked by default
+    And   ticking it saves fact_sources ["academic"]; leaving it unticked saves []
+    And   non-interactively --academic saves ["academic"]
 ```
 
 ## Must NOT
@@ -59,3 +66,4 @@ Feature: intake
 ## Revisions
 - 2026-10-22 · +S-intake-001..007 +N-intake-001 · decision: none -- follows docs/DESIGN.md §3 P1-P3
 - 2026-10-22 · ~S-intake-005 ~S-intake-006 ~S-intake-007 +S-intake-008 · decision: none -- user request: every audience layer is a multi-select checkbox
+- 2026-10-22 · +S-intake-009 · decision: none -- user: academic fact-checking only when the user asks for it, chosen in a checkbox after the audience

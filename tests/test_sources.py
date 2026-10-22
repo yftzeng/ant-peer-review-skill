@@ -262,3 +262,13 @@ def test_same_host_requests_are_spaced(server):
     finally:
         Handler.do_GET = orig
     assert len(stamps) == 2 and stamps[1] - stamps[0] >= 0.3
+
+
+def test_host_specific_interval(server):
+    import time
+    port = server.server_address[1]
+    Handler.routes["/p"] = (200, {"Content-Type": "text/html"}, b"<p>x</p>")
+    c = local_crawler(min_interval=0.0, host_intervals={"pub.example": 0.3})
+    t0 = time.monotonic()
+    c.fetch(f"http://pub.example:{port}/p")   # robots + page
+    assert time.monotonic() - t0 >= 0.3

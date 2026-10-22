@@ -136,7 +136,7 @@ def _intakes(store):
 # @S-cli-011
 def test_interactive_feed_one_run_per_ticked_article(feed_env):
     store, url = feed_env
-    io = ScriptedIO(["1", url, "/done", "", "", "", "", "", "1", "",  # purpose, target, 5 layers, card, brand
+    io = ScriptedIO(["1", url, "/done", "", "", "", "", "", "1", "", "",  # purpose, target, 5 layers, card, fact sources, brand
                      "1 3", "",                                          # tick articles 1 and 3
                      ])
     cli.main([], io=io, store=store)
@@ -158,7 +158,7 @@ def test_non_interactive_feed_limit(feed_env):
 # @S-cli-015
 def test_more_than_three_articles_asks_first(feed_env):
     store, url = feed_env
-    answers = ["1", url, "/done", "", "", "", "", "", "1", "", "1 2 3 4 5", ""]
+    answers = ["1", url, "/done", "", "", "", "", "", "1", "", "", "1 2 3 4 5", ""]
     io = ScriptedIO(answers + ["n"])
     cli.main([], io=io, store=store)
     assert "5 runs" in io.text and "2 reviewers" in io.text

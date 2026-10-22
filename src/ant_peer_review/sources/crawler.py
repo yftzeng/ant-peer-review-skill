@@ -93,6 +93,8 @@ class Crawler:
                  timeout: float = 20.0, site_profiles: dict | None = None,
                  respect_robots: bool = True, deadline: float = 120.0,
                  min_interval: float | None = None,
+                 allowed_types: tuple[str, ...] = ALLOWED_TYPES,
+                 host_intervals: dict[str, float] | None = None,
                  _allow_hosts_for_tests: frozenset[str] = frozenset()):
         self.resolver = resolver
         self.max_bytes = max_bytes
@@ -101,6 +103,8 @@ class Crawler:
         self.respect_robots = respect_robots
         self.deadline = deadline
         self.min_interval = DEFAULT_MIN_INTERVAL if min_interval is None else min_interval
+        self.allowed_types = allowed_types
+        self.host_intervals = host_intervals or {}
         self._last_hit: dict[str, float] = {}
         self._test_hosts = _allow_hosts_for_tests
         self._robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
@@ -131,7 +135,7 @@ class Crawler:
             if status >= 400:
                 raise FetchError("http_status", str(status))
             ctype = headers.get("content-type", "").split(";")[0].strip().lower()
-            if ctype not in ALLOWED_TYPES:
+            if ctype not in self.allowed_types:
                 raise FetchError("content_type", ctype or "missing")
             return FetchResult(url, current, status, ctype, body, hops)
         raise FetchError("too_many_redirects", url)
@@ -174,14 +178,15 @@ class Crawler:
     def _request(self, url: str, ua: str, until: float | None = None) -> tuple[int, dict, bytes]:
         until = until or time.monotonic() + self.deadline
         scheme, host, port, ip, path = self._target(url)
-        wait = self._last_hit.get(host, -1e9) + self.min_interval - time.monotonic()
+        interval = max(self.min_interval, self.host_intervals.get(host, 0.0))
+        wait = self._last_hit.get(host, -1e9) + interval - time.monotonic()
         if wait > 0:
             time.sleep(wait)
         self._last_hit[host] = time.monotonic()
         cls = _PinnedHTTPS if scheme == "https" else _PinnedHTTP
         conn = cls(host, ip, port=port, timeout=self.timeout)
         try:
-            conn.request("GET", path, headers={"User-Agent": ua, "Accept": ", ".join(ALLOWED_TYPES),
+            conn.request("GET", path, headers={"User-Agent": ua, "Accept": ", ".join(self.allowed_types),
                                                "Accept-Encoding": "identity"})
             resp = conn.getresponse()
             headers = {k.lower(): v for k, v in resp.getheaders()}

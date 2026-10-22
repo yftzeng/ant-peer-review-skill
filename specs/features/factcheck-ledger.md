@@ -75,6 +75,31 @@ Feature: fact-check ledger
   Scenario: every kept source records when it was accessed
     When  a claim is checked and keeps a source
     Then  the source has an accessed_at timestamp and the report shows its date next to the URL
+
+  @S-factcheck-ledger-012
+  Scenario: without the academic option no identifier is looked up
+    Given a piece citing "doi:10.1038/nature12373" and fact_sources []
+    When  the fact-check phase runs
+    Then  no request goes to doi.org, Crossref or arXiv and the ledger has no citation claim
+
+  @S-factcheck-ledger-013
+  Scenario: DOIs and arXiv ids are extracted and verified against doi.org, Crossref and arXiv
+    Given fact_sources ["academic"] and a piece citing a resolvable DOI, an unknown DOI and arXiv 1706.03762
+    When  the fact-check phase runs
+    Then  the citation claims are supported (with Crossref title and year), unsupported "identifier_not_found", and supported (arXiv title)
+    And   each source has a doi.org or arxiv.org URL and an accessed_at time, and no model call is made for them
+
+  @S-factcheck-ledger-014
+  Scenario: retracted papers and mismatched titles are flagged
+    Given a cited DOI whose Crossref record is updated-by a retraction, and a DOI cited next to a quoted title that differs from its Crossref title
+    When  they are verified
+    Then  the first is unsupported "retracted" and the second partly "title_mismatch"
+
+  @S-factcheck-ledger-015
+  Scenario: an arXiv id that is not found arrives as HTTP 200 with no entry
+    Given arXiv answers 200 with a feed that has no entry, or with an entry titled "Error"
+    When  the id is verified
+    Then  it is unsupported "identifier_not_found"
 ```
 
 ## Must NOT
@@ -84,3 +109,4 @@ Feature: fact-check ledger
 - 2026-10-22 · +S-factcheck-ledger-001..009 +N-factcheck-ledger-001 · decision: none -- follows docs/DESIGN.md §4
 - 2026-10-22 · +S-factcheck-ledger-010 · decision: none -- adversarial security review (sonnet) proved these by running
 - 2026-10-22 · +S-factcheck-ledger-011 · decision: none -- re-evaluated references: K-Dense source ledger keeps a verification date per source
+- 2026-10-22 · +S-factcheck-ledger-012..015 · decision: none -- K-Dense paper-lookup: resolve identifiers against authoritative APIs and check retraction notices; opt-in per run (user)

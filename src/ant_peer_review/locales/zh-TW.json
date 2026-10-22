@@ -216,5 +216,7 @@
   "report.q.text": "貼上的文字",
   "feed.scale": "這會建立 {n} 個工作、每個 {m} 位 reviewer；每個工作約 {calls} 次模型呼叫，另加事實查證。",
   "feed.scale_confirm": "全部都要審嗎？",
-  "feed.nothing": "沒有要審的內容，未建立任何工作。"
+  "feed.nothing": "沒有要審的內容，未建立任何工作。",
+  "intake.fact_sources": "額外的事實查證來源（網頁搜尋一律會用）：",
+  "intake.fact_sources.academic": "學術識別碼（DOI / arXiv）：透過 doi.org、Crossref、arXiv 查證引用的論文是否存在、標題是否相符、有無撤稿"
 }

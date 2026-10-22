@@ -42,6 +42,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "(several values per layer joined with +)")
     n.add_argument("--brand", help="brand name for the Style Guide")
     n.add_argument("--weights", help="e.g. macro=30,accuracy=40,micro=10,impact=20")
+    n.add_argument("--academic", action="store_true",
+                   help="also verify DOIs and arXiv ids against doi.org, Crossref and arXiv")
     n.add_argument("--feed-limit", type=int, default=None,
                    help="for an RSS/Atom target: review the newest N articles, one run each "
                         "(default 1 with --yes)")
@@ -251,7 +253,7 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
     if args.target or args.yes:
         try:
             intake = build_intake_from_args(args.purpose or "audit", args.target, args.audience,
-                                            lang=ctx.lang)
+                                            lang=ctx.lang, academic=args.academic)
         except ValueError as e:
             io.say(f"error: {e}")
             return EXIT_USAGE

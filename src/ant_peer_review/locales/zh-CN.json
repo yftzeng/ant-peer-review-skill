@@ -216,5 +216,7 @@
   "report.q.text": "粘贴的文字",
   "feed.scale": "这会建立 {n} 个任务、每个 {m} 位 reviewer；每个任务约 {calls} 次模型调用，另加事实核查。",
   "feed.scale_confirm": "全部都要审吗？",
-  "feed.nothing": "没有要审的内容，未建立任何任务。"
+  "feed.nothing": "没有要审的内容，未建立任何任务。",
+  "intake.fact_sources": "额外的事实核查来源（网页搜索始终会用）：",
+  "intake.fact_sources.academic": "学术标识符（DOI / arXiv）：通过 doi.org、Crossref、arXiv 核查引用的论文是否存在、标题是否相符、有无撤稿"
 }

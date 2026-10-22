@@ -183,6 +183,8 @@ def ph_factcheck(run: Run, ctx: Ctx) -> None:
     reviews = load_records(run, "03-reviews")
     ledger = build_ledger(reviews, read_ledger(run), ctx.models)
     write_ledger(run, ledger)
+    from .scholarly import verify_identifiers
+    verify_identifiers(run, ctx.options.get("api_crawler"), say=ctx.say)
     active = [m for m in ctx.models if reviews.get(m, {}).get("status") == "ok"]
     summ = run_checks(run, ctx.backend, pick_checker(ctx.models, active), ctx.lang, say=ctx.say)
     if summ["left"]:
