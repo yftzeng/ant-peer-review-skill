@@ -17,6 +17,7 @@ PHASES = [
     "factcheck",
     "debate",
     "consensus",
+    "recheck",
     "report",
     "revision",
     "decision",
@@ -32,7 +33,8 @@ PHASE_INPUTS: dict[str, list[str]] = {
     "factcheck": ["03-reviews"],
     "debate": ["03-reviews", "factcheck/ledger.jsonl"],
     "consensus": ["02-rubric.json", "03-reviews", "04-debate", "factcheck/ledger.jsonl"],
-    "report": ["05-consensus.json"],
+    "recheck": ["05-consensus.json", "01-sources/segments.json"],
+    "report": ["05-consensus.json", "05b-recheck.json"],
     "revision": ["05-consensus.json", "01-sources/segments.json"],
     "decision": ["07-revision"],
 }
@@ -73,7 +75,11 @@ class Run:
 
     # ---- state -----------------------------------------------------------
     def state(self) -> dict:
-        return read_json(self.state_path)
+        st = read_json(self.state_path)
+        for ph in PHASES:  # a phase added after this run was created did not apply to it
+            st["phases"].setdefault(ph, {"status": DONE, "inputs": self.input_hashes(ph),
+                                         "added_later": True})
+        return st
 
     def save_state(self, state: dict) -> None:
         write_json(self.state_path, state)

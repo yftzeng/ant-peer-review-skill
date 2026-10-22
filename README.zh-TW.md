@@ -60,7 +60,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | intake | **目的**：撰寫或審核。**目標**：逐行輸入，單獨一行輸入 `/done` 或連按兩次 Enter 結束。**受眾卡**共五層：專業度、決策層、產業／政治視角、信任距離、閱讀目的。每層都是 checkbox，可以多選，也可以加自訂值；全不勾就是略過。 |
 | sources | 用安全爬蟲和轉檔程式把目標轉成 Markdown，每段每句都有固定編號（例如 `D1.P03.S2`）。Prompt injection 掃描會標記可疑文字，並把它從 reviewer 看到的內容中隱藏。 |
 | rubric | 四個維度：結構邏輯（Macro）、事實論據（Accuracy）、語言表達（Micro）、傳播轉換（Impact，含 S 型曲線）。系統依受眾建議權重，你可以修改後再確認。 |
-| review | 各 reviewer 獨立審稿，產出：各維度評分、篇章 → 段落 → 字句三層診斷、待查證的事實主張、敏感度掃描、6 條紅線判定、S 型曲線階段。 |
+| review | 依 reviewer 名單順序分配視角：結構與論證、事實與合規，第 3 位擔任唱反調（Devil's Advocate）。各 reviewer 獨立審稿，產出：各維度評分、篇章 → 段落 → 字句三層診斷、待查證的事實主張、敏感度掃描、6 條紅線判定、S 型曲線階段。 |
 | factcheck | 事實主張寫進帳本，用網頁搜尋查證。只有當次搜尋真的回傳過的網址才算來源。 |
 | debate | 每位 reviewer 對其他人的發現表示贊同或提出異議，都要附證據。 |
 | consensus | 用確定性的程式統計立場：沒提到不算同意，有異議就標成 SPLIT。接著套用紅線否決，算出加權總分和等級。 |
@@ -88,6 +88,8 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | `ant-peer-review rerun <run> --from review` | 從指定階段重跑。 |
 | `ant-peer-review factcheck <run> --continue` | 補查還沒驗證的事實。中途停下時，可選「下次再繼續」或「終止並完成」。選「終止並完成」時，只有事實真的有變化才會產生新版報告並附變更紀錄，而且不會重新呼叫 reviewer。 |
 | `ant-peer-review runs` | 列出所有工作和各自的下一個階段。 |
+| `ant-peer-review runs --summary` | 每個工作一列：總分、等級、成立的紅線、問題數。加上 `--format csv --out f.csv` 可匯出試算表。 |
+| `ant-peer-review recheck <run> --target <修改版> [--response 回覆.md]` | 對照前一輪的發現複審作者的修改版，沿用同一組 reviewer 和評分標準。先只憑修改版逐條判定，之後才看作者回覆。報告會多一張修改對照表。 |
 
 ## 資料存放位置
 

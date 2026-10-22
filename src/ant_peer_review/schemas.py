@@ -140,3 +140,18 @@ REREVIEW = obj({
 })
 
 DRAFT = obj({"title": STR, "paragraphs": arr(STR)})
+
+RECHECK_VERDICTS = ["FULLY", "PARTIALLY", "NOT_ADDRESSED", "MADE_WORSE", "CANNOT_VERIFY"]
+
+RECHECK = obj({
+    "verdicts": arr(obj({
+        "finding": STR,
+        "verdict": {"type": "string", "enum": RECHECK_VERDICTS},
+        "evidence": STR,             # anchor(s) in the revised text
+        "note": STR,
+    })),
+})
+
+RECHECK_CLAIMS = obj({
+    "claims": arr(obj({"finding": STR, "author_claim": STR})),
+})

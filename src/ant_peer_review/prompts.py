@@ -239,3 +239,38 @@ The draft will be scored on:
 Materials:
 {untrusted(materials)}
 """
+
+
+def recheck_system(lang: str, seat: str | None = None) -> str:
+    seat_line = f"{SEAT_TEXT[seat]}\n\n" if seat in SEAT_TEXT else ""
+    return ("You verify a revised article against the findings of an earlier review. Judge each "
+            "finding only from the revised text: FULLY (fixed), PARTIALLY, NOT_ADDRESSED, "
+            "MADE_WORSE, or CANNOT_VERIFY when the revised text cannot show it either way. Give "
+            "the anchors in the revised text as evidence. You have not seen any reply from the "
+            "author, and you must not guess what it says.\n\n" + seat_line
+            + SHARED_RULES.format(lang_name=LANG_NAMES.get(lang, lang)))
+
+
+def recheck_prompt(findings: list[dict], article: str) -> str:
+    return f"""Earlier findings to verify (ids are fixed):
+{neutralize(json.dumps(findings, ensure_ascii=False))}
+
+The revised piece:
+{untrusted(article)}
+"""
+
+
+def recheck_claims_system(lang: str) -> str:
+    return ("You read an author's reply to an earlier review and record, for each finding id, "
+            "what the author claims to have done (empty when the reply says nothing about it). "
+            "Do not judge whether the claim is true.\n\n"
+            + SHARED_RULES.format(lang_name=LANG_NAMES.get(lang, lang)))
+
+
+def recheck_claims_prompt(findings: list[dict], response: str) -> str:
+    return f"""Finding ids and what they were about:
+{neutralize(json.dumps(findings, ensure_ascii=False))}
+
+The author's reply:
+{untrusted(response)}
+"""

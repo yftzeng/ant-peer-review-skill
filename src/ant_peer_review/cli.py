@@ -76,6 +76,11 @@ def build_parser() -> argparse.ArgumentParser:
     ls.add_argument("--enforced")
     ls.add_argument("--archived", action="store_true")
 
+    rc = sub.add_parser("recheck", parents=[common],
+                        help="check an author's revised version against a run's findings")
+    rc.add_argument("run")
+    rc.add_argument("--target", required=True, help="the revised version: URL, path or text")
+    rc.add_argument("--response", help="file with the author's reply (read only after gate 1)")
     rs = sub.add_parser("runs", parents=[common], help="list runs and their status")
     rs.add_argument("--summary", action="store_true", help="one row per run: score, grade, red lines")
     rs.add_argument("--format", choices=["md", "csv"], default="md")
@@ -397,6 +402,32 @@ def summary_rows(store: Store) -> list[dict]:
     return rows
 
 
+def cmd_recheck(args, io, store, cfg) -> int:
+    from pathlib import Path
+    from .intake import classify_target
+    parent = find_run(store, args.run)
+    if not parent.path("05-consensus.json").exists():
+        io.say(T(cfg.lang)("recheck.no_findings", run=parent.id))
+        return EXIT_USAGE
+    models, backend, lang = parent.settings()
+    ctx = make_ctx(args, io, store, cfg, models=models, backend=backend, lang=args.lang or lang)
+    io.say(banner(ctx.t, ctx.models))
+    intake = dict(read_json(parent.path("00-intake.json")))
+    intake["targets"] = [classify_target(args.target)]
+    intake["parent"] = parent.id
+    run = create_run(store.runs_dir, f"recheck {parent.id[14:]}", models=ctx.models,
+                     backend=ctx.backend.name, lang=ctx.lang)
+    io.say(ctx.t("run.created", path=str(run.root)))
+    write_json(run.path("00-intake.json"), intake)
+    write_json(run.path("02-rubric.json"), read_json(parent.path("02-rubric.json")))
+    if args.response:
+        from .jsonio import write_text_atomic
+        write_text_atomic(run.path("00-response.md"),
+                          Path(args.response).expanduser().read_text(encoding="utf-8"))
+    run.mark("intake", "done")
+    return finish(run_pipeline(run, ctx))
+
+
 def cmd_runs(args, io, store, cfg) -> int:
     if args.summary:
         import csv
@@ -433,7 +464,7 @@ def cmd_runs(args, io, store, cfg) -> int:
 
 COMMANDS = {"new": cmd_new, "resume": cmd_resume, "rerun": cmd_rerun,
             "factcheck": cmd_factcheck, "decide": cmd_decide, "config": cmd_config,
-            "lessons": cmd_lessons, "runs": cmd_runs}
+            "lessons": cmd_lessons, "runs": cmd_runs, "recheck": cmd_recheck}
 
 
 def main(argv: list[str] | None = None, *, io: IO | None = None,

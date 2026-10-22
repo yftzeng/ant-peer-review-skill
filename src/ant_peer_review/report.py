@@ -144,6 +144,21 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
                  + (t("report.scurve_scored") if s["scored"] else t("report.scurve_not_scored")))
     if cons["split_scores"]:
         L.append(f"- {t('report.split_scores')}: {', '.join(cons['split_scores'])}")
+    rc = read_json(run.path("05b-recheck.json"), default=None)
+    if rc:
+        L.append("")
+        L.append(f"## {t('recheck.title', parent=rc['parent'], v=rc['parent_report'])}")
+        L.append("")
+        L.append(f"| ID | {t('recheck.earlier')} | {t('recheck.verdict')} | "
+                 f"{t('recheck.agreement')} | {t('recheck.by_model')} | {t('recheck.evidence')} | "
+                 f"{t('recheck.claim')} | {t('recheck.claim_ok')} |")
+        L.append("|---|---|---|---|---|---|---|---|")
+        for r in rc["verdicts"]:
+            by = ", ".join(f"{m}: {v}" for m, v in r["by_model"].items())
+            ok_ = {True: "✓", False: "✗", None: "—"}[r["claim_supported"]]
+            L.append(f"| {r['finding']} | {cell(r['observation'])} | **{r['final']}** | "
+                     f"{r['agreement']} | {by} | {cell('; '.join(r['evidence']))} | "
+                     f"{cell(r['author_claim'])} | {ok_} |")
     L.append("")
     L.append(f"## {t('report.red_lines')}")
     L.append("")

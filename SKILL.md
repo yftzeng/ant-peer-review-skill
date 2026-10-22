@@ -63,6 +63,8 @@ Do not soften or upgrade the report's judgments. Quote the anchors (e.g. `D1.P03
 | `ant-peer-review lessons new "<title>" --area crawl/<domain> --cause … --rule … --enforced …` | Record a user lesson. |
 | `ant-peer-review lessons list` | List user lessons. |
 | `ant-peer-review runs` | List runs and their next phase. |
+| `ant-peer-review runs --summary [--format csv --out f.csv]` | One row per run: total, grade, confirmed red lines, findings. |
+| `ant-peer-review recheck <run> --target <revised> [--response reply.md]` | Check an author's revision against that run's findings. Same reviewers and rubric. The author's reply is read only after each finding has been judged from the text. |
 
 Audience values:
 

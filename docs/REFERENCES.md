@@ -25,6 +25,8 @@ None of the seven has multi-model debate, checkpoint resume, a red-line veto, ti
 | Every comment has fixed fields (Location / Observation / Evidence / Why it matters / Requested action), and a linter enforces them | `schemas.py` ISSUE; `report.py` `lint_report` (the five fields) |
 | Claim–evidence matrix with enumerated support levels | `factcheck.py` statuses supported / partly / unsupported / cannot_verify |
 | Lint for unsupported "I verified / I ran" claims | `report.py` `UNVERIFIED_CLAIMS` |
+| Tone lint: abusive wording, personal attacks, impersonation, editorial verdicts (second pass) | `report.py` `TONE_RULES` (en + zh) |
+| A verification date per source (second pass) | fact-check sources carry `accessed_at`; the report prints the date |
 | "Orient without deciding": map the piece before judging it | `prompts.review_prompt` step 1 `orientation` |
 | Distinct exit codes; atomic writes that never overwrite | `cli.py` (0 done, 3 paused, 2 usage, 130 interrupted); `jsonio.write_bytes_atomic(overwrite=False)` for raw sources |
 
@@ -39,6 +41,7 @@ None of the seven has multi-model debate, checkpoint resume, a red-line veto, ti
 |---|---|
 | Weighted dimensions with high/mid/low band descriptors | `rubric.py` `TEMPLATE[*].bands` |
 | A separate folder per item; skip work already done | Run workspace with input hashing (`workspace.py`), which is stronger than "the folder exists" |
+| Cross-item summary sheet (second pass) | `ant-peer-review runs --summary` (Markdown or CSV) |
 | Opinions from different perspectives must not contradict each other | Enforced instead by the debate round plus SPLIT labelling (`consensus.py`) |
 
 | Left out | Why |
@@ -66,7 +69,7 @@ None of the seven has multi-model debate, checkpoint resume, a red-line veto, ti
 
 | Borrowed | Where here |
 |---|---|
-| One-to-one coverage: no finding silently dropped | Every finding keeps its members and supporters in `05-consensus.json` and the report |
+| One-to-one coverage: no finding silently dropped | Every finding keeps its members and supporters in `05-consensus.json` and the report; `07-revision/coverage.json` maps each finding to plan A, B, both or none |
 | Neutral restatement; narrow a claim rather than retract it | Plan B prompt (`prompts.revise_b_system`): strengthen without inventing facts, mark `[source needed]` |
 | Leak checklist for outputs | The report quotes flagged text only in a fenced "untrusted evidence" block |
 
@@ -110,7 +113,9 @@ None of the seven has multi-model debate, checkpoint resume, a red-line veto, ti
 | Unresolved dissent is recorded, never auto-resolved | `dissent` lists; the report's "Disagreements" section |
 | Arbitration goes evidence first | Hallucination red line: ledger evidence outranks a dispute |
 | Devil's-advocate CRITICALs need a visible ruling | Red lines `needs_ruling`, then a human ruling at the decision gate |
-| Typed anchors, including `absence: <where> - expected <item>` | `prompts.SHARED_RULES` |
+| Typed anchors, including `absence: <where> - expected <item>; checked: <surfaces>` | `prompts.SHARED_RULES`; `report.lint_report` flags an absence without checked surfaces |
+| Distinct reviewer roles plus a devil's advocate (second pass) | `prompts.assign_seats`: structure / facts / devil's advocate by roster order |
+| Re-review mode: traceability matrix, evidence verdict before reading the author's reply (second pass) | `ant-peer-review recheck`, `recheck.py` (gate 1 blind to the reply, gate 2 claims) |
 | Provenance record; never claim the reviewers are independent | `consensus` provenance plus the warning `single_vendor_correlated_errors` |
 | Re-review verdict scale FULLY / PARTIALLY / NOT_ADDRESSED / MADE_WORSE | `schemas.REREVIEW`; `revision.run_revision` |
 | HITL checkpoint on the reviewer configuration | Reviewer checkbox at first use; `config models` |

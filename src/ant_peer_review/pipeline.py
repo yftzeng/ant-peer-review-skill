@@ -98,6 +98,8 @@ def ph_sources(run: Run, ctx: Ctx) -> None:
 
 def ph_rubric(run: Run, ctx: Ctx) -> None:
     intake = read_json(run.path("00-intake.json"))
+    if intake.get("parent") and run.path("02-rubric.json").exists():
+        return  # recheck: the parent's rubric is the yardstick, not edited
     rub = propose(intake["audience"])
     weights = ctx.options.get("weights")
     if weights:
@@ -204,6 +206,14 @@ def ph_consensus(run: Run, ctx: Ctx) -> None:
     compute_consensus(run, ctx.models, ctx.cfg.grade_thresholds)
 
 
+def ph_recheck(run: Run, ctx: Ctx) -> None:
+    from .recheck import run_recheck
+    out = run_recheck(run, ctx.backend, ctx.models, ctx.lang, say=ctx.say)
+    if out:
+        ctx.say(ctx.t("recheck.done", parent=out["parent"],
+                      counts=", ".join(f"{k} {v}" for k, v in out["counts"].items())))
+
+
 def ph_report(run: Run, ctx: Ctx) -> None:
     cons = read_json(run.path("05-consensus.json"))
     intake = read_json(run.path("00-intake.json"))
@@ -254,6 +264,7 @@ class Restart(Exception):
 PHASE_FUNCS = {
     "intake": ph_intake, "sources": ph_sources, "rubric": ph_rubric, "review": ph_review,
     "factcheck": ph_factcheck, "debate": ph_debate, "consensus": ph_consensus,
+    "recheck": ph_recheck,
     "report": ph_report, "revision": ph_revision, "decision": ph_decision,
 }
 

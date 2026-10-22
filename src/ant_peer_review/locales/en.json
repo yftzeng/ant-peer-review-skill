@@ -194,5 +194,15 @@
   "report.seat": "Seat",
   "seat.structure": "Structure and argument",
   "seat.facts": "Facts and compliance",
-  "seat.devils_advocate": "Devil's advocate"
+  "seat.devils_advocate": "Devil's advocate",
+  "recheck.title": "Revision check against {parent} (report v{v})",
+  "recheck.earlier": "Earlier finding",
+  "recheck.verdict": "Verdict",
+  "recheck.agreement": "Agreement",
+  "recheck.by_model": "By reviewer",
+  "recheck.evidence": "Evidence in revision",
+  "recheck.claim": "Author's claim",
+  "recheck.claim_ok": "Claim holds",
+  "recheck.done": "Revision check against {parent}: {counts}",
+  "recheck.no_findings": "{run} has no consensus findings yet; finish it first."
 }

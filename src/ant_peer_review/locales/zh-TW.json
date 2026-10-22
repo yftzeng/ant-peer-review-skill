@@ -194,5 +194,15 @@
   "report.seat": "視角",
   "seat.structure": "結構與論證",
   "seat.facts": "事實與合規",
-  "seat.devils_advocate": "唱反調（Devil's advocate）"
+  "seat.devils_advocate": "唱反調（Devil's advocate）",
+  "recheck.title": "修改對照：相對於 {parent}（報告 v{v}）",
+  "recheck.earlier": "前一輪發現",
+  "recheck.verdict": "判定",
+  "recheck.agreement": "一致性",
+  "recheck.by_model": "各 reviewer",
+  "recheck.evidence": "修改版中的證據",
+  "recheck.claim": "作者說法",
+  "recheck.claim_ok": "說法成立",
+  "recheck.done": "修改對照（相對於 {parent}）：{counts}",
+  "recheck.no_findings": "{run} 還沒有合議後的發現，請先完成該工作。"
 }

@@ -96,6 +96,15 @@ class FakeBackend(Backend):
         found = sorted(set(re.findall(r'"id": "(F\d+)"', prompt)))
         return {"verdicts": [{"issue": f, "verdict": "FULLY", "note": "fake"} for f in found]}
 
+    def _recheck(self, model, ids, paras, bias, prompt):
+        found = sorted(set(re.findall(r'"id": "(F\d+)"', prompt)))
+        return {"verdicts": [{"finding": f, "verdict": "PARTIALLY" if i else "FULLY",
+                              "evidence": ids[0], "note": "fake"} for i, f in enumerate(found)]}
+
+    def _recheck_claims(self, model, ids, paras, bias, prompt):
+        found = sorted(set(re.findall(r'"id": "(F\d+)"', prompt)))
+        return {"claims": [{"finding": f, "author_claim": "fixed"} for f in found]}
+
     def _draft(self, model, ids, paras, bias, prompt):
         return {"title": "Fake draft", "paragraphs": [
             "This draft was produced offline by the fake backend.",
