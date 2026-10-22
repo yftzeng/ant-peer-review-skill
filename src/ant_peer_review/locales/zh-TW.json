@@ -179,5 +179,9 @@
   "dim.accuracy": "事實與論據（Accuracy）",
   "dim.micro": "語言與表達（Micro）",
   "dim.impact": "傳播與轉換（Impact）",
-  "ui.toggle_custom": "輸入編號切換勾選（例如 1 3），c = 新增自訂，Enter 確認（全不勾 = 略過）："
+  "ui.toggle_custom": "輸入編號切換勾選（例如 1 3），c = 新增自訂，Enter 確認（全不勾 = 略過）：",
+  "run.resume.delete": "刪除未完成的工作",
+  "run.delete_which": "要刪除哪一個工作？",
+  "run.delete_confirm": "刪除 {run} 及其中 {n} 個檔案？此動作無法復原。",
+  "run.deleted": "已刪除 {run}。"
 }

@@ -52,6 +52,18 @@ Feature: cli
   Scenario: the run folder is named after the target, not its full path
     When  runs start with targets "/tmp/x/my-article.md", "https://example.com/blog/hello-world" and text "# Big News\nBody"
     Then  the folder slugs are "my-article", "example-com-hello-world" and "big-news"
+
+  @S-cli-009
+  Scenario: leaving during interactive intake leaves no run folder
+    Given no runs
+    When  "ant-peer-review" starts interactively and the input ends while the audience is asked
+    Then  the runs directory has no run in it
+
+  @S-cli-010
+  Scenario: an unfinished run can be deleted from the start menu, with confirmation
+    Given an unfinished run "20261022-0923-run" holding only state.json
+    When  the user picks "delete an unfinished run", chooses it, sees its file count and confirms
+    Then  the folder is gone; declining the confirmation keeps it
 ```
 
 ## Must NOT
@@ -60,3 +72,4 @@ Feature: cli
 ## Revisions
 - 2026-10-22 · +S-cli-001..007 +N-cli-001 · decision: none -- follows docs/DESIGN.md §2
 - 2026-10-22 · +S-cli-008 · decision: none -- live run: a path target produced a slug of the temp directory
+- 2026-10-22 · +S-cli-009 +S-cli-010 · decision: none -- user saw an empty run left by an abandoned intake and stale dev runs in the start menu

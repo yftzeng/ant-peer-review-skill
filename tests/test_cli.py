@@ -128,3 +128,26 @@ def test_slug_from_target(env):
     assert slugify(slug_for("/tmp/x/my-article.md")) == "my-article"
     assert slugify(slug_for("https://example.com/blog/hello-world")) == "example-com-hello-world"
     assert slugify(slug_for("# Big News\nBody")) == "big-news"
+
+
+# @S-cli-009
+def test_abandoned_intake_leaves_no_run(env):
+    env.save_config(__import__("ant_peer_review.store", fromlist=["Config"]).Config())
+    io = ScriptedIO(["1", "https://example.com/a", "/done", "4"])  # input ends in layer a
+    code = cli.main([], io=io, store=env)
+    assert code == 130
+    assert list_runs(env.runs_dir) == []
+
+
+# @S-cli-010
+def test_delete_unfinished_run_from_menu(env):
+    from ant_peer_review.workspace import create_run
+    run = create_run(env.runs_dir, "run", models=["opus", "sonnet"], backend="fake", lang="en")
+    env.save_config(__import__("ant_peer_review.store", fromlist=["Config"]).Config())
+    # menu: 1) continue run  2) delete an unfinished run  3) new ; then pick run 1, decline
+    io = ScriptedIO(["2", "1", "n"])
+    cli.main([], io=io, store=env)
+    assert run.root.exists() and "1 file" in io.text
+    io = ScriptedIO(["2", "1", "y"])
+    cli.main([], io=io, store=env)
+    assert not run.root.exists()

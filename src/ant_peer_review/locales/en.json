@@ -179,5 +179,9 @@
   "dim.accuracy": "Facts and evidence (Accuracy)",
   "dim.micro": "Language and expression (Micro)",
   "dim.impact": "Reach and conversion (Impact)",
-  "ui.toggle_custom": "Toggle numbers (e.g. 1 3), c = add a custom value, Enter to confirm (nothing ticked = skip):"
+  "ui.toggle_custom": "Toggle numbers (e.g. 1 3), c = add a custom value, Enter to confirm (nothing ticked = skip):",
+  "run.resume.delete": "Delete an unfinished run",
+  "run.delete_which": "Delete which run?",
+  "run.delete_confirm": "Delete {run} and its {n} file(s)? This cannot be undone.",
+  "run.deleted": "Deleted {run}."
 }

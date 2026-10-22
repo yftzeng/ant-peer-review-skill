@@ -179,5 +179,9 @@
   "dim.accuracy": "事实与论据（Accuracy）",
   "dim.micro": "语言与表达（Micro）",
   "dim.impact": "传播与转化（Impact）",
-  "ui.toggle_custom": "输入编号切换勾选（例如 1 3），c = 新增自定义，Enter 确认（全不勾 = 跳过）："
+  "ui.toggle_custom": "输入编号切换勾选（例如 1 3），c = 新增自定义，Enter 确认（全不勾 = 跳过）：",
+  "run.resume.delete": "删除未完成的任务",
+  "run.delete_which": "要删除哪一个任务？",
+  "run.delete_confirm": "删除 {run} 及其中 {n} 个文件？此操作无法恢复。",
+  "run.deleted": "已删除 {run}。"
 }

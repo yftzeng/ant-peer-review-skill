@@ -3,20 +3,21 @@ from __future__ import annotations
 
 import argparse
 import re
+import shutil
 import sys
 
 from . import __version__
 from .backends.base import get_backend
 from .decision import run_decision
 from .i18n import T
-from .intake import build_intake_from_args
+from .intake import build_intake_from_args, run_intake_interactive
 from .jsonio import read_json, write_json
 from .lessons import add_lesson, all_lessons, archive_lesson, lessons_for, promote_if_repeated
 from .onboarding import banner, choose_backend, choose_lang, choose_models, effective_models, first_use
 from .pipeline import Ctx, run_pipeline
 from .refresh import factcheck_continue
 from .store import BACKENDS, LANGS, Config, Store
-from .ui import IO, ConsoleIO, radio
+from .ui import IO, ConsoleIO, confirm, radio
 from .workspace import PHASES, Run, create_run, list_runs, unfinished_runs
 
 EXIT_OK, EXIT_PAUSED, EXIT_USAGE, EXIT_INTERRUPTED = 0, 3, 2, 130
@@ -149,27 +150,40 @@ def finish(status: str) -> int:
     return {"done": EXIT_OK, "paused": EXIT_PAUSED, "interrupted": EXIT_INTERRUPTED}[status]
 
 
+def _delete_menu(io: IO, t: T, pending: list[Run]) -> None:
+    """Pick an unfinished run, show what is in it, delete only after confirmation."""
+    rid = radio(io, t, t("run.delete_which"),
+                [(r.id, f"{r.id} ({r.first_incomplete()})") for r in pending])
+    run = next(r for r in pending if r.id == rid)
+    n = sum(1 for p in run.root.rglob("*") if p.is_file())
+    if confirm(io, t, t("run.delete_confirm", run=run.id, n=n), default=False):
+        shutil.rmtree(run.root)
+        io.say(t("run.deleted", run=run.id))
+
+
 def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
     t = T(cfg.lang)
     if not args.yes and not args.target:
-        pending = unfinished_runs(store.runs_dir)
-        if pending:
+        while pending := unfinished_runs(store.runs_dir):
             io.say(t("run.resume_found"))
             opts = []
             for r in pending[-5:]:
                 opts.append((f"c:{r.id}", t("run.resume.continue", run=r.id,
                                             phase=r.first_incomplete())))
+            opts.append(("delete", t("run.resume.delete")))
             opts.append(("new", t("run.resume.new")))
             choice = radio(io, t, t("run.resume_choice"), opts, default="new")
+            if choice == "delete":
+                _delete_menu(io, t, pending)
+                continue
             if choice.startswith("c:"):
                 run = find_run(store, choice[2:])
                 ctx = run_ctx(args, io, store, cfg, run)
                 io.say(banner(ctx.t, ctx.models))
                 return finish(run_pipeline(run, ctx))
+            break
     ctx = make_ctx(args, io, store, cfg)
     io.say(banner(ctx.t, ctx.models))
-    slug = slug_for(args.target[0]) if args.target else "run"
-    intake = None
     if args.target or args.yes:
         try:
             intake = build_intake_from_args(args.purpose or "audit", args.target, args.audience,
@@ -179,11 +193,17 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
             return EXIT_USAGE
         if args.brand:
             intake["brand"] = args.brand
+    else:
+        # Ask everything first: leaving midway must not leave an empty run behind.
+        intake = run_intake_interactive(io, ctx.t, ctx.lang)
+        brand = io.ask(ctx.t("intake.brand") + " ").strip()
+        if brand:
+            intake["brand"] = brand
+    slug = slug_for(intake["targets"][0]["value"]) if intake["targets"] else "run"
     run = create_run(store.runs_dir, slug, models=ctx.models, backend=ctx.backend.name,
                      lang=ctx.lang)
     io.say(ctx.t("run.created", path=str(run.root)))
-    if intake:
-        write_json(run.path("00-intake.json"), intake)
+    write_json(run.path("00-intake.json"), intake)
     return finish(run_pipeline(run, ctx))
 
 
