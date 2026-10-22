@@ -6,7 +6,7 @@ No model call happens here, so recomputing after a fact-check change is free
 from __future__ import annotations
 
 from .rubric import final_impact, s_curve_fit
-from .schemas import RED_LINES
+from .schemas import OLD_POSITIONS, RED_LINES
 
 SEV_ORDER = {"critical": 0, "major": 1, "minor": 2}
 LEVEL_ORDER = {"macro": 0, "meso": 1, "micro": 2}
@@ -36,7 +36,8 @@ def _responses(debates: dict[str, dict], active: list[str]) -> list[tuple[str, d
         rec = debates.get(m, {})
         if rec.get("status") == "ok":
             for r in rec["data"].get("responses", []):
-                out.append((m, r))
+                out.append((m, dict(r, position=OLD_POSITIONS.get(r.get("position"),
+                                                                   r.get("position")))))
     return out
 
 
@@ -78,7 +79,7 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
     uf = _UF(issues)
     for who, r in resp:
         dup = (r.get("duplicate_of") or "").strip()
-        if r["position"] == "corroborate" and dup and r["target"] in issues:
+        if r["position"] == "support" and dup and r["target"] in issues:
             mine = f"{who}:{dup}"
             if mine in issues:
                 uf.union(r["target"], mine)
@@ -90,16 +91,16 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
     for members in groups.values():
         members.sort(key=lambda g: (active.index(issues[g]["model"]), g))
         owners = {issues[g]["model"] for g in members}
-        corrob = {w for w, r in resp if r["target"] in members and r["position"] == "corroborate"}
+        corrob = {w for w, r in resp if r["target"] in members and r["position"] == "support"}
         disputes = [{"model": w, "evidence": r.get("evidence", "")} for w, r in resp
-                    if r["target"] in members and r["position"] == "dispute" and w not in owners]
+                    if r["target"] in members and r["position"] == "object" and w not in owners]
         supporters = sorted(owners | corrob, key=active.index)
         if disputes:
             label = "SPLIT"
         elif len(supporters) == n and n >= 2:
             label = f"CONSENSUS-{n}"
         elif len(supporters) >= 2:
-            label = f"CORROBORATED-{len(supporters)}/{n}"
+            label = f"SUPPORTED-{len(supporters)}/{n}"
         else:
             label = "SINGLE"
         lead = issues[members[0]]
@@ -140,16 +141,16 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
                     comments.append({"model": m, "comment": rl.get("comment", ""),
                                      "anchors": rl.get("anchors", [])})
         tgt = {f"{m}:redline:{k}" for m in flaggers}
-        corrob = {w for w, r in resp if r["target"] in tgt and r["position"] == "corroborate"}
+        corrob = {w for w, r in resp if r["target"] in tgt and r["position"] == "support"}
         disputes = [{"model": w, "evidence": r.get("evidence", "")} for w, r in resp
-                    if r["target"] in tgt and r["position"] == "dispute" and w not in flaggers]
+                    if r["target"] in tgt and r["position"] == "object" and w not in flaggers]
         supporters = sorted(set(flaggers) | corrob, key=active.index)
         evidence = [{"claim": c["id"], "text": c["text"]} for c in unsupported] \
             if k == "hallucination" else []
         if not supporters and not evidence:
             status = "advisory" if advisory else "clear"
         elif k == "hallucination" and evidence and supporters:
-            status = "confirmed"          # evidence first: the ledger outranks a dispute
+            status = "confirmed"          # evidence first: the ledger outranks an objection
         elif len(supporters) >= 2 and not disputes:
             status = "confirmed"
         else:

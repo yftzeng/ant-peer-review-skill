@@ -80,7 +80,7 @@ class FakeBackend(Backend):
         out = []
         for t in targets:
             if t.endswith(":I1"):
-                out.append({"target": t, "position": "corroborate", "evidence": "same",
+                out.append({"target": t, "position": "support", "evidence": "same",
                             "duplicate_of": "I1"})
         return {"responses": out}
 
@@ -94,11 +94,11 @@ class FakeBackend(Backend):
 
     def _rereview(self, model, ids, paras, bias, prompt):
         found = sorted(set(re.findall(r'"id": "(F\d+)"', prompt)))
-        return {"verdicts": [{"issue": f, "verdict": "FULLY", "note": "fake"} for f in found]}
+        return {"verdicts": [{"issue": f, "verdict": "RESOLVED", "note": "fake"} for f in found]}
 
     def _recheck(self, model, ids, paras, bias, prompt):
         found = sorted(set(re.findall(r'"id": "(F\d+)"', prompt)))
-        return {"verdicts": [{"finding": f, "verdict": "PARTIALLY" if i else "FULLY",
+        return {"verdicts": [{"finding": f, "verdict": "IMPROVED" if i else "RESOLVED",
                               "evidence": ids[0], "note": "fake"} for i, f in enumerate(found)]}
 
     def _recheck_claims(self, model, ids, paras, bias, prompt):

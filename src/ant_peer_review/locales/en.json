@@ -194,7 +194,7 @@
   "report.seat": "Seat",
   "seat.structure": "Structure and argument",
   "seat.facts": "Facts and compliance",
-  "seat.devils_advocate": "Devil's advocate",
+  "seat.skeptic": "Skeptic",
   "recheck.title": "Revision check against {parent} (report v{v})",
   "recheck.earlier": "Earlier finding",
   "recheck.verdict": "Verdict",

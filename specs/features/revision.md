@@ -24,7 +24,7 @@ Feature: revision
   Scenario: B is re-reviewed by a different model with the four-level scale
     Given reviewers opus and sonnet and plan B written by opus
     When  the re-review runs
-    Then  sonnet judges each addressed issue as FULLY, PARTIALLY, NOT_ADDRESSED or MADE_WORSE
+    Then  sonnet judges each addressed issue as RESOLVED, IMPROVED, UNCHANGED or WORSE
 
   @S-revision-004
   Scenario: unknown paragraph ids from a model are ignored and reported
@@ -58,3 +58,4 @@ Feature: revision
 - 2026-10-22 · +S-revision-001..005 +N-revision-001 · decision: none -- follows docs/DESIGN.md §3 P8
 - 2026-10-22 · +S-revision-006 · decision: none -- live run: models returned sentence ids and new paragraphs, which were dropped
 - 2026-10-22 · +S-revision-007 · decision: none -- re-evaluated references: black-yt rebuttal one-to-one coverage, no finding silently dropped
+- 2026-10-22 · ~S-revision-003 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md)

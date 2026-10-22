@@ -27,7 +27,7 @@ A_OUT = {"paragraphs": [{"id": "D1.P02", "text": "我們的產品很棒，大家
          "corrections": [{"from": "喜翻", "to": "喜歡", "category": "typo"}]}
 B_OUT = {"headline_options": ["H"], "paragraphs": [{"id": "D1.P03", "text": "Rewritten.",
                                                     "addresses": ["F01"]}], "notes": ""}
-RR = {"verdicts": [{"issue": "F01", "verdict": "FULLY", "note": ""}]}
+RR = {"verdicts": [{"issue": "F01", "verdict": "RESOLVED", "note": ""}]}
 
 
 # @S-revision-001
@@ -62,7 +62,7 @@ def test_b_rereviewed_by_other_model(tmp_path):
                        ("sonnet", "rereview"): RR})
     run_revision(run, b, ["opus", "sonnet"], "en", say=lambda *_: None)
     rr = read_json(run.path("07-revision/rereview.json"))
-    assert rr["checker"] == "sonnet" and rr["verdicts"][0]["verdict"] == "FULLY"
+    assert rr["checker"] == "sonnet" and rr["verdicts"][0]["verdict"] == "RESOLVED"
     assert [c["model"] for c in b.calls if c["task"] == "rereview"] == ["sonnet"]
 
 

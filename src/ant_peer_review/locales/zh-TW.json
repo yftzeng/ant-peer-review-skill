@@ -194,7 +194,7 @@
   "report.seat": "視角",
   "seat.structure": "結構與論證",
   "seat.facts": "事實與合規",
-  "seat.devils_advocate": "唱反調（Devil's advocate）",
+  "seat.skeptic": "質疑者",
   "recheck.title": "修改對照：相對於 {parent}（報告 v{v}）",
   "recheck.earlier": "前一輪發現",
   "recheck.verdict": "判定",

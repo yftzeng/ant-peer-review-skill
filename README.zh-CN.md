@@ -61,7 +61,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | intake | 选择目的（撰写或审核）；逐行输入目标，单独一行输入 `/done` 或连按两次 Enter 结束；填写受众卡。受众卡共五层：专业度、决策层、产业／政治视角、信任距离、阅读目的，每层都是 checkbox，可多选，也可添加自定义值；全不勾即跳过。 |
 | sources | 通过安全爬虫和转换程序把目标转成 Markdown，每段每句都有固定编号（如 `D1.P03.S2`）。prompt injection 扫描会标记可疑文字，并对 reviewer 隐藏。 |
 | rubric | 四个维度：结构逻辑（Macro）、事实论据（Accuracy）、语言表达（Micro）、传播转化（Impact，含 S 型曲线）。系统根据受众建议权重，由你修改并确认。 |
-| review | 按 reviewer 名单顺序分配视角：结构与论证、事实与合规，第 3 位担任唱反调（Devil's Advocate）。每位 reviewer 独立产出：各维度评分、篇章 → 段落 → 字句三层诊断、待核查的事实主张、敏感度扫描、6 条红线的判定、S 型曲线阶段。 |
+| review | 按 reviewer 名单顺序分配视角：结构与论证、事实与合规，第 3 位担任质疑者（Skeptic）。每位 reviewer 独立产出：各维度评分、篇章 → 段落 → 字句三层诊断、待核查的事实主张、敏感度扫描、6 条红线的判定、S 型曲线阶段。 |
 | factcheck | 事实主张记入账本并用网页搜索核查。只有当次搜索真正返回过的网址才算来源。可选功能：在受众之后勾选，或加上 `--academic`，文中引用的 DOI 和 arXiv 会再通过 doi.org、Crossref、arXiv 核查是否存在、标题是否相符、有无撤稿。 |
 | debate | 每位 reviewer 对其他人的发现表示赞同或提出异议，都必须附证据。 |
 | consensus | 用确定性程序统计各方立场：没提到不算同意；有异议的发现标为 SPLIT。随后执行红线否决，计算加权总分和等级。 |

@@ -75,7 +75,7 @@ FACT_STATUS = ["supported", "partly", "unsupported", "cannot_verify"]
 
 ISSUE = obj({
     "id": STR,                       # reviewer-local id, e.g. "I3"
-    "anchor": STR,                   # "P03.S2", or "absence: <where> - expected <item>"
+    "anchor": STR,                   # "P03.S2", or "missing: <where> - expected <item>; searched: <parts>"
     "level": LEVEL,
     "dimension": STR,                # rubric dimension key
     "observation": STR,
@@ -110,10 +110,15 @@ FACTCHECK = obj({
     "sources": arr(obj({"url": STR, "supporting_excerpt": STR})),
 })
 
+# A debate answer supports a finding or objects to it (cf. RFC 7282: objections are
+# addressed, not outvoted). Older runs stored "corroborate" / "dispute".
+POSITIONS = ["support", "object"]
+OLD_POSITIONS = {"corroborate": "support", "dispute": "object"}
+
 DEBATE = obj({
     "responses": arr(obj({
         "target": STR,               # "<model>:<issue id>" or "<model>:redline:<key>"
-        "position": {"type": "string", "enum": ["corroborate", "dispute"]},
+        "position": {"type": "string", "enum": POSITIONS},
         "evidence": STR,
         "duplicate_of": STR,         # own issue id if it is the same finding, else ""
     })),
@@ -130,18 +135,24 @@ REVISE_B = obj({
     "notes": STR,
 })
 
+# Change since the earlier version, best to worst (a change-from-baseline scale in
+# the spirit of CGI-I). Older runs stored FULLY / PARTIALLY / NOT_ADDRESSED / MADE_WORSE.
+CHANGE_VERDICTS = ["RESOLVED", "IMPROVED", "UNCHANGED", "WORSE"]
+OLD_VERDICTS = {"FULLY": "RESOLVED", "PARTIALLY": "IMPROVED", "NOT_ADDRESSED": "UNCHANGED",
+                "MADE_WORSE": "WORSE"}
+
 REREVIEW = obj({
     "verdicts": arr(obj({
         "issue": STR,
         "verdict": {"type": "string",
-                    "enum": ["FULLY", "PARTIALLY", "NOT_ADDRESSED", "MADE_WORSE"]},
+                    "enum": CHANGE_VERDICTS},
         "note": STR,
     })),
 })
 
 DRAFT = obj({"title": STR, "paragraphs": arr(STR)})
 
-RECHECK_VERDICTS = ["FULLY", "PARTIALLY", "NOT_ADDRESSED", "MADE_WORSE", "CANNOT_VERIFY"]
+RECHECK_VERDICTS = CHANGE_VERDICTS + ["CANNOT_VERIFY"]
 
 RECHECK = obj({
     "verdicts": arr(obj({

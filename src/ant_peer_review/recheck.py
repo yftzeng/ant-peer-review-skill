@@ -1,4 +1,4 @@
-"""Recheck a revised piece against a parent run's findings (Imbad re-review mode).
+"""Recheck a revised piece against a parent run's findings (gate 1 blind to the reply, like blinded outcome assessment).
 
 Gate 1: each reviewer judges every earlier finding from the revised text, never
 seeing the author's reply. Gate 2 (only when a reply exists): one call records
@@ -12,15 +12,15 @@ from collections import Counter
 from . import prompts
 from .jsonio import read_json, write_json
 from .review import FAILED, OK, REFUSED, _parallel, _record, article_view, load_records
-from .schemas import RECHECK, RECHECK_CLAIMS
+from .schemas import OLD_VERDICTS, RECHECK, RECHECK_CLAIMS
 from .workspace import Run
 
 # Lower = less favourable; ties between equally common verdicts go to the lower one.
-UNFAVOURABLE = {"MADE_WORSE": 0, "NOT_ADDRESSED": 1, "PARTIALLY": 2, "CANNOT_VERIFY": 3, "FULLY": 4}
+UNFAVOURABLE = {"WORSE": 0, "UNCHANGED": 1, "IMPROVED": 2, "CANNOT_VERIFY": 3, "RESOLVED": 4}
 
 
 def merge_verdicts(by_model: dict[str, str]) -> tuple[str, str]:
-    votes = Counter(by_model.values())
+    votes = Counter(OLD_VERDICTS.get(v, v) for v in by_model.values())
     top = max(votes.values())
     best = min((v for v, n in votes.items() if n == top), key=UNFAVOURABLE.get)
     agreement = "unanimous" if len(votes) == 1 else "majority" if top > len(by_model) / 2 \
@@ -95,7 +95,7 @@ def run_recheck(run: Run, backend, models: list[str], lang: str, *, say=print) -
         for r in rows:
             if r["finding"] in claims:
                 r["author_claim"] = claims[r["finding"]]
-                r["claim_supported"] = r["final"] == "FULLY"
+                r["claim_supported"] = r["final"] == "RESOLVED"
     counts = dict(Counter(r["final"] for r in rows))
     out = {"parent": parent.id, "parent_report": _latest(parent), "verdicts": rows,
            "counts": counts}

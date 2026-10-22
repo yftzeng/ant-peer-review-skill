@@ -15,8 +15,8 @@ This repo copies no code, prompts or text from any of these skills; it takes onl
 | 1, 8, 9 (K-Dense-AI) | MIT (repo and each skill's frontmatter) | yes |
 | 2 (tsingke) | MIT | yes |
 | 3 (jam-cc) | MIT | yes |
-| 4, 5, 6 (black-yt) | none stated (no LICENSE file; all rights reserved by default) | no: ideas only, nothing copied |
-| 7 (Imbad0202 @3224a27) | CC BY-NC 4.0 | no: ideas only, nothing copied |
+| 4, 5, 6 (black-yt) | none stated (no LICENSE file; all rights reserved by default) | no: superseded by §4, nothing copied |
+| 7 (Imbad0202 @3224a27) | CC BY-NC 4.0 | no: superseded by §4, nothing copied |
 
 Do not paste text or code from rows marked "no" into this repo.
 
@@ -27,12 +27,12 @@ Do not paste text or code from rows marked "no" into this repo.
 | 1 | [K-Dense-AI/scientific-agent-skills — peer-review](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/peer-review/SKILL.md) | scientific manuscript review | MIT | machine-checkable comment schema + linter |
 | 2 | [tsingke/thesis-review-skill](https://github.com/tsingke/thesis-review-skill) | thesis grading (zh-CN) | MIT | weighted dimensions with score bands, per-item folders |
 | 3 | [jam-cc/paper-review.skill](https://github.com/jam-cc/paper-review.skill) | ML paper review | MIT | citation verification discipline |
-| 4 | [black-yt/skills — rebuttal-writing](https://github.com/black-yt/skills/blob/main/rebuttal-writing/SKILL.md) | author rebuttal | none | neutral issue restatement, one-to-one coverage |
-| 5 | [black-yt/skills — paper-review-writing](https://github.com/black-yt/skills/tree/main/paper-review-writing) | review writing | none | evidence-chain record, "unstated vs wrong" |
-| 6 | [black-yt/skills — paper-review-injection-audit](https://github.com/black-yt/skills/tree/main/paper-review-injection-audit) | prompt-injection audit | none | detection categories, evidence collectors |
+| 4 | [black-yt/skills — rebuttal-writing](https://github.com/black-yt/skills/blob/main/rebuttal-writing/SKILL.md) | author rebuttal | none | superseded by §4 |
+| 5 | [black-yt/skills — paper-review-writing](https://github.com/black-yt/skills/tree/main/paper-review-writing) | review writing | none | superseded by §4 |
+| 6 | [black-yt/skills — paper-review-injection-audit](https://github.com/black-yt/skills/tree/main/paper-review-injection-audit) | prompt-injection audit | none | superseded by §4 |
 | 8 | [K-Dense-AI/scientific-agent-skills — paperzilla](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paperzilla/SKILL.md) | CLI wrapper for a paper-recommendation service | MIT | label what a summary was built from; keep tokens out of logs; honest paging |
 | 9 | [K-Dense-AI/scientific-agent-skills — paper-lookup](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paper-lookup/SKILL.md) | 18 scholarly APIs with provenance | MIT | "APIs can fail with HTTP 200"; identifier resolution; credential redaction; bounded work |
-| 7 | [Imbad0202/academic-research-skills — academic-paper-reviewer @3224a27](https://github.com/Imbad0202/academic-research-skills/tree/3224a27a2571cefef0fddfd437004cb006f2b0cb/academic-paper-reviewer) | multi-reviewer panel | CC BY-NC 4.0 | sub-claim consensus, silence ≠ agreement, provenance |
+| 7 | [Imbad0202/academic-research-skills — academic-paper-reviewer @3224a27](https://github.com/Imbad0202/academic-research-skills/tree/3224a27a2571cefef0fddfd437004cb006f2b0cb/academic-paper-reviewer) | multi-reviewer panel | CC BY-NC 4.0 | superseded by §4 |
 
 ## 1. K-Dense-AI peer-review
 
@@ -81,66 +81,33 @@ Do not paste text or code from rows marked "no" into this repo.
 | Prose-only reviews without bullets | Clashes with the anchored issues table. |
 | Reference caps; ML-venue formats | Academic only. |
 
-## 4. black-yt rebuttal-writing
+## 4. Independent sources (replace rows 4–7)
 
-| Borrowed | Where here |
-|---|---|
-| One-to-one coverage: no finding silently dropped | Every finding keeps its members and supporters in `05-consensus.json` and the report; `07-revision/coverage.json` maps each finding to plan A, B, both or none |
-| Neutral restatement; narrow a claim rather than retract it | Plan B prompt (`prompts.revise_b_system`): strengthen without inventing facts, mark `[source needed]` |
-| Leak checklist for outputs | The report quotes flagged text only in a fenced "untrusted evidence" block |
+Rows 4–7 were read during design. On the licence review (2026-10-22) every idea taken from them was traced to an independent, public source below, and the terms they used were renamed. The code, prompts and docs now follow these sources; nothing from rows 4–7 remains.
 
-| Left out | Why |
-|---|---|
-| Persuasion tactics (asking reviewers to raise scores, letters to the AC) | Academic only, and it pushes the writer to argue a side. |
+| Concept | Independent source | Where here |
+|---|---|---|
+| Tally each finding per reviewer; a silent reviewer has not agreed; an objection is addressed, never outvoted; dissent is recorded | P. Resnick, [RFC 7282: On Consensus and Humming in the IETF](https://www.rfc-editor.org/rfc/rfc7282.html) (2014) | Debate positions `support` / `object`; `consensus.synthesize` labels CONSENSUS-n / SUPPORTED-k/n / SINGLE / SPLIT; `dissent` lists |
+| Ledger evidence outranks an objection | K-Dense claim–evidence matrix (row 1, MIT) | Hallucination red line in `consensus.synthesize` |
+| A contested red line, and the reviewer roster, go to a human | NIST [AI RMF 1.0 (AI 100-1)](https://doi.org/10.6028/NIST.AI.100-1), human oversight | `needs_ruling` → decide gate; reviewer checkbox and `config models` |
+| A missing item names what was searched; "not stated" is not "stated wrongly" | D. G. Altman & J. M. Bland, [Absence of evidence is not evidence of absence](https://pmc.ncbi.nlm.nih.gov/articles/PMC2550545/), BMJ 1995 | Anchor `missing: <where> - expected <item>; searched: <parts>`; `report.lint_report`; `prompts.SHARED_RULES` |
+| Reviewers from one vendor share errors, so give them different lenses and never call them independent | E. Kim et al., [Correlated Errors in Large Language Models](https://arxiv.org/abs/2506.07962), ICML 2025; Y. Du et al., [Multiagent Debate](https://arxiv.org/abs/2305.14325), ICML 2024 | `prompts.assign_seats`; provenance warning `single_vendor_correlated_errors` |
+| A skeptic seat reads against the grain | U.S. Government, *A Tradecraft Primer: Structured Analytic Techniques* (2009), devil's advocacy; U.S. Army UFMCS, *Red Team Handbook*; E. de Bono, *Six Thinking Hats* (1985), black hat | Seat `skeptic` |
+| Judge a revision before reading the author's reply | Cochrane Handbook, blinding of outcome assessment (detection bias) | `recheck` gate 1 never sees the reply; gate 2 compares claims |
+| Rate change since the earlier version, best to worst | W. Guy, Clinical Global Impression – Improvement scale (ECDEU Assessment Manual, 1976): change from baseline | `RESOLVED / IMPROVED / UNCHANGED / WORSE` (+ `CANNOT_VERIFY` in recheck) |
+| Every finding is mapped to what handled it; none dropped silently | Bidirectional traceability matrix ([NASA SWE-059](https://swehb.nasa.gov/spaces/7150/pages/16449675/SWE-059+-+Bidirectional+Traceability+Between+Software+Requirements+and+Software+Design)); W. S. Noble, [Ten simple rules for writing a response to reviewers](https://doi.org/10.1371/journal.pcbi.1005730), PLOS Comput Biol 2017 | `07-revision/coverage.json`; findings keep members and supporters |
+| Restate neutrally; narrow a claim instead of inventing support | Noble 2017 (above) | Plan B prompt: `[source needed]` |
+| Each finding carries claim, grounds and why it matters | S. Toulmin, *The Uses of Argument* (1958); K-Dense five fields (row 1, MIT) | ISSUE fields anchor / observation / standard / why_it_matters / action |
+| The same judgment strength in every output language | D. Wild et al., ISPOR principles for translation and cultural adaptation, Value in Health 2005 (conceptual equivalence) | `prompts.SHARED_RULES` |
+| Inputs are never modified; outputs are versioned | NIST SP 800-86, *Guide to Integrating Forensic Techniques into Incident Response* (2006) | `Run.write_raw_source` write-once; `06-report.v<N>` |
+| Injection categories | [OWASP LLM01:2025 Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/); K. Greshake et al., [indirect prompt injection](https://arxiv.org/abs/2302.12173), AISec 2023; Z. Lin, [hidden prompts in manuscripts](https://arxiv.org/abs/2507.06185), 2025; [Publish to Perish](https://arxiv.org/abs/2508.20863), 2025 | `injection.CATEGORIES`: rating_manipulation, sentiment_steering, output_dictation, canary_check, instruction_override, addressed_to_ai, secrecy_request, action_request |
+| Search a normalized view; catch invisible and bidi characters | Unicode [UAX #15](https://www.unicode.org/reports/tr15/) (NFKC), [UTS #39](https://www.unicode.org/reports/tr39/); N. Boucher & R. Anderson, Trojan Source (CVE-2021-42574) | `injection.search_view`, `format_controls`; `segments.prompt_view` |
+| Hidden carriers: hidden CSS, comments, alt / title / aria | Greshake et al. 2023; the 2025 white-text prompts in preprints (Lin 2025) | `htmlmd.py` `hidden` list |
+| Flags are not verdicts; no flag does not mean no injection | OWASP LLM01:2025 (no fool-proof prevention); Altman & Bland 1995 | `injection.scan` note; report injection section |
+| Flagged text never becomes a heading or reaches output unfenced | [OWASP LLM05:2025 Improper Output Handling](https://genai.owasp.org/llmrisk/llm052025-improper-output-handling/) | `report.lint_report`; fenced untrusted-evidence block |
+| Hash an input before and after reading it | MITRE [CWE-367](https://cwe.mitre.org/data/definitions/367.html) (time-of-check / time-of-use) | `converter.changed_during_read` |
 
-## 5. black-yt paper-review-writing
-
-| Borrowed | Where here |
-|---|---|
-| Evidence-chain record per weakness | ISSUE fields: anchor, observation, standard, why_it_matters, action, claim_ids |
-| "Unstated" must not become "incorrect"; judgment strength kept the same across languages | `prompts.SHARED_RULES` (keep judgment strength when writing in zh-TW / zh-CN) |
-| Inputs are read-only; one output file per input, never overwritten | Raw sources are write-once (`Run.write_raw_source`); report versions `06-report.v<N>` |
-
-| Left out | Why |
-|---|---|
-| Fixed 1 strength / 2 weaknesses / 2 questions; no numbers in the review | Venue format rules. |
-
-## 6. black-yt paper-review-injection-audit
-
-| Borrowed | Where here |
-|---|---|
-| Definition of injection with 8 categories: score, evaluation direction, prescribed wording, fingerprint, instruction priority, target/stage, concealment, tools/data flow | `sources/injection.py` `CATEGORIES` (en + zh patterns) |
-| Search on an NFKC-normalized view with format controls removed; capture Unicode Cf characters | `injection.search_view`, `injection.format_controls`; `segments.prompt_view` strips Cf |
-| Hidden carriers: hidden CSS, comments, alt/title/aria text | `sources/htmlmd.py` puts them in a `hidden` list, which the scan inspects |
-| Flags, not verdicts, each with a confidence; "no flag" never claims "no injection" | `injection.scan` `note`; the report's injection section |
-| Never let flagged text become a heading or the payload | `report.lint_report`; fenced block in the report |
-| Hash inputs before and after reading | `sources/converter.py` `changed_during_read` |
-
-| Left out | Why |
-|---|---|
-| PDF object-level and optional-content-layer forensics | Overkill for web articles. PDFs are text-extracted only. |
-| Treating any stray symbol as a possible fingerprint | Too noisy for marketing copy. |
-
-## 7. Imbad0202 academic-paper-reviewer (@3224a27)
-
-| Borrowed | Where here |
-|---|---|
-| Tally each finding per reviewer (raised / backed / silent / disputed), and do not count a reviewer who stayed silent as disagreeing | `consensus.synthesize`: labels CONSENSUS-n / CORROBORATED-k/n / SINGLE / SPLIT |
-| Unresolved dissent is recorded, never auto-resolved | `dissent` lists; the report's "Disagreements" section |
-| Arbitration goes evidence first | Hallucination red line: ledger evidence outranks a dispute |
-| Devil's-advocate CRITICALs need a visible ruling | Red lines `needs_ruling`, then a human ruling at the decision gate |
-| Typed anchors, including `absence: <where> - expected <item>; checked: <surfaces>` | `prompts.SHARED_RULES`; `report.lint_report` flags an absence without checked surfaces |
-| Distinct reviewer roles plus a devil's advocate (second pass) | `prompts.assign_seats`: structure / facts / devil's advocate by roster order |
-| Re-review mode: traceability matrix, evidence verdict before reading the author's reply (second pass) | `ant-peer-review recheck`, `recheck.py` (gate 1 blind to the reply, gate 2 claims) |
-| Provenance record; never claim the reviewers are independent | `consensus` provenance plus the warning `single_vendor_correlated_errors` |
-| Re-review verdict scale FULLY / PARTIALLY / NOT_ADDRESSED / MADE_WORSE | `schemas.REREVIEW`; `revision.run_revision` |
-| HITL checkpoint on the reviewer configuration | Reviewer checkbox at first use; `config models` |
-
-| Left out | Why |
-|---|---|
-| No weights or totals | We keep weights. Vetoes give the non-compensatory override. |
-| Journal-specific roles; calibration tiers; 50 KB protocols and schema versioning | Far beyond an article workflow. |
-| Commit-before-reading trigger contracts | Considered; deferred. It adds a call per reviewer, and the debate round already limits after-the-fact rationalization. |
+Left out (our own reasons, not inherited): persuasion tactics aimed at reviewers; fixed strength / weakness quotas; PDF object-level forensics; a no-weights rule; journal-specific roles and calibration tiers.
 
 ## 8. K-Dense paperzilla (analysed 2026-10-22)
 

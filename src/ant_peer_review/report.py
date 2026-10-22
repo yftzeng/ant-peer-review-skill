@@ -76,8 +76,9 @@ def lint_report(cons: dict, md: str, flagged_excerpts: list[str]) -> list[str]:
                 if rx.search(val):
                     problems.append(f"{f.get('id', '?')}: {name} in '{k}'")
         anchor = str(f.get("anchor", ""))
-        if anchor.lower().startswith("absence:") and "checked:" not in anchor.lower():
-            problems.append(f"{f.get('id', '?')}: absence without checked surfaces")
+        low = anchor.lower()  # "absence:" / "checked:" are the pre-rename spelling
+        if low.startswith(("missing:", "absence:")) and not ("searched:" in low or "checked:" in low):
+            problems.append(f"{f.get('id', '?')}: missing item without searched surfaces")
     if PLACEHOLDER.search(md):
         problems.append("placeholder text left in report")
     headings = [ln for ln in md.splitlines() if ln.startswith("#")]

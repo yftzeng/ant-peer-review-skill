@@ -25,16 +25,16 @@ Feature: recheck
 
   @S-recheck-003
   Scenario: gate 2 flags claims the evidence does not support
-    Given gate-1 verdicts F01 NOT_ADDRESSED and F02 FULLY, and a response claiming both are fixed
+    Given gate-1 verdicts F01 UNCHANGED and F02 RESOLVED, and a response claiming both are fixed
     When  gate 2 runs
     Then  F01 is marked claim_supported false and F02 true
     And   without a response there is no gate-2 call
 
   @S-recheck-004
   Scenario: verdicts merge by majority, ties go to the less favourable verdict
-    Given three reviewers judge F01 FULLY, FULLY, PARTIALLY and F02 FULLY, NOT_ADDRESSED, CANNOT_VERIFY
+    Given three reviewers judge F01 RESOLVED, RESOLVED, IMPROVED and F02 RESOLVED, UNCHANGED, CANNOT_VERIFY
     When  the verdicts merge
-    Then  F01 is FULLY with agreement "majority" and F02 is NOT_ADDRESSED with agreement "split"
+    Then  F01 is RESOLVED with agreement "majority" and F02 is UNCHANGED with agreement "split"
 
   @S-recheck-005
   Scenario: the report carries the revision check table next to the new review
@@ -46,6 +46,12 @@ Feature: recheck
     Given a state.json from an older version without a "recheck" phase, every phase done
     When  it is loaded
     Then  the run is finished
+
+  @S-recheck-007
+  Scenario: verdicts written with the old scale are read with the new names
+    Given stored gate-1 verdicts FULLY, PARTIALLY, NOT_ADDRESSED and MADE_WORSE from an older version
+    When  the verdicts merge
+    Then  they count as RESOLVED, IMPROVED, UNCHANGED and WORSE
 ```
 
 ## Must NOT
@@ -53,3 +59,4 @@ Feature: recheck
 
 ## Revisions
 - 2026-10-22 · +S-recheck-001..006 +N-recheck-001 · decision: none -- re-evaluated references: Imbad re-review mode (traceability matrix, evidence verdict before reading the author's response)
+- 2026-10-22 · ~S-recheck-002..004 +S-recheck-007 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md); scale renamed RESOLVED / IMPROVED / UNCHANGED / WORSE after the CGI-I change-from-baseline idea

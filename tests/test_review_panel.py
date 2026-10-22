@@ -68,14 +68,14 @@ def test_silence_is_not_agreement():
 
 
 # @S-review-panel-005
-def test_duplicates_and_corroboration_make_consensus():
+def test_duplicates_and_support_make_consensus():
     models = ("opus", "sonnet", "fable")
     reviews = {"opus": ok("opus", review_data(issues=[{"id": "I1"}])),
                "sonnet": ok("sonnet", review_data(issues=[{"id": "I4"}])),
                "fable": ok("fable", review_data())}
-    debates = {"sonnet": deb("sonnet", {"target": "opus:I1", "position": "corroborate",
+    debates = {"sonnet": deb("sonnet", {"target": "opus:I1", "position": "support",
                                         "duplicate_of": "I4"}),
-               "fable": deb("fable", {"target": "opus:I1", "position": "corroborate"})}
+               "fable": deb("fable", {"target": "opus:I1", "position": "support"})}
     cons = synth(reviews, debates, models=models)
     assert len(cons["findings"]) == 1
     f = cons["findings"][0]
@@ -83,10 +83,10 @@ def test_duplicates_and_corroboration_make_consensus():
 
 
 # @S-review-panel-006
-def test_dispute_makes_split():
+def test_objection_makes_split():
     reviews = {"opus": ok("opus", review_data(issues=[{"id": "I1"}])),
                "sonnet": ok("sonnet", review_data())}
-    debates = {"sonnet": deb("sonnet", {"target": "opus:I1", "position": "dispute",
+    debates = {"sonnet": deb("sonnet", {"target": "opus:I1", "position": "object",
                                         "evidence": "P02 cites the source"})}
     f = synth(reviews, debates)["findings"][0]
     assert f["label"] == "SPLIT"
@@ -107,7 +107,7 @@ def test_contested_red_line_needs_ruling():
     reviews = {"opus": ok("opus", review_data(flags=["pr_landmine"])),
                "sonnet": ok("sonnet", review_data())}
     debates = {"sonnet": deb("sonnet", {"target": "opus:redline:pr_landmine",
-                                        "position": "dispute", "evidence": "satire, labelled"})}
+                                        "position": "object", "evidence": "satire, labelled"})}
     cons = synth(reviews, debates)
     assert cons["red_lines"]["pr_landmine"]["status"] == "needs_ruling"
     assert cons["provisional"] is True
@@ -199,22 +199,39 @@ def test_seats_by_roster_order(tmp_path):
     sys = {c["model"]: c["system"] for c in b.calls}
     assert "structure and argument" in sys["opus"]
     assert "facts and compliance" in sys["sonnet"]
-    assert "devil's advocate" in sys["fable"]
+    assert "skeptic" in sys["fable"]
     for c in b.calls:
         assert all(k in c["prompt"] for k in ("macro", "accuracy", "micro", "impact"))
         assert all(k in c["prompt"] for k in ("illegal", "hallucination", "human_rights"))
 
 
 # @S-review-panel-019
-def test_two_reviewers_no_devils_advocate_and_disclosed(tmp_path):
+def test_two_reviewers_no_skeptic_and_disclosed(tmp_path):
     from ant_peer_review.refresh import compute_consensus
     from ant_peer_review.report import write_report
     run = make_run(tmp_path)
     b = ScriptBackend({("*", "review"): review_data()})
     run_round1(run, b, ["opus", "sonnet"], "en", say=lambda *_: None)
-    assert all("devil's advocate" not in c["system"] for c in b.calls)
+    assert all("skeptic" not in c["system"] for c in b.calls)
     cons = compute_consensus(run, ["opus", "sonnet"], TH)
     assert [p["seat"] for p in cons["provenance"]] == ["structure", "facts"]
     meta = write_report(run, cons, lang="en")
     md = run.path(f"06-report.v{meta['version']}.md").read_text()
     assert "| Seat |" in md and "Structure and argument" in md
+
+
+# @S-review-panel-021
+def test_old_positions_and_absence_anchor_still_read():
+    from ant_peer_review.report import lint_report
+    models = ("opus", "sonnet", "fable")
+    reviews = {"opus": ok("opus", review_data(issues=[{"id": "I1"}, {"id": "I2"}])),
+               "sonnet": ok("sonnet", review_data()), "fable": ok("fable", review_data())}
+    debates = {"sonnet": deb("sonnet", {"target": "opus:I1", "position": "corroborate"}),
+               "fable": deb("fable", {"target": "opus:I2", "position": "dispute",
+                                      "evidence": "P02 cites it"})}
+    by = {f["members"][0]: f for f in synth(reviews, debates, models=models)["findings"]}
+    assert by["opus:I1"]["label"] == "SUPPORTED-2/3"
+    assert by["opus:I2"]["label"] == "SPLIT"
+    old = {"id": "F01", "anchor": "absence: P02 - expected a date; checked: P01-P03",
+           "observation": "obs", "standard": "std", "why_it_matters": "why", "action": "act"}
+    assert lint_report({"findings": [old], "unverified_findings": []}, "# R\n", []) == []

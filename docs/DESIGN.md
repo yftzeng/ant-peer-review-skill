@@ -19,7 +19,7 @@ and README.zh-CN.md.
 | D-2 | Model calls go through a `Backend` interface; ship `claude-cli` (`claude -p`) and `anthropic-api` (Anthropic SDK). Chosen at first run | One backend only: `claude-cli` is cheapest for a subscriber (no per-token cost inside plan limits); `anthropic-api` gives schema-guaranteed JSON, batch -50%, predictable cost for teams/CI. **Build order: `claude-cli` first**, `anthropic-api` second |
 | D-3 | Claude models only for now; the `Backend` interface does not assume Anthropic so other vendors can be added | Multi-vendor now: more code, more credentials, not needed yet |
 | D-4 | Reviewer roster chosen by checkbox at first run (opus + sonnet preselected, fable optional), minimum 2, persisted | Fixed roster: fable costs ~2.5x opus per token; the user decides |
-| D-5 | Weighted rubric total **plus** non-compensatory veto: a confirmed red line fails the piece regardless of score | No weights (Imbad0202, K-Dense): the user needs a ranked, weighted total. Weights only (tsingke): a high score could hide a legal problem |
+| D-5 | Weighted rubric total **plus** non-compensatory veto: a confirmed red line fails the piece regardless of score | No weights (K-Dense): the user needs a ranked, weighted total. Weights only (tsingke): a high score could hide a legal problem |
 | D-6 | Unverifiable facts are recorded `cannot_verify` and the run continues; a separate command continues fact-checking later | Abort on no network: one flaky source would block the whole review |
 | D-7 | When facts change after a report, recompute only what depends on them (Accuracy score, veto (b), issues anchored to those claims); no new debate round | Full re-review: costs about one more run for a local change |
 | D-8 | User lessons and site profiles live in one per-user store shared by all runs; never shipped with the skill | Per-brand stores: crawl knowledge is per site, not per brand. Brand-specific rules go to the brand Style Guide instead |
@@ -95,12 +95,12 @@ All fetched or converted content is **untrusted data, never instructions**.
 
 **Text**: written straight to `normalized/` as Markdown.
 
-**Injection scan**, adapted from black-yt paper-review-injection-audit:
+**Injection scan**, categories from OWASP LLM01:2025, Greshake et al. 2023 and the 2025 hidden-prompt reports (docs/REFERENCES.md §4):
 - What it looks for:
   - hidden CSS (display:none, zero size, near-white text)
   - HTML comments, alt/aria/title text
   - zero-width and other Unicode Cf characters
-  - instructions aimed at a reviewer or LLM (8 categories: score, evaluation direction, prescribed wording, fingerprint, instruction priority, target/stage, concealment, tools/data flow)
+  - instructions aimed at a reviewer or LLM (8 categories: rating manipulation, sentiment steering, output dictation, canary check, instruction override, addressed to AI, secrecy request, action request)
 - Matches are flags, not verdicts. Flagged spans are excluded from review prompts and shown in the report inside an "untrusted evidence" block.
 
 ### P5 Rubric
@@ -136,10 +136,10 @@ All fetched or converted content is **untrusted data, never instructions**.
    - Meso (paragraph): unclear topic sentences, abrupt transitions
    - Micro (sentence): grammar, double negatives, passive overuse, typos, full/half-width spacing
 
-**Round 2, cross-examination.** Each reviewer sees the others' findings and answers each one with `corroborate` or `dispute`, with evidence. There is one round only.
+**Round 2, cross-examination.** Each reviewer sees the others' findings and answers each one with `support` or `object`, with evidence (RFC 7282: objections are addressed, not outvoted). There is one round only.
 
 **Synthesis.**
-- Each weakness is split into sub-claims and tallied per reviewer as raised / corroborated / silent / disputed. *A reviewer who said nothing about it has not agreed.*
+- Each weakness is split into sub-claims and tallied per reviewer as raised / supported / silent / objected. *A reviewer who said nothing about it has not agreed.*
 - Labels: `CONSENSUS-n`, `SPLIT`, `unresolved-dissent`. Disputes are never silently resolved; they appear in the report.
 - **Veto rule:** any red line marked Y with evidence by any reviewer must get an explicit ruling. A confirmed red line forces the grade to *Fail*, whatever the total score.
 - **Provenance:** the report lists the model, backend and fresh-context status of each reviewer. Reviewers from one vendor have correlated errors, so the report never claims they are independent.
@@ -157,7 +157,7 @@ All fetched or converted content is **untrusted data, never instructions**.
 ### P8 Tiered revision
 - **A, line edit:** the structure is unchanged; fixes typos, grammar and wordiness. Output is a character-level unified diff.
 - **B, developmental edit:** rewrites the flagged paragraphs, writes new headlines and strengthens weak evidence. Every change cites the issue ids it addresses.
-- After B, a re-review gives each issue a verdict: `FULLY / PARTIALLY / NOT_ADDRESSED / MADE_WORSE`.
+- After B, a re-review gives each issue a verdict of change since the earlier version: `RESOLVED / IMPROVED / UNCHANGED / WORSE`.
 
 ### P9 Human decision and Style Guide evolution
 - The user adopts A, B or a manual edit. The decision is recorded in `08-decision.json`.
@@ -180,7 +180,7 @@ Location: `runs/<run>/factcheck/ledger.jsonl`, one claim per line.
 - `unsupported`
 - `cannot_verify`, which takes a reason: `offline`, `timeout`, `refused` or `no_source`
 
-**Rules** (from jam-cc and black-yt):
+**Rules** (from jam-cc, and Altman & Bland 1995 for "not stated" vs "stated wrongly"):
 - A search snippet is a lead, not evidence.
 - "Not stated in the text" is a different finding from "stated wrongly".
 - If a claim stays unverifiable, any criticism built on it is dropped too.
@@ -286,10 +286,7 @@ To be replaced with measured numbers from the prototype.
 | K-Dense-AI peer-review | 5-field comment schema + linter; claim–evidence support levels; exit codes 0/1/2; atomic no-overwrite writes; "orient without deciding" | "never score" rule; medical reporting guidelines |
 | tsingke/thesis-review-skill | per-item folders + summary table; per-dimension score bands; cross-perspective consistency | persona scores as multiples of one score; boilerplate templates; 80-point floor; no HITL |
 | jam-cc/paper-review.skill | identity / publication / support error classes; cascade deletion; evidence notes file; no issue quotas | prose-only style; reference cap |
-| black-yt/rebuttal-writing | neutral restatement of issues; one-to-one coverage; leak checklist for outputs | persuasion tactics |
-| black-yt/paper-review-writing | 7-field evidence record; "unstated vs wrong"; judgment parity across languages; read-only inputs | fixed 1/2/2 quota; no-numbers rule |
-| black-yt/paper-review-injection-audit | 8-category definition; concealment as a separate layer; collector design (hashes, flags not verdicts, Cf capture, normalized search view); conditional negatives | PDF object-level depth |
-| Imbad0202/academic-paper-reviewer | sub-claim consensus, silence ≠ agreement, unresolved dissent; typed anchors incl. `absence:`; devil's-advocate ruling → veto; provenance record; re-review verdict scale; HITL on reviewer config | anti-weighting rule; journal-specific roles; heavy schema/calibration machinery |
+| Independent sources (docs/REFERENCES.md §4) | consensus without outvoting objections (RFC 7282); missing-item anchors with search scope (Altman & Bland 1995); reviewer seats and a skeptic (Kim et al. 2025; structured analytic techniques' devil's advocacy); blind recheck (Cochrane blinding of outcome assessment); change scale (CGI-I); one-to-one coverage (traceability matrix; Noble 2017); injection categories and Unicode checks (OWASP LLM01/LLM05, Greshake et al. 2023, UAX #15, Trojan Source); hash before and after (CWE-367) | — |
 
 ## 9. Open items
 

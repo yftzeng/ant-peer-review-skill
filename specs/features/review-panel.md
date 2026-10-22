@@ -1,7 +1,7 @@
 # Feature: review panel
 
 Two or more Claude models review the same text blind to each other, then each
-answers the others' findings (corroborate or dispute, with evidence), and a
+answers the others' findings (support or object, with evidence), and a
 deterministic synthesis tallies every finding, applies the red-line veto and
 computes the weighted score. Disagreement is reported, never silently resolved.
 
@@ -34,26 +34,26 @@ Feature: review panel
     Then  the finding is labelled "SINGLE" with supporters ["opus"]
 
   @S-review-panel-005
-  Scenario: corroboration and duplicates merge into consensus
-    Given opus raises I1, sonnet raises I4 and marks it duplicate_of opus:I1, and fable corroborates opus:I1
+  Scenario: support and duplicates merge into consensus
+    Given opus raises I1, sonnet raises I4 and marks it duplicate_of opus:I1, and fable supports opus:I1
     When  synthesis runs
     Then  one finding "CONSENSUS-3" covers opus:I1 and sonnet:I4
 
   @S-review-panel-006
-  Scenario: any dispute makes a finding SPLIT with the dissent recorded
-    Given opus raises I1 and sonnet disputes it with evidence "P02 cites the source"
+  Scenario: any objection makes a finding SPLIT with the dissent recorded
+    Given opus raises I1 and sonnet objects to it with evidence "P02 cites the source"
     When  synthesis runs
     Then  the finding is "SPLIT" and its dissent lists sonnet with that evidence
 
   @S-review-panel-007
   Scenario: a confirmed red line fails the piece whatever the score
-    Given every dimension scores 95 and two reviewers flag red line "illegal" undisputed
+    Given every dimension scores 95 and two reviewers flag red line "illegal" with no objection
     When  synthesis runs
     Then  the red line is "confirmed" and the grade is "fail"
 
   @S-review-panel-008
   Scenario: a contested red line waits for a human ruling
-    Given opus flags "pr_landmine" and sonnet disputes it
+    Given opus flags "pr_landmine" and sonnet objects to it
     When  synthesis runs
     Then  the red line is "needs_ruling" and the grade is marked provisional
 
@@ -106,20 +106,20 @@ Feature: review panel
     Then  each is reported as a lint problem naming its finding
 
   @S-review-panel-017
-  Scenario: an absence finding must say where the reviewer looked
-    Given a finding anchored "absence: whole piece - expected sources" with no "checked:" part
+  Scenario: a missing-item finding must say where the reviewer searched
+    Given a finding anchored "missing: whole piece - expected sources" with no "searched:" part
     When  the report is linted
-    Then  it is reported as "absence without checked surfaces"
+    Then  it is reported as "missing item without searched surfaces"
 
   @S-review-panel-018
   Scenario: each reviewer gets a seat by roster order and still scores the whole rubric
     Given reviewers opus, sonnet and fable
     When  round 1 runs
-    Then  opus reviews from the "structure" seat, sonnet from "facts", fable as "devils_advocate"
+    Then  opus reviews from the "structure" seat, sonnet from "facts", fable as "skeptic"
     And   every prompt still asks for all rubric dimensions and all six red lines
 
   @S-review-panel-019
-  Scenario: with two reviewers there is no devil's advocate, and seats are disclosed
+  Scenario: with two reviewers there is no skeptic, and seats are disclosed
     Given reviewers opus and sonnet
     When  synthesis runs
     Then  provenance lists seats "structure" and "facts" and the report shows a seat column
@@ -129,6 +129,12 @@ Feature: review panel
     Given D1 read from its page, D2 from a feed copy and a URL that failed with "blocked_by_challenge"
     When  the report is written
     Then  its sources section lists D1 as "page", D2 as "feed copy, may be lossy" and the failed URL with its reason
+
+  @S-review-panel-021
+  Scenario: runs written with the old vocabulary still synthesize and lint
+    Given stored debate positions "corroborate" and "dispute" and a finding anchored "absence: P02 - expected a date; checked: P01-P03"
+    When  synthesis runs and the report is linted
+    Then  they count as "support" and "object" and the anchor needs no "searched:" part
 ```
 
 ## Must NOT
@@ -141,3 +147,4 @@ Feature: review panel
 - 2026-10-22 · +S-review-panel-016..017 · decision: none -- re-evaluated references: K-Dense lint_review tone rules; Imbad/black-yt absence grammar with checked surfaces
 - 2026-10-22 · +S-review-panel-018..019 · decision: none -- re-evaluated references: Imbad's distinct reviewer roles and devil's advocate; same-vendor reviewers share errors, distinct lenses spread them
 - 2026-10-22 · +S-review-panel-020 · decision: none -- paperzilla: label whether a summary used metadata, an abstract or the full text; the quality marks lived only in the manifest
+- 2026-10-22 · ~S-review-panel-005..008 ~S-review-panel-017..019 +S-review-panel-021 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md); positions after RFC 7282 (objections are addressed, not outvoted), seat after the Red Team Handbook's devil's-advocacy and the black hat, missing-item grammar after Altman & Bland 1995 with the search scope stated

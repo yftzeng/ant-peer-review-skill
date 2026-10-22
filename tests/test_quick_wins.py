@@ -29,10 +29,10 @@ def test_tone_lint():
 
 
 # @S-review-panel-017
-def test_absence_needs_checked_surfaces():
-    probs = lint(finding("F01", anchor="absence: whole piece - expected sources"))
-    assert any("absence without checked surfaces" in p for p in probs)
-    assert lint(finding("F02", anchor="absence: whole piece - expected sources; checked: body, footnotes")) == []
+def test_missing_item_needs_searched_surfaces():
+    probs = lint(finding("F01", anchor="missing: whole piece - expected sources"))
+    assert any("missing item without searched surfaces" in p for p in probs)
+    assert lint(finding("F02", anchor="missing: whole piece - expected sources; searched: body, footnotes")) == []
 
 
 # @S-factcheck-ledger-011

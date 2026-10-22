@@ -56,9 +56,9 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | intake | Purpose (audit / drafting). Targets, one per line, end with `/done` or two Enters. The audience card has five layers (expertise, decision role, industry/political lens, trust distance, reading purpose); each is a checkbox: tick any number of options or add custom values; ticking none skips the layer. |
 | sources | Safe crawler and converters produce Markdown with stable ids (`D1.P03.S2`). The prompt-injection scan flags suspect text and withholds it from reviewers. |
 | rubric | Four dimensions: Macro (structure), Accuracy (facts), Micro (language), Impact (reach, including the S-curve stage). Weights are proposed from the audience; you edit and confirm them. |
-| review | Each reviewer has a seat by roster order: structure, facts, or devil's advocate for a third. Blind to the others, each gives scores, a macro → meso → micro audit, fact claims, a sensitivity scan, 6 red lines and the S-curve stage. |
+| review | Each reviewer has a seat by roster order: structure, facts, or skeptic for a third. Blind to the others, each gives scores, a macro → meso → micro audit, fact claims, a sensitivity scan, 6 red lines and the S-curve stage. |
 | factcheck | Claims go into a ledger and are checked with web search. A source counts only if it came back from a search in that call. Optionally, if you tick it after the audience or pass `--academic`, cited DOIs and arXiv ids are verified against doi.org, Crossref and arXiv: existence, title match and retractions. |
-| debate | Each reviewer corroborates or disputes the others' findings, with evidence. |
+| debate | Each reviewer supports or objects to the others' findings, with evidence. |
 | consensus | A deterministic tally. Silence is not agreement; disputes are reported as SPLIT. Red-line veto; weighted total and grade. |
 | report | `06-report.v<N>.md`: scoreboard, red lines, anchored issues table, disagreements, ledger, injection scan. |
 | revision | Plan A is a line edit with a character-level diff, safe for CJK text. Plan B is a developmental edit, re-reviewed by a second model. |

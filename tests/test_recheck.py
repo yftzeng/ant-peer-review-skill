@@ -27,9 +27,9 @@ def parent_run(home):
             {"id": "I2", "anchor": "D1.P03.S1", "observation": "OBS-TWO", "level": "micro",
              "severity": "minor"}])))
     write_json(run.path("04-debate/sonnet.json"), {"model": "sonnet", "status": "ok", "data": {
-        "responses": [{"target": "opus:I1", "position": "corroborate", "evidence": "",
+        "responses": [{"target": "opus:I1", "position": "support", "evidence": "",
                        "duplicate_of": "I1"},
-                      {"target": "opus:I2", "position": "corroborate", "evidence": "",
+                      {"target": "opus:I2", "position": "support", "evidence": "",
                        "duplicate_of": "I2"}]}})
     cons = compute_consensus(run, ["opus", "sonnet"], TH)
     write_report(run, cons, lang="en")
@@ -71,7 +71,7 @@ def run_recheck(store, monkeypatch, b, extra=()):
 def test_linked_run_keeps_yardstick(env):
     store, home, mp = env
     parent, fids = parent_run(home)
-    b = backend({"opus": {f: "FULLY" for f in fids}, "sonnet": {f: "FULLY" for f in fids}})
+    b = backend({"opus": {f: "RESOLVED" for f in fids}, "sonnet": {f: "RESOLVED" for f in fids}})
     run_recheck(store, mp, b, [parent.id, "--target", "# New\n\nNew para one.", "--yes"])
     child = [r for r in list_runs(store.runs_dir) if r.id != parent.id][0]
     intake = read_json(child.path("00-intake.json"))
@@ -88,7 +88,7 @@ def test_gate1_blind_to_response(env, tmp_path):
     parent, fids = parent_run(home)
     resp = tmp_path / "response.md"
     resp.write_text(RESPONSE)
-    b = backend({"opus": {f: "FULLY" for f in fids}, "sonnet": {f: "FULLY" for f in fids}},
+    b = backend({"opus": {f: "RESOLVED" for f in fids}, "sonnet": {f: "RESOLVED" for f in fids}},
                 claims={"claims": []})
     run_recheck(store, mp, b, [parent.id, "--target", "# New\n\nNEW-TEXT here.", "--yes",
                                "--response", str(resp)])
@@ -107,15 +107,15 @@ def test_gate2_flags_unsupported_claims(env, tmp_path):
     resp.write_text(RESPONSE)
     claims = {"claims": [{"finding": f1, "author_claim": "fixed"},
                          {"finding": f2, "author_claim": "fixed"}]}
-    b = backend({"opus": {f1: "NOT_ADDRESSED", f2: "FULLY"},
-                 "sonnet": {f1: "NOT_ADDRESSED", f2: "FULLY"}}, claims=claims)
+    b = backend({"opus": {f1: "UNCHANGED", f2: "RESOLVED"},
+                 "sonnet": {f1: "UNCHANGED", f2: "RESOLVED"}}, claims=claims)
     run_recheck(store, mp, b, [parent.id, "--target", "# New\n\nx.", "--yes", "--response", str(resp)])
     child = [r for r in list_runs(store.runs_dir) if r.id != parent.id][0]
     rows = {r["finding"]: r for r in read_json(child.path("05b-recheck.json"))["verdicts"]}
     assert rows[f1]["claim_supported"] is False and rows[f2]["claim_supported"] is True
     g2 = [c for c in b.calls if c["task"] == "recheck_claims"]
     assert len(g2) == 1 and "AUTHOR-RESPONSE-MARKER" in g2[0]["prompt"]
-    b2 = backend({"opus": {f1: "FULLY", f2: "FULLY"}, "sonnet": {f1: "FULLY", f2: "FULLY"}})
+    b2 = backend({"opus": {f1: "RESOLVED", f2: "RESOLVED"}, "sonnet": {f1: "RESOLVED", f2: "RESOLVED"}})
     run_recheck(store, mp, b2, [parent.id, "--target", "# New\n\ny.", "--yes"])
     assert not [c for c in b2.calls if c["task"] == "recheck_claims"]
 
@@ -123,23 +123,23 @@ def test_gate2_flags_unsupported_claims(env, tmp_path):
 # @S-recheck-004
 def test_merge_majority_and_unfavourable_ties():
     from ant_peer_review.recheck import merge_verdicts
-    assert merge_verdicts({"a": "FULLY", "b": "FULLY", "c": "PARTIALLY"}) == ("FULLY", "majority")
-    assert merge_verdicts({"a": "FULLY", "b": "NOT_ADDRESSED", "c": "CANNOT_VERIFY"}) == \
-        ("NOT_ADDRESSED", "split")
-    assert merge_verdicts({"a": "PARTIALLY", "b": "PARTIALLY"}) == ("PARTIALLY", "unanimous")
+    assert merge_verdicts({"a": "RESOLVED", "b": "RESOLVED", "c": "IMPROVED"}) == ("RESOLVED", "majority")
+    assert merge_verdicts({"a": "RESOLVED", "b": "UNCHANGED", "c": "CANNOT_VERIFY"}) == \
+        ("UNCHANGED", "split")
+    assert merge_verdicts({"a": "IMPROVED", "b": "IMPROVED"}) == ("IMPROVED", "unanimous")
 
 
 # @S-recheck-005
 def test_report_has_revision_check_table(env):
     store, home, mp = env
     parent, fids = parent_run(home)
-    b = backend({"opus": {fids[0]: "FULLY", fids[1]: "MADE_WORSE"},
-                 "sonnet": {fids[0]: "FULLY", fids[1]: "MADE_WORSE"}})
+    b = backend({"opus": {fids[0]: "RESOLVED", fids[1]: "WORSE"},
+                 "sonnet": {fids[0]: "RESOLVED", fids[1]: "WORSE"}})
     run_recheck(store, mp, b, [parent.id, "--target", "# New\n\nz.", "--yes"])
     child = [r for r in list_runs(store.runs_dir) if r.id != parent.id][0]
     md = child.path("06-report.v1.md").read_text()
     assert "Revision check" in md and parent.id in md
-    assert "MADE_WORSE" in md and "OBS-ONE" in md
+    assert "WORSE" in md and "OBS-ONE" in md
 
 
 # @S-recheck-006
@@ -151,3 +151,12 @@ def test_old_state_without_recheck_phase_is_finished(tmp_path):
     st["phases"].pop("recheck")
     run.state_path.write_text(json.dumps(st))
     assert Run(run.root).is_finished()
+
+
+# @S-recheck-007
+def test_old_verdict_names_are_read_as_new():
+    from ant_peer_review.recheck import merge_verdicts
+    assert merge_verdicts({"a": "FULLY", "b": "FULLY"}) == ("RESOLVED", "unanimous")
+    assert merge_verdicts({"a": "PARTIALLY"}) == ("IMPROVED", "unanimous")
+    assert merge_verdicts({"a": "NOT_ADDRESSED", "b": "UNCHANGED"}) == ("UNCHANGED", "unanimous")
+    assert merge_verdicts({"a": "MADE_WORSE"}) == ("WORSE", "unanimous")
