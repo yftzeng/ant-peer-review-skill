@@ -158,5 +158,23 @@ def run_revision(run: Run, backend: Backend, models: list[str], lang: str, *, sa
                          prompt=prompts.rereview_prompt(targets, b_text), schema=REREVIEW)
         write_json(run.path("07-revision/rereview.json"),
                    {"checker": checker, **(rr.data or {"verdicts": []})})
+    out["coverage"] = write_coverage(run, cons, rep_a, out)
     write_json(run.path("07-revision/summary.json"), out)
     return out
+
+
+def write_coverage(run: Run, cons: dict, rep_a: dict[str, str], out: dict) -> dict:
+    """Which plan handles each finding: A (its micro finding's paragraph was edited),
+    B (listed in a rewrite's addresses), both, or none."""
+    bdata = read_json(run.path("07-revision/B.json"), default={})
+    b_ids = {i for p in bdata.get("paragraphs", []) for i in p.get("addresses", [])}
+    a_ids = {i["id"] for i in split_findings(cons)[0]}
+    by = {}
+    for f in cons["findings"]:
+        para = ".".join(f["anchor"].split(".")[:2])
+        in_a = f["id"] in a_ids and para in rep_a
+        in_b = f["id"] in b_ids
+        by[f["id"]] = "both" if in_a and in_b else "A" if in_a else "B" if in_b else "none"
+    counts = {k: sum(1 for v in by.values() if v == k) for k in ("A", "B", "both", "none")}
+    write_json(run.path("07-revision/coverage.json"), {"by_finding": by, "counts": counts})
+    return counts

@@ -189,5 +189,6 @@
   "ui.keys_multi": "↑↓ move · Space tick · Enter confirm · Esc cancel",
   "ui.keys_custom": " · c add custom",
   "feed.pick": "This is a feed with {n} articles. Which ones should be reviewed? (each becomes its own run)",
-  "feed.picked": "Feed: reviewing the newest {n} of {total} articles, one run each (change with --feed-limit)"
+  "feed.picked": "Feed: reviewing the newest {n} of {total} articles, one run each (change with --feed-limit)",
+  "revision.coverage": "Coverage: plan A {a}, plan B {b}, both {both}, not handled {none} (07-revision/coverage.json)"
 }

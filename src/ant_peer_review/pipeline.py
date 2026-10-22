@@ -232,6 +232,8 @@ def ph_report(run: Run, ctx: Ctx) -> None:
 
 def ph_revision(run: Run, ctx: Ctx) -> None:
     out = run_revision(run, ctx.backend, ctx.models, ctx.lang, say=ctx.say)
+    c = out["coverage"]
+    ctx.say(ctx.t("revision.coverage", a=c["A"], b=c["B"], both=c["both"], none=c["none"]))
     for w in out["warnings"] + out["notes"]:
         ctx.say(f"  · {w}")
 

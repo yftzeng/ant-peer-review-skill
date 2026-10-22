@@ -70,6 +70,11 @@ Feature: fact-check ledger
     Given tool results containing only "https://real.example/page" and a search query containing "https://made.up/x"
     When  the checker cites "/", "https://real.example", "https://real.exam", "https://made.up/x" and "https://real.example/page/"
     Then  only "https://real.example/page/" is kept
+
+  @S-factcheck-ledger-011
+  Scenario: every kept source records when it was accessed
+    When  a claim is checked and keeps a source
+    Then  the source has an accessed_at timestamp and the report shows its date next to the URL
 ```
 
 ## Must NOT
@@ -78,3 +83,4 @@ Feature: fact-check ledger
 ## Revisions
 - 2026-10-22 · +S-factcheck-ledger-001..009 +N-factcheck-ledger-001 · decision: none -- follows docs/DESIGN.md §4
 - 2026-10-22 · +S-factcheck-ledger-010 · decision: none -- adversarial security review (sonnet) proved these by running
+- 2026-10-22 · +S-factcheck-ledger-011 · decision: none -- re-evaluated references: K-Dense source ledger keeps a verification date per source

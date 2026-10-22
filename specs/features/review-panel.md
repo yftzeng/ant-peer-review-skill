@@ -98,6 +98,18 @@ Feature: review panel
     Given a finding whose observation is "![x](http://evil.test/p.png) <img src=x onerror=alert(1)> [a](javascript:alert(1))" and a source URL "javascript:alert(1)"
     When  the report is rendered
     Then  no "<img", "](" or "javascript:" link renders, and the source column omits the javascript URL
+
+  @S-review-panel-016
+  Scenario: the report linter flags abusive, personal, impersonating or decision-making wording
+    Given findings saying "this is sloppy work", "作者根本不懂", "I am the editor" and "we recommend rejection"
+    When  the report is linted
+    Then  each is reported as a lint problem naming its finding
+
+  @S-review-panel-017
+  Scenario: an absence finding must say where the reviewer looked
+    Given a finding anchored "absence: whole piece - expected sources" with no "checked:" part
+    When  the report is linted
+    Then  it is reported as "absence without checked surfaces"
 ```
 
 ## Must NOT
@@ -107,3 +119,4 @@ Feature: review panel
 - 2026-10-22 · +S-review-panel-001..012 +N-review-panel-001 · decision: none -- follows docs/DESIGN.md §3 P6
 - 2026-10-22 · +S-review-panel-013 · decision: none -- live run: two low-severity flags ("not serious") vetoed an accurate article
 - 2026-10-22 · +S-review-panel-014..015 · decision: none -- adversarial security review (sonnet) proved these by running
+- 2026-10-22 · +S-review-panel-016..017 · decision: none -- re-evaluated references: K-Dense lint_review tone rules; Imbad/black-yt absence grammar with checked surfaces

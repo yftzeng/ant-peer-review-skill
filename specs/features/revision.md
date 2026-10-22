@@ -43,6 +43,12 @@ Feature: revision
     Given paragraph D1.P02 with sentences S1 "Old one." and S2 "Keep two."
     When  plan B returns id "D1.P02.S1" with "New one." and id "D1.P02+" with "Inserted para."
     Then  D1.P02 reads "New one. Keep two." and "Inserted para." follows it as its own paragraph
+
+  @S-revision-007
+  Scenario: a coverage table shows which plan handles each finding
+    Given findings F01 (macro), F02 (micro) and F03 (micro), plan A changing F02's paragraph and plan B addressing F01
+    When  the revision phase ends
+    Then  07-revision/coverage.json maps F01 to B, F02 to A and F03 to none, and the counts are printed
 ```
 
 ## Must NOT
@@ -51,3 +57,4 @@ Feature: revision
 ## Revisions
 - 2026-10-22 · +S-revision-001..005 +N-revision-001 · decision: none -- follows docs/DESIGN.md §3 P8
 - 2026-10-22 · +S-revision-006 · decision: none -- live run: models returned sentence ids and new paragraphs, which were dropped
+- 2026-10-22 · +S-revision-007 · decision: none -- re-evaluated references: black-yt rebuttal one-to-one coverage, no finding silently dropped

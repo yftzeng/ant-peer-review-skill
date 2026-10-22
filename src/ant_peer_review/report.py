@@ -13,6 +13,22 @@ from .workspace import Run
 FIVE = ("anchor", "observation", "standard", "why_it_matters", "action")
 UNVERIFIED_CLAIMS = re.compile(r"\b(?:I|we) (?:have )?(?:verified|ran|executed|tested|confirmed "
                                r"by running)\b|我(?:已|們已)?(?:驗證|执行|執行|驗算)過?", re.I)
+# Tone rules after K-Dense lint_review: criticise the text, never the author.
+TONE_RULES = {
+    "abusive wording": re.compile(
+        r"\b(?:idiot(?:ic)?|incompetent|ridiculous|nonsense|garbage|lazy|sloppy|clueless|"
+        r"amateurish|embarrassing|worthless)\b|愚蠢|白癡|白痴|垃圾|草率|偷懶|外行|丟臉|丢脸|胡扯", re.I),
+    "personal attack": re.compile(
+        r"\b(?:the\s+)?(?:author|writer)s?\s+(?:do(?:es)?\s+not\s+understand|failed\s+to\s+"
+        r"understand|(?:is|are)\s+(?:unaware|careless|dishonest|clueless))\b|"
+        r"作者(?:根本|完全)?(?:不懂|不了解|不瞭解|很粗心|不誠實|不诚实)", re.I),
+    "impersonation": re.compile(
+        r"\b(?:i\s+am\s+(?:the\s+)?(?:editor|publisher)|on\s+behalf\s+of\s+the\s+"
+        r"(?:editor|publication))\b|我是(?:總編|总编|編輯|编辑)", re.I),
+    "editorial decision": re.compile(
+        r"\b(?:i|we)\s+(?:recommend|would\s+recommend|have\s+decided)\s+"
+        r"(?:to\s+)?(?:accept|reject)(?:ion|ance)?\b|建議(?:退稿|拒絕刊登)|建议(?:退稿|拒绝刊登)", re.I),
+}
 PLACEHOLDER = re.compile(r"TODO|TBD|\{\{|\}\}|<placeholder>|\[insert", re.I)
 
 
@@ -29,9 +45,15 @@ def cell(text) -> str:
 
 def source_urls(sources: list[dict]) -> str:
     from .factcheck import norm_url
-    ok = [s["url"].strip() for s in sources if norm_url(s.get("url") or "")]
-    return " ".join(u.replace("|", "%7C").replace("<", "%3C").replace(">", "%3E")
-                    .replace(" ", "%20") for u in ok)
+    out = []
+    for s in sources:
+        if not norm_url(s.get("url") or ""):
+            continue
+        u = s["url"].strip().replace("|", "%7C").replace("<", "%3C").replace(">", "%3E") \
+            .replace(" ", "%20")
+        date = str(s.get("accessed_at", ""))[:10]
+        out.append(f"{u} ({date})" if date else u)
+    return " ".join(out)
 
 
 def latest_version(run: Run) -> int:
@@ -47,8 +69,15 @@ def lint_report(cons: dict, md: str, flagged_excerpts: list[str]) -> list[str]:
             if not str(f.get(k, "")).strip():
                 problems.append(f"{f.get('id', '?')}: empty field '{k}'")
         for k in FIVE:
-            if UNVERIFIED_CLAIMS.search(str(f.get(k, ""))):
+            val = str(f.get(k, ""))
+            if UNVERIFIED_CLAIMS.search(val):
                 problems.append(f"{f.get('id', '?')}: unsupported verification claim in '{k}'")
+            for name, rx in TONE_RULES.items():
+                if rx.search(val):
+                    problems.append(f"{f.get('id', '?')}: {name} in '{k}'")
+        anchor = str(f.get("anchor", ""))
+        if anchor.lower().startswith("absence:") and "checked:" not in anchor.lower():
+            problems.append(f"{f.get('id', '?')}: absence without checked surfaces")
     if PLACEHOLDER.search(md):
         problems.append("placeholder text left in report")
     headings = [ln for ln in md.splitlines() if ln.startswith("#")]

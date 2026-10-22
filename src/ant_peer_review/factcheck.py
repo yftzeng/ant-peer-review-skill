@@ -147,7 +147,8 @@ def check_claim(backend: Backend, model: str, claim: dict, context: str, lang: s
         c.update(status="cannot_verify", reason="no_search", sources=[])
         return c
     data = res.data
-    sources = _provenance_filter(data.get("sources", []), res.tool_results)
+    sources = [dict(s, accessed_at=c["updated_at"])
+               for s in _provenance_filter(data.get("sources", []), res.tool_results)]
     status = data["status"]
     if status != "cannot_verify" and not sources:
         c.update(status="cannot_verify", reason="no_source", sources=[])
