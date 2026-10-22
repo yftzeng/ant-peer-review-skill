@@ -4,21 +4,35 @@ The skills reviewed while designing ant-peer-review (analysed 2026-10-22). For e
 - what we borrowed, and where it lives in this repo;
 - what we left out, and why.
 
-None of the seven has multi-model debate, checkpoint resume, a red-line veto, tiered A/B revision or Style Guide evolution. Those parts are original to this project.
+None of them has multi-model debate, checkpoint resume, a red-line veto, tiered A/B revision or Style Guide evolution. Those parts are original to this project.
+
+## Licences
+
+This repo copies no code, prompts or text from any of these skills; it takes only ideas and methods, written anew here. Licences as checked on 2026-10-22 (LICENSE file, GitHub API and SKILL.md frontmatter):
+
+| # | Licence | Commercial use |
+|---|---|---|
+| 1, 8, 9 (K-Dense-AI) | MIT (repo and each skill's frontmatter) | yes |
+| 2 (tsingke) | MIT | yes |
+| 3 (jam-cc) | MIT | yes |
+| 4, 5, 6 (black-yt) | none stated (no LICENSE file; all rights reserved by default) | no: ideas only, nothing copied |
+| 7 (Imbad0202 @3224a27) | CC BY-NC 4.0 | no: ideas only, nothing copied |
+
+Do not paste text or code from rows marked "no" into this repo.
 
 ## Repo list
 
-| # | Repo | Kind | Main takeaway |
-|---|---|---|---|
-| 1 | [K-Dense-AI/scientific-agent-skills — peer-review](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/peer-review/SKILL.md) | scientific manuscript review | machine-checkable comment schema + linter |
-| 2 | [tsingke/thesis-review-skill](https://github.com/tsingke/thesis-review-skill) | thesis grading (zh-CN) | weighted dimensions with score bands, per-item folders |
-| 3 | [jam-cc/paper-review.skill](https://github.com/jam-cc/paper-review.skill) | ML paper review | citation verification discipline |
-| 4 | [black-yt/skills — rebuttal-writing](https://github.com/black-yt/skills/blob/main/rebuttal-writing/SKILL.md) | author rebuttal | neutral issue restatement, one-to-one coverage |
-| 5 | [black-yt/skills — paper-review-writing](https://github.com/black-yt/skills/tree/main/paper-review-writing) | review writing | evidence-chain record, "unstated vs wrong" |
-| 6 | [black-yt/skills — paper-review-injection-audit](https://github.com/black-yt/skills/tree/main/paper-review-injection-audit) | prompt-injection audit | detection categories, evidence collectors |
-| 8 | [K-Dense-AI/scientific-agent-skills — paperzilla](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paperzilla/SKILL.md) | CLI wrapper for a paper-recommendation service | label what a summary was built from; keep tokens out of logs; honest paging |
-| 9 | [K-Dense-AI/scientific-agent-skills — paper-lookup](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paper-lookup/SKILL.md) | 18 scholarly APIs with provenance | "APIs can fail with HTTP 200"; identifier resolution; credential redaction; bounded work |
-| 7 | [Imbad0202/academic-research-skills — academic-paper-reviewer @3224a27](https://github.com/Imbad0202/academic-research-skills/tree/3224a27a2571cefef0fddfd437004cb006f2b0cb/academic-paper-reviewer) | multi-reviewer panel | sub-claim consensus, silence ≠ agreement, provenance |
+| # | Repo | Kind | Licence | Main takeaway |
+|---|---|---|---|---|
+| 1 | [K-Dense-AI/scientific-agent-skills — peer-review](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/peer-review/SKILL.md) | scientific manuscript review | MIT | machine-checkable comment schema + linter |
+| 2 | [tsingke/thesis-review-skill](https://github.com/tsingke/thesis-review-skill) | thesis grading (zh-CN) | MIT | weighted dimensions with score bands, per-item folders |
+| 3 | [jam-cc/paper-review.skill](https://github.com/jam-cc/paper-review.skill) | ML paper review | MIT | citation verification discipline |
+| 4 | [black-yt/skills — rebuttal-writing](https://github.com/black-yt/skills/blob/main/rebuttal-writing/SKILL.md) | author rebuttal | none | neutral issue restatement, one-to-one coverage |
+| 5 | [black-yt/skills — paper-review-writing](https://github.com/black-yt/skills/tree/main/paper-review-writing) | review writing | none | evidence-chain record, "unstated vs wrong" |
+| 6 | [black-yt/skills — paper-review-injection-audit](https://github.com/black-yt/skills/tree/main/paper-review-injection-audit) | prompt-injection audit | none | detection categories, evidence collectors |
+| 8 | [K-Dense-AI/scientific-agent-skills — paperzilla](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paperzilla/SKILL.md) | CLI wrapper for a paper-recommendation service | MIT | label what a summary was built from; keep tokens out of logs; honest paging |
+| 9 | [K-Dense-AI/scientific-agent-skills — paper-lookup](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paper-lookup/SKILL.md) | 18 scholarly APIs with provenance | MIT | "APIs can fail with HTTP 200"; identifier resolution; credential redaction; bounded work |
+| 7 | [Imbad0202/academic-research-skills — academic-paper-reviewer @3224a27](https://github.com/Imbad0202/academic-research-skills/tree/3224a27a2571cefef0fddfd437004cb006f2b0cb/academic-paper-reviewer) | multi-reviewer panel | CC BY-NC 4.0 | sub-claim consensus, silence ≠ agreement, provenance |
 
 ## 1. K-Dense-AI peer-review
 
@@ -111,7 +125,7 @@ None of the seven has multi-model debate, checkpoint resume, a red-line veto, ti
 
 | Borrowed | Where here |
 |---|---|
-| Positions tallied per finding (raised / corroborated / not-mentioned / disputed); "not-mentioned is silence, NOT opposition" | `consensus.synthesize`: labels CONSENSUS-n / CORROBORATED-k/n / SINGLE / SPLIT |
+| Tally each finding per reviewer (raised / backed / silent / disputed), and do not count a reviewer who stayed silent as disagreeing | `consensus.synthesize`: labels CONSENSUS-n / CORROBORATED-k/n / SINGLE / SPLIT |
 | Unresolved dissent is recorded, never auto-resolved | `dissent` lists; the report's "Disagreements" section |
 | Arbitration goes evidence first | Hallucination red line: ledger evidence outranks a dispute |
 | Devil's-advocate CRITICALs need a visible ruling | Red lines `needs_ruling`, then a human ruling at the decision gate |
