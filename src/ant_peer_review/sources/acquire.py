@@ -60,6 +60,9 @@ NO_FALLBACK = {"robots", "site_profile_blocked", "blocked_address", "scheme",
                "credentials_in_url", "bad_url", "no_host", "is_feed", "login_or_paywall"}
 # HTTP answers that mean "authenticate", "pay" or "legally unavailable".
 NO_FALLBACK_STATUS = {"401", "402", "451"}
+# A refusal the site makes to us: the archive only with the user's consent (D-0001).
+BLOCK_STATUS = {"403"}
+BLOCK_PROBLEMS = {"blocked_by_challenge"}
 # Read like a thin page: the browser, AMP and the archive may help.
 THIN_PROBLEMS = {"empty_page"}
 # Anything else (a bot challenge, a soft 404, other HTTP errors) may use the archive,
@@ -151,8 +154,16 @@ def _amp(crawler, idx, res, title):
                       via="amp")
 
 
-def _archive(crawler, idx, url):
-    """The newest Wayback Machine snapshot, fetched through the same safe crawler. A URL
+class BlockedError(FetchError):
+    """The site refused us; archive_at is the date of a Wayback copy the user may choose."""
+
+    def __init__(self, reason: str, detail: str, archive_at: str | None):
+        super().__init__(reason, detail)
+        self.archive_at = archive_at
+
+
+def _archive_lookup(crawler, url) -> str | None:
+    """The newest snapshot's timestamp, asked of archive.org only (never the site). A URL
     carrying secrets is never sent: it would leak them, and could not be archived anyway."""
     if _profile(crawler, url).get("no_archive") or redact(url) != url:
         return None
@@ -162,8 +173,26 @@ def _archive(crawler, idx, url):
         if not snap or not snap.get("available") or str(snap.get("status", "200")) != "200":
             return None
         ts = str(snap["timestamp"])
-        if not re.fullmatch(r"\d{8,14}", ts):
-            return None
+    except (FetchError, ValueError, KeyError, AttributeError, TypeError):
+        return None
+    return ts if re.fullmatch(r"\d{8,14}", ts) else None
+
+
+def _date(ts: str) -> str:
+    return f"{ts[:4]}-{ts[4:6]}-{ts[6:8]}"
+
+
+def _blocked(crawler, url, reason: str, detail: str) -> BlockedError:
+    ts = _archive_lookup(crawler, url)
+    return BlockedError(reason, detail, _date(ts) if ts else None)
+
+
+def _archive(crawler, idx, url):
+    """The newest Wayback Machine snapshot, fetched through the same safe crawler."""
+    ts = _archive_lookup(crawler, url)
+    if not ts:
+        return None
+    try:
         r = crawler.fetch(f"https://web.archive.org/web/{ts}id_/{url}")
         md, hidden, title, ext, problem = _convert(r)
     except (FetchError, ConvertError, ValueError, KeyError, AttributeError, TypeError):
@@ -172,7 +201,7 @@ def _archive(crawler, idx, url):
         return None
     human = f"https://web.archive.org/web/{ts}/{url}"
     return _candidate(md, hidden, title or url, r.body, f"D{idx}.archive.{ext}", human,
-                      via="archive", archived_at=f"{ts[:4]}-{ts[4:6]}-{ts[6:8]}",
+                      via="archive", archived_at=_date(ts),
                       archive_url=human)
 
 
@@ -189,7 +218,8 @@ def _accept(run, idx, cand, live_chars: int) -> dict | None:
     return {"docs": [rec], **cand["extra"]}
 
 
-def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None) -> dict:
+def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None,
+                archive_on_block: bool = False) -> dict:
     """D-0001 order: crawler (with bounded retries) -> browser for thin, empty or needs_js
     pages -> AMP -> archive. The paste step is offered by the sources phase."""
     profile = _profile(crawler, url)
@@ -198,6 +228,8 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None) -
     except FetchError as e:
         if e.reason in NO_FALLBACK or (e.reason == "http_status" and e.detail in NO_FALLBACK_STATUS):
             raise
+        if e.reason == "http_status" and e.detail in BLOCK_STATUS and not archive_on_block:
+            raise _blocked(crawler, url, e.reason, e.detail)
         alt = _accept(run, idx, _archive(crawler, idx, url), 0)
         if alt:
             return dict(alt, fell_back_from=e.reason)
@@ -207,6 +239,8 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None) -
     md, hidden, title, ext, problem = _convert(res)
     if problem in NO_FALLBACK:
         raise FetchError(problem, redact(res.final_url))
+    if problem in BLOCK_PROBLEMS and not archive_on_block:
+        raise _blocked(crawler, url, problem, redact(res.final_url))
     if problem and problem not in THIN_PROBLEMS:
         alt = _accept(run, idx, _archive(crawler, idx, url), 0)
         if alt:
@@ -295,7 +329,9 @@ def _text_item(run: Run, idx: int, value: str, pasted_for: str = "") -> dict:
     return item
 
 
-def run_sources(run: Run, crawler: Crawler, *, on_progress=None, renderer=None) -> dict:
+def run_sources(run: Run, crawler: Crawler, *, on_progress=None, renderer=None,
+                archive_on_block: bool | set[int] = False) -> dict:
+    """archive_on_block: True for every item, or the item numbers the user agreed for."""
     intake = read_json(run.path("00-intake.json"))
     manifest_path = run.path("01-sources/manifest.json")
     manifest = read_json(manifest_path, default={"items": []})
@@ -312,7 +348,9 @@ def run_sources(run: Run, crawler: Crawler, *, on_progress=None, renderer=None) 
                  "attempted_at": datetime.now().isoformat(timespec="seconds")}
         try:
             if target["kind"] == "url":
-                entry.update(_fetch_item(run, crawler, idx, target["value"], renderer))
+                consent = archive_on_block is True or (isinstance(archive_on_block, set)
+                                                       and idx in archive_on_block)
+                entry.update(_fetch_item(run, crawler, idx, target["value"], renderer, consent))
             elif target["kind"] == "feed_item":
                 entry.update(_feed_item(run, crawler, idx, target, renderer))
             elif target["kind"] == "path":
@@ -322,6 +360,8 @@ def run_sources(run: Run, crawler: Crawler, *, on_progress=None, renderer=None) 
             entry["status"] = "ok"
         except (FetchError, ConvertError) as e:
             entry.update(status="failed", reason=e.reason, detail=redact(str(e))[:300])
+            if isinstance(e, BlockedError):
+                entry.update(blocked=True, archive_at=e.archive_at)
         items.append(entry)
         if on_progress:
             on_progress(entry)

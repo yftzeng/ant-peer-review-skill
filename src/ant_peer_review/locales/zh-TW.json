@@ -227,5 +227,9 @@
   "sources.paste": "我自己貼上內文",
   "sources.paste_for": "請貼上 {url} 的內文（以 /done 或連按兩次 Enter 結束）：",
   "sources.paste_hint": "  提示：可自行存下網頁（你可能有爬蟲沒有的存取權），用 --target <檔案> 傳入，或把內文直接當 --target。",
-  "lessons.promote.needs_js": "{domain} 一律以無頭瀏覽器渲染"
+  "lessons.promote.needs_js": "{domain} 一律以無頭瀏覽器渲染",
+  "sources.blocked": "  {url}：網站拒絕了我們（{reason}）。",
+  "sources.blocked_archive": "Wayback Machine 有 {date} 的存檔。",
+  "sources.use_archive": "{n} 個被拒絕的頁面改用存檔",
+  "sources.blocked_hint": "  提示：要讀取被拒絕頁面的存檔，請加上 --archive-on-block 重新執行；或自行存下網頁，用 --target <檔案> 傳入。"
 }

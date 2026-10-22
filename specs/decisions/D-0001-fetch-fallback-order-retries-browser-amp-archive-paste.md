@@ -19,7 +19,9 @@ When a fetch fails or reads as thin, sources are tried in this order:
 3. The page's AMP version, then the newest Wayback Machine snapshot, labelled with its date in the sources table.
 4. The user pastes the text, or passes a saved file.
 
-robots.txt, a site-profile block, internal addresses and a login or paywall never fall back. A bot challenge or a soft 404 may use the archive but never the browser. A site-profile User-Agent must still name ant-peer-review.
+robots.txt, a site-profile block, internal addresses and a login or paywall never fall back. A refusal the site makes to us (HTTP 403 or a bot challenge) uses the archive only when the user agrees: interactively they are told the archive date and choose; a non-interactive run needs `--archive-on-block`. A soft 404, 5xx and network errors use the archive automatically. A challenge never uses the browser.
+
+Revised 2026-10-22 (user): 403 and challenges first used the archive automatically; that routed around a refusal the user had not seen. A site-profile User-Agent must still name ant-peer-review.
 
 ## Why not the alternative
 

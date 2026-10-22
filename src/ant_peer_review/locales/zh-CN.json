@@ -227,5 +227,9 @@
   "sources.paste": "我自己粘贴正文",
   "sources.paste_for": "请粘贴 {url} 的正文（以 /done 或连按两次 Enter 结束）：",
   "sources.paste_hint": "  提示：可自行保存网页（你可能有爬虫没有的访问权限），用 --target <文件> 传入，或把正文直接作为 --target。",
-  "lessons.promote.needs_js": "{domain} 一律以无头浏览器渲染"
+  "lessons.promote.needs_js": "{domain} 一律以无头浏览器渲染",
+  "sources.blocked": "  {url}：网站拒绝了我们（{reason}）。",
+  "sources.blocked_archive": "Wayback Machine 有 {date} 的存档。",
+  "sources.use_archive": "{n} 个被拒绝的页面改用存档",
+  "sources.blocked_hint": "  提示：要读取被拒绝页面的存档，请加上 --archive-on-block 重新执行；或自行保存网页，用 --target <文件> 传入。"
 }

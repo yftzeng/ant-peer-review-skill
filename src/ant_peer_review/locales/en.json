@@ -227,5 +227,9 @@
   "sources.paste": "Paste the text myself",
   "sources.paste_for": "Paste the text of {url} (end with /done or two empty lines):",
   "sources.paste_hint": "  tip: save the page yourself (you may have access the crawler does not) and pass it as --target <file>, or paste its text as --target.",
-  "lessons.promote.needs_js": "Always render {domain} with the headless browser"
+  "lessons.promote.needs_js": "Always render {domain} with the headless browser",
+  "sources.blocked": "  {url}: the site refused us ({reason}).",
+  "sources.blocked_archive": "A Wayback Machine copy from {date} exists.",
+  "sources.use_archive": "Use the archive copy for the {n} refused page(s)",
+  "sources.blocked_hint": "  tip: to read the archive copy of a page that refused us, run again with --archive-on-block; or save the page yourself and pass --target <file>."
 }

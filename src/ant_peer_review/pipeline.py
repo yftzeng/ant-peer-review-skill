@@ -75,8 +75,10 @@ def ph_sources(run: Run, ctx: Ctx) -> None:
     be retried, pasted by the user, skipped, or left for later."""
     crawler = ctx.crawler or make_crawler(ctx.store)
     renderer = ctx.options["renderer"] if "renderer" in ctx.options else default_renderer()
+    consent: bool | set[int] = True if ctx.options.get("archive_on_block") else set()
     while True:
-        manifest = run_sources(run, crawler, renderer=renderer, on_progress=lambda e: ctx.say(
+        manifest = run_sources(run, crawler, renderer=renderer, archive_on_block=consent,
+                               on_progress=lambda e: ctx.say(
             f"  {'✓' if e['status'] == 'ok' else '✗'} #{e['item']} {' '.join(e['value'].split())[:70]}"
             + (f" ({e.get('reason')})" if e["status"] != "ok" else "")
             + (f" [{ctx.t('via.' + e['via'])}{' ' + e['archived_at'] if e.get('archived_at') else ''}]"
@@ -90,18 +92,31 @@ def ph_sources(run: Run, ctx: Ctx) -> None:
             if b.get("kind") == "url":
                 ctx.say(ctx.t("sources.lesson_hint", reason=b.get("reason")))
         urls = [b for b in bad if b.get("kind") in ("url", "feed_item")]
+        blocked = [b for b in bad if b.get("blocked")]
+        for b in blocked:
+            ctx.say(ctx.t("sources.blocked", url=b["value"], reason=b.get("reason")) + (
+                " " + ctx.t("sources.blocked_archive", date=b["archive_at"])
+                if b.get("archive_at") else ""))
         if not ctx.interactive:
+            if any(b.get("archive_at") for b in blocked):
+                ctx.say(ctx.t("sources.blocked_hint"))
             if urls:
                 ctx.say(ctx.t("sources.paste_hint"))
             if ok_count:
                 return
             raise Stop("no source could be read")
         opts = [("retry", ctx.t("sources.retry"))]
+        with_copy = [b for b in blocked if b.get("archive_at")]
+        if with_copy:
+            opts.append(("archive", ctx.t("sources.use_archive", n=len(with_copy))))
         if urls:
             opts.append(("paste", ctx.t("sources.paste")))
         opts += [("continue", ctx.t("sources.continue")), ("stop", ctx.t("sources.stop"))]
         act = radio(ctx.io, ctx.t, ctx.t("sources.failed", n=len(bad)), opts,
                     default="retry" if not ok_count else "continue")
+        if act == "archive":
+            consent = set(consent) | {b["item"] for b in with_copy}
+            continue
         if act == "paste":
             paste_texts(run, ctx, urls)
             continue

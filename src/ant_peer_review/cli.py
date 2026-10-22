@@ -44,6 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--weights", help="e.g. macro=30,accuracy=40,micro=10,impact=20")
     n.add_argument("--academic", action="store_true",
                    help="also verify DOIs and arXiv ids against doi.org, Crossref and arXiv")
+    n.add_argument("--archive-on-block", action="store_true",
+                   help="when a site refuses us (403 or a bot challenge), read its Wayback copy")
     n.add_argument("--no-render", action="store_true",
                    help="never use the headless browser for JavaScript-rendered pages")
     n.add_argument("--feed-limit", type=int, default=None,
@@ -202,6 +204,8 @@ def make_ctx(args, io: IO, store: Store, cfg: Config, *, models=None, backend=No
              lang=None) -> Ctx:
     backend_name = backend or args.backend or cfg.backend
     options = {"weights": parse_weights(getattr(args, "weights", None))}
+    if getattr(args, "archive_on_block", False):
+        options["archive_on_block"] = True  # D-0001: consent given up front
     if getattr(args, "no_render", False):
         options["renderer"] = None  # D-0001: the user turned the browser off
     return Ctx(io=io, store=store, cfg=cfg, backend=get_backend(backend_name),

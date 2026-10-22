@@ -66,11 +66,11 @@ class FakeRenderer:
         return self.html, self.lands_on or url
 
 
-def run_for(tmp_path, crawler, renderer=None, url=URL):
+def run_for(tmp_path, crawler, renderer=None, url=URL, archive_on_block=False):
     run = create_run(tmp_path / "runs", "t", models=["opus", "sonnet"], backend="x", lang="en")
     write_json(run.path("00-intake.json"), {"purpose": "audit", "audience": {}, "lang": "en",
                                             "targets": [{"kind": "url", "value": url}]})
-    m = run_sources(run, crawler, renderer=renderer)
+    m = run_sources(run, crawler, renderer=renderer, archive_on_block=archive_on_block)
     return run, m["items"][0]
 
 
@@ -197,7 +197,7 @@ def test_failed_fetch_uses_dated_archive_copy_never_browser_for_challenge(tmp_pa
     assert item["fell_back_from"] == "http_status" and item["archived_at"] == "2026-01-02"
     assert item["archive_url"] == f"https://web.archive.org/web/{TS}/{URL}"
     c = FakeCrawler(pages=dict(archived(), **{URL: ("text/html", CHALLENGE)}))
-    run, item = run_for(tmp_path / "b", c, r)
+    run, item = run_for(tmp_path / "b", c, r, archive_on_block=True)
     assert item["via"] == "archive" and item["fell_back_from"] == "blocked_by_challenge"
     assert r.calls == []
     rows = "\n".join(sources_rows(T("en"), read_json(run.path("01-sources/manifest.json"))))
@@ -265,9 +265,10 @@ def test_hostile_retry_after_uses_default_backoff(seq_server):
 
 
 # @S-source-acquisition-033
-@pytest.mark.parametrize("status,falls_back", [("401", False), ("402", False), ("451", False),
-                                               ("403", True)])
-def test_auth_payment_legal_statuses_never_fall_back(tmp_path, status, falls_back):
+@pytest.mark.parametrize("status,consent,falls_back", [
+    ("401", True, False), ("402", True, False), ("451", True, False),
+    ("403", False, False), ("403", True, True)])
+def test_auth_payment_legal_statuses_never_fall_back(tmp_path, status, consent, falls_back):
     class C(FakeCrawler):
         def fetch(self, url, **kw):
             if url == URL:
@@ -275,9 +276,9 @@ def test_auth_payment_legal_statuses_never_fall_back(tmp_path, status, falls_bac
                 raise FetchError("http_status", status)
             return super().fetch(url, **kw)
     c = C(pages=archived())
-    run, item = run_for(tmp_path, c)
+    run, item = run_for(tmp_path, c, archive_on_block=consent)
     assert (item["status"] == "ok") is falls_back
-    assert any(u.startswith(ARCHIVE_API) for u in c.calls) is falls_back
+    assert (SNAP in c.calls) is falls_back
 
 
 # @S-source-acquisition-034
@@ -388,3 +389,53 @@ def test_no_render_flag_and_contact_joins_our_ua(tmp_path, monkeypatch):
                         "crawl/news.example")
     assert read_json(store.site_profiles)["news.example"]["user_agent"] == \
         DEFAULT_UA + " ed@acme.example"
+
+
+# ---- a refusal uses the archive only with consent ---------------------------
+
+class Blocked(FakeCrawler):
+    def fetch(self, url, **kw):
+        if url == URL:
+            self.calls.append(url)
+            raise FetchError("http_status", "403")
+        return super().fetch(url, **kw)
+
+
+# @S-source-acquisition-042
+def test_refusal_not_read_from_archive_by_default(tmp_path):
+    from ant_peer_review.pipeline import Ctx, Stop, ph_sources
+    from ant_peer_review.store import Config
+    from ant_peer_review.ui import ScriptedIO
+    c = Blocked(pages=archived())
+    run, item = run_for(tmp_path / "n", c)
+    assert item["status"] == "failed" and item["reason"] == "http_status"
+    assert item["blocked"] is True and item["archive_at"] == "2026-01-02" and SNAP not in c.calls
+    io = ScriptedIO([])
+    ctx = Ctx(io=io, store=None, cfg=Config(), backend=None, models=["opus", "sonnet"], lang="en",
+              interactive=False, crawler=c, options={"renderer": None})
+    with pytest.raises(Stop):
+        ph_sources(run, ctx)
+    assert "--archive-on-block" in io.text and "--target <file>" in io.text
+    assert "2026-01-02" in io.text
+    run, item = run_for(tmp_path / "y", Blocked(pages=archived()), archive_on_block=True)
+    assert item["status"] == "ok" and item["via"] == "archive"
+    import ant_peer_review.cli as cli
+    args = cli.build_parser().parse_args(["new", "--yes", "--archive-on-block", "--target", "x"])
+    assert args.archive_on_block is True
+
+
+# @S-source-acquisition-043
+def test_user_told_of_refusal_and_chooses_archive(tmp_path):
+    from ant_peer_review.pipeline import Ctx, ph_sources
+    from ant_peer_review.store import Config
+    from ant_peer_review.ui import ScriptedIO
+    c = FakeCrawler(pages=dict(archived(), **{URL: ("text/html", CHALLENGE)}))
+    run, item = run_for(tmp_path, c)
+    assert item["status"] == "failed" and item["blocked"] is True
+    io = ScriptedIO(["2"])  # 1 retry, 2 use the archive copy, 3 paste, ...
+    ctx = Ctx(io=io, store=None, cfg=Config(), backend=None, models=["opus", "sonnet"], lang="en",
+              interactive=True, crawler=c, options={"renderer": None})
+    ph_sources(run, ctx)
+    assert "2026-01-02" in io.text and "refused" in io.text
+    item = read_json(run.path("01-sources/manifest.json"))["items"][0]
+    assert item["status"] == "ok" and item["via"] == "archive"
