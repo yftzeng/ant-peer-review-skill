@@ -93,7 +93,7 @@ def ask_audience(io: IO, t: T, initial: dict | None = None) -> dict:
         for layer in LAYER_KEYS:
             io.say(f"  {t(f'aud.{layer}')} {audience_label(t, layer, aud.get(layer))}")
         choices = [("confirm", t("intake.card.confirm"))]
-        choices += [(f"edit:{k}", t("intake.card.edit", layer=t(f"aud.{k}"))) for k in LAYER_KEYS]
+        choices += [(f"edit:{k}", t("intake.card.edit", layer=t(f"aud.{k}").rstrip(":："))) for k in LAYER_KEYS]
         choices += [("redo", t("intake.card.redo"))]
         act = radio(io, t, t("run.resume_choice"), choices, default="confirm")
         if act == "confirm":

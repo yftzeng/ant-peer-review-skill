@@ -111,10 +111,16 @@ def validate_rubric(rubric: dict) -> None:
         raise ValueError("every weight must be at least 1")
 
 
+def display_name(t: T, d: dict) -> str:
+    key = f"dim.{d['key']}"
+    label = t(key)
+    return d["name"] if label == key else label
+
+
 def show(io: IO, t: T, rubric: dict) -> None:
     io.say(t("rubric.title"))
     for i, d in enumerate(rubric["dimensions"], 1):
-        io.say(f"  {i}) {d['name']}: {d['weight']}")
+        io.say(f"  {i}) {display_name(t, d)}: {d['weight']}")
 
 
 def edit_rubric(io: IO, t: T, rubric: dict) -> dict:
@@ -129,7 +135,7 @@ def edit_rubric(io: IO, t: T, rubric: dict) -> dict:
             validate_rubric(rubric)
             return rubric
         if act == "weight":
-            key = radio(io, t, t("rubric.which"), [(d["key"], d["name"]) for d in dims])
+            key = radio(io, t, t("rubric.which"), [(d["key"], display_name(t, d)) for d in dims])
             val = _ask_int(io, t, t("rubric.new_weight"))
             w = {d["key"]: d["weight"] for d in dims}
             w[key] = val
@@ -158,7 +164,7 @@ def edit_rubric(io: IO, t: T, rubric: dict) -> dict:
             if len(dims) <= 1:
                 io.say(t("ui.invalid"))
                 continue
-            key = radio(io, t, t("rubric.which"), [(d["key"], d["name"]) for d in dims])
+            key = radio(io, t, t("rubric.which"), [(d["key"], display_name(t, d)) for d in dims])
             rubric["dimensions"] = dims = [d for d in dims if d["key"] != key]
             w = _rebalance({d["key"]: d["weight"] for d in dims})
             for d in dims:

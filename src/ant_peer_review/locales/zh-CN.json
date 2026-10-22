@@ -174,5 +174,9 @@
   "run.resume_hint": "续跑：ant-peer-review resume {run}",
   "run.paused": "已暂停（{reason}）。续跑：ant-peer-review resume {run}",
   "run.interrupted": "已中断，进度已保存。续跑：ant-peer-review resume {run}",
-  "report.rl.advisory": "警示（低严重度，不否决）"
+  "report.rl.advisory": "警示（低严重度，不否决）",
+  "dim.macro": "结构与逻辑（Macro）",
+  "dim.accuracy": "事实与论据（Accuracy）",
+  "dim.micro": "语言与表达（Micro）",
+  "dim.impact": "传播与转化（Impact）"
 }

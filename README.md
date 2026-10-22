@@ -9,7 +9,7 @@ It ships as a standalone Python CLI (`ant-peer-review`) plus a Claude skill (`SK
 ## Install
 
 ```bash
-uv tool install .          # or: pipx install .
+uv tool install --python 3.12 .          # or: pipx install .
 ant-peer-review --version
 ```
 

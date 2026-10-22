@@ -174,5 +174,9 @@
   "run.resume_hint": "續跑：ant-peer-review resume {run}",
   "run.paused": "已暫停（{reason}）。續跑：ant-peer-review resume {run}",
   "run.interrupted": "已中斷，進度已存。續跑：ant-peer-review resume {run}",
-  "report.rl.advisory": "警示（低嚴重度，不否決）"
+  "report.rl.advisory": "警示（低嚴重度，不否決）",
+  "dim.macro": "結構與邏輯（Macro）",
+  "dim.accuracy": "事實與論據（Accuracy）",
+  "dim.micro": "語言與表達（Micro）",
+  "dim.impact": "傳播與轉換（Impact）"
 }

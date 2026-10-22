@@ -14,7 +14,7 @@
 ## 安裝
 
 ```bash
-uv tool install .          # 或：pipx install .
+uv tool install --python 3.12 .          # 或：pipx install .
 ant-peer-review --version
 ```
 

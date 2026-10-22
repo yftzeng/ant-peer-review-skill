@@ -84,7 +84,8 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     L.append(f"| {t('report.dimension')} | {t('report.weight')} | {t('report.score')} | "
              f"{t('report.spread')} | " + " | ".join(models) + " |")
     L.append("|---|---:|---:|---:|" + "---:|" * len(models))
-    names = {d["key"]: d["name"] for d in rubric["dimensions"]}
+    from .rubric import display_name
+    names = {d["key"]: display_name(t, d) for d in rubric["dimensions"]}
     for k, v in cons["scores"].items():
         L.append(f"| {cell(names.get(k, k))} | {v['weight']} | {v['mean']} | {v['spread']} | "
                  + " | ".join(str(v["by_model"].get(m, "—")) for m in models) + " |")

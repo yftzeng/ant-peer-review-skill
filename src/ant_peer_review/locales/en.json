@@ -174,5 +174,9 @@
   "run.resume_hint": "Resume with: ant-peer-review resume {run}",
   "run.paused": "Paused ({reason}). Resume with: ant-peer-review resume {run}",
   "run.interrupted": "Interrupted; progress saved. Resume with: ant-peer-review resume {run}",
-  "report.rl.advisory": "Advisory (low severity, no veto)"
+  "report.rl.advisory": "Advisory (low severity, no veto)",
+  "dim.macro": "Structure and logic (Macro)",
+  "dim.accuracy": "Facts and evidence (Accuracy)",
+  "dim.micro": "Language and expression (Micro)",
+  "dim.impact": "Reach and conversion (Impact)"
 }
