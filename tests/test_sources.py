@@ -272,7 +272,9 @@ def test_same_host_requests_are_spaced(server):
         local_crawler(min_interval=0.3).fetch(f"http://pub.example:{port}/p")  # robots, then page
     finally:
         Handler.do_GET = orig
-    assert len(stamps) == 2 and stamps[1] - stamps[0] >= 0.3
+    # The crawler spaces the moments it starts requests; the server stamps when it reads
+    # them, after connection setup, so its gap can be a few milliseconds short.
+    assert len(stamps) == 2 and stamps[1] - stamps[0] >= 0.3 - 0.005
 
 
 def test_host_specific_interval(server):
