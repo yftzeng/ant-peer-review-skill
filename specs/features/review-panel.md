@@ -134,7 +134,7 @@ Feature: review panel
   Scenario: runs written with the old vocabulary still synthesize and lint
     Given stored debate positions "corroborate" and "dispute" and a finding anchored "absence: P02 - expected a date; checked: P01-P03"
     When  synthesis runs and the report is linted
-    Then  they count as "support" and "object" and the anchor needs no "searched:" part
+    Then  they count as "support" and "object", and the old "checked:" part counts as "searched:" so the anchor passes lint
 ```
 
 ## Must NOT
@@ -148,3 +148,4 @@ Feature: review panel
 - 2026-10-22 · +S-review-panel-018..019 · decision: none -- re-evaluated references: Imbad's distinct reviewer roles and devil's advocate; same-vendor reviewers share errors, distinct lenses spread them
 - 2026-10-22 · +S-review-panel-020 · decision: none -- paperzilla: label whether a summary used metadata, an abstract or the full text; the quality marks lived only in the manifest
 - 2026-10-22 · ~S-review-panel-005..008 ~S-review-panel-017..019 +S-review-panel-021 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md); positions after RFC 7282 (objections are addressed, not outvoted), seat after the Red Team Handbook's devil's-advocacy and the black hat, missing-item grammar after Altman & Bland 1995 with the search scope stated
+- 2026-10-22 · ~S-review-panel-021 · decision: none -- user review: the Then read as if a new anchor needs no searched part; it means the old checked part still counts

@@ -60,3 +60,4 @@ Feature: recheck
 ## Revisions
 - 2026-10-22 · +S-recheck-001..006 +N-recheck-001 · decision: none -- re-evaluated references: Imbad re-review mode (traceability matrix, evidence verdict before reading the author's response)
 - 2026-10-22 · ~S-recheck-002..004 +S-recheck-007 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md); scale renamed RESOLVED / IMPROVED / UNCHANGED / WORSE after the CGI-I change-from-baseline idea
+- 2026-10-22 · correction · decision: none -- the line above lists ~S-recheck-002..004, but only S-recheck-003..004 changed; S-recheck-002 is unchanged
