@@ -4,7 +4,8 @@ from __future__ import annotations
 import re
 
 from .i18n import T
-from .ui import IO, radio
+from .ui import IO, radio, section
+from .ui import prompt as ui_prompt
 
 MIN_WEIGHT = 5
 
@@ -121,7 +122,7 @@ def display_name(t: T, d: dict) -> str:
 
 
 def show(io: IO, t: T, rubric: dict) -> None:
-    io.say(t("rubric.title"))
+    io.say(section(t("rubric.title")))
     for i, d in enumerate(rubric["dimensions"], 1):
         io.say(f"  {i}) {display_name(t, d)}: {d['weight']}")
 
@@ -150,7 +151,7 @@ def edit_rubric(io: IO, t: T, rubric: dict) -> dict:
             for d in dims:
                 d["weight"] = w[d["key"]]
         elif act == "add":
-            name = io.ask(t("rubric.add_name") + " ").strip()
+            name = io.ask(ui_prompt(t("rubric.add_name"))).strip()
             if not name:
                 continue
             val = _ask_int(io, t, t("rubric.new_weight"))
@@ -176,7 +177,7 @@ def edit_rubric(io: IO, t: T, rubric: dict) -> dict:
 
 def _ask_int(io: IO, t: T, prompt: str) -> int:
     while True:
-        s = io.ask(prompt + " ").strip()
+        s = io.ask(ui_prompt(prompt)).strip()
         if s.isdigit() and 1 <= int(s) <= 95:
             return int(s)
         io.say(t("ui.invalid"))

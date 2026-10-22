@@ -4,12 +4,54 @@ All prompts go through an IO object so tests can script the answers.
 """
 from __future__ import annotations
 
+import os
 import sys
 from typing import Callable, Protocol, Sequence
 
 from .i18n import T
 
 END_TOKENS = {"/done"}
+
+
+# ---- styling: symbols always, ANSI colour only on a real terminal ------------
+def _use_color() -> bool:
+    return sys.stdout.isatty() and not os.environ.get("NO_COLOR") \
+        and os.environ.get("TERM") != "dumb"
+
+
+def _c(code: str, text: str) -> str:
+    return f"\x1b[{code}m{text}\x1b[0m" if _use_color() else text
+
+
+def question(text: str) -> str:
+    """A question opens a new block so consecutive questions never run together."""
+    return "\n" + _c("1;36", "? " + text)
+
+
+def prompt(text: str) -> str:
+    return _c("36", "› ") + text + " "
+
+
+def info(text: str) -> str:
+    return _c("33", "ℹ " + text)
+
+
+def dim(text: str) -> str:
+    return _c("2", text)
+
+
+def section(text: str) -> str:
+    return "\n" + _c("1", text)
+
+
+def ask_text(io: "IO", title: str) -> str:
+    """A free-text question: its own block, then a bare input marker."""
+    io.say(question(title))
+    return io.ask(_c("36", "› "))
+
+
+def phase_line(text: str) -> str:
+    return "\n" + _c("1;35", f"━━ {text} ━━")
 
 
 class IO(Protocol):
@@ -52,7 +94,7 @@ def radio(io: IO, t: T, title: str, options: Sequence[tuple[str, str]],
     """options: (value, label). Returns value, custom text, or None for skip."""
     opts = list(options)
     while True:
-        io.say(title)
+        io.say(question(title))
         for i, (val, label) in enumerate(opts, 1):
             mark = " *" if val == default else ""
             io.say(f"  {i}) {label}{mark}")
@@ -63,13 +105,13 @@ def radio(io: IO, t: T, title: str, options: Sequence[tuple[str, str]],
         if allow_skip:
             io.say(f"  s) {t('ui.skip')}")
             extra.append("s")
-        ans = io.ask(t("ui.choose") + " ").strip()
+        ans = io.ask(prompt(t("ui.choose"))).strip()
         if not ans and default is not None:
             return default
         if ans.isdigit() and 1 <= int(ans) <= len(opts):
             return opts[int(ans) - 1][0]
         if allow_custom and ans.lower() == "c":
-            txt = io.ask(t("ui.custom_prompt") + " ").strip()
+            txt = io.ask(prompt(t("ui.custom_prompt"))).strip()
             if txt:
                 return txt
             continue
@@ -87,13 +129,13 @@ def checkbox(io: IO, t: T, title: str, options: Sequence[tuple[str, str]],
     options = list(options)
     chosen = [v for v, _ in options if v in set(selected)]
     while True:
-        io.say(title)
+        io.say(question(title))
         for i, (val, label) in enumerate(options, 1):
             box = "[x]" if val in chosen else "[ ]"
             io.say(f"  {i}) {box} {label}")
-        ans = io.ask(t("ui.toggle_custom" if allow_custom else "ui.toggle") + " ").strip()
+        ans = io.ask(prompt(t("ui.toggle_custom" if allow_custom else "ui.toggle"))).strip()
         if allow_custom and ans.lower() == "c":
-            txt = " ".join(io.ask(t("ui.custom_prompt") + " ").split())
+            txt = " ".join(io.ask(prompt(t("ui.custom_prompt"))).split())
             if txt and f"custom:{txt}" not in chosen:
                 options.append((f"custom:{txt}", txt))
                 chosen.append(f"custom:{txt}")
@@ -126,7 +168,7 @@ def checkbox(io: IO, t: T, title: str, options: Sequence[tuple[str, str]],
 def confirm(io: IO, t: T, question: str, default: bool = True) -> bool:
     hint = "Y/n" if default else "y/N"
     while True:
-        ans = io.ask(f"{question} [{hint}] ").strip().lower()
+        ans = io.ask(prompt(f"{question} [{hint}]")).strip().lower()
         if not ans:
             return default
         if ans in ("y", "yes", "是", "好"):

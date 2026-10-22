@@ -49,6 +49,13 @@ Feature: user setup
     Given saved reviewers ["opus", "sonnet"]
     When  a run starts with --models opus,fable
     Then  the run uses opus and fable and the saved reviewers are still ["opus", "sonnet"]
+
+  @S-user-setup-008
+  Scenario: questions, information and phases look different from each other
+    Given output that is not a terminal
+    When  a question, the reviewer banner and a phase start are printed
+    Then  the question starts on a new block with "? ", the banner line starts with "ℹ " and puts the change hint on its own line, and the phase line is a "━━" rule
+    And   no ANSI escape codes are printed
 ```
 
 ## Must NOT
@@ -56,3 +63,4 @@ Feature: user setup
 
 ## Revisions
 - 2026-10-22 · +S-user-setup-001..007 +N-user-setup-001 · decision: none -- first spec, decisions live in docs/DESIGN.md §1
+- 2026-10-22 · +S-user-setup-008 · decision: none -- user: consecutive questions ran together and the reviewer banner looked like an answer

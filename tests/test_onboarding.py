@@ -88,3 +88,19 @@ def test_unavailable_backend_is_refused(store):
     io = ScriptedIO(["", "2", "1", ""])  # lang default, pick anthropic-api (refused), claude-cli, models
     cfg = first_use(io, store, lambda name: ProbeBackend())
     assert cfg.backend == "claude-cli" and "not available yet" in io.text
+
+
+# @S-user-setup-008
+def test_questions_info_and_phases_are_distinct():
+    from ant_peer_review.ui import phase_line, radio
+    io = ScriptedIO([""])
+    radio(io, T("zh-TW"), "目的：", [("a", "A"), ("b", "B")], default="a")
+    assert io.out[0].startswith("\n? 目的：")
+    assert io.out[-1].startswith("› ")
+    b = banner(T("zh-TW"), ["opus", "sonnet"])
+    first, second = b.split("\n")
+    assert first.startswith("ℹ ") and "opus, sonnet" in first
+    assert "ant-peer-review config models" in second and "ant-peer-review" not in first
+    line = phase_line(T("zh-TW")("run.phase_start", phase="intake"))
+    assert line.startswith("\n━━") and "intake" in line
+    assert "\x1b[" not in b + io.text + line

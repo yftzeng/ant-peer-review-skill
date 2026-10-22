@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from .i18n import T
-from .ui import IO, END_TOKENS, checkbox, radio
+from .ui import IO, END_TOKENS, checkbox, dim, prompt, question, radio, section
 
 PURPOSES = ["audit", "drafting"]
 
@@ -37,12 +37,12 @@ def ask_purpose(io: IO, t: T) -> str:
 
 def collect_targets(io: IO, t: T) -> list[dict]:
     while True:
-        io.say(t("intake.targets_help"))
+        io.say(question(t("intake.targets_help")))
         targets: list[dict] = []
         empty_run = 0
         while True:
             try:
-                line = io.ask("> ")
+                line = io.ask(prompt("").rstrip() + " ")
             except EOFError:
                 break
             s = line.strip()
@@ -59,7 +59,7 @@ def collect_targets(io: IO, t: T) -> list[dict]:
                 targets[-1]["value"] += "\n" + s          # same pasted block
                 continue
             targets.append(tgt)
-            io.say(t(f"intake.ack.{tgt['kind']}", n=len(targets)))
+            io.say(dim(t(f"intake.ack.{tgt['kind']}", n=len(targets))))
         if targets:
             return targets
         io.say(t("intake.need_target"))
@@ -98,7 +98,7 @@ def ask_audience(io: IO, t: T, initial: dict | None = None) -> dict:
         for layer, options in AUDIENCE_LAYERS:
             aud[layer] = _ask_layer(io, t, layer, options, [])
     while True:
-        io.say(t("intake.card"))
+        io.say(section(t("intake.card")))
         for layer in LAYER_KEYS:
             io.say(f"  {t(f'aud.{layer}')} {audience_label(t, layer, aud.get(layer))}")
         choices = [("confirm", t("intake.card.confirm"))]

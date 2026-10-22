@@ -21,7 +21,7 @@ from .sources.crawler import Crawler
 from .sources.injection import scan
 from .sources.segments import prompt_view, segment
 from .store import Config, Store
-from .ui import IO, radio
+from .ui import IO, ask_text, phase_line, radio
 from .workspace import PHASES, Run
 
 MAX_DRAFT_ROUNDS = 2
@@ -63,7 +63,7 @@ def ph_intake(run: Run, ctx: Ctx) -> None:
     if not ctx.interactive:
         raise Stop("intake missing: pass --purpose and --target")
     intake = run_intake_interactive(ctx.io, ctx.t, ctx.lang)
-    brand = ctx.io.ask(ctx.t("intake.brand") + " ").strip()
+    brand = ask_text(ctx.io, ctx.t("intake.brand")).strip()
     if brand:
         intake["brand"] = brand
     write_json(run.path("00-intake.json"), intake)
@@ -263,7 +263,7 @@ def run_pipeline(run: Run, ctx: Ctx) -> str:
             for ph in PHASES:
                 if not run.needs_run(ph):
                     continue
-                ctx.say(ctx.t("run.phase_start", phase=ph))
+                ctx.say(phase_line(ctx.t("run.phase_start", phase=ph)))
                 run.mark(ph, "running")
                 try:
                     PHASE_FUNCS[ph](run, ctx)

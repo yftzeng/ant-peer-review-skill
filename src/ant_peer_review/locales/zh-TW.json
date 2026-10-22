@@ -15,7 +15,7 @@
   "setup.models": "Peer reviewer 模型（至少 2 個）：",
   "setup.model_unavailable": "模型 {model} 無法使用，未儲存：{reason}",
   "setup.saved": "已儲存至 {path}",
-  "run.banner": "Peer reviewers：{models}   （變更：ant-peer-review config models）",
+  "run.banner": "Peer reviewers：{models}",
   "run.resume_found": "發現尚未完成的工作：",
   "run.resume_choice": "要怎麼處理？",
   "run.resume.continue": "從階段 {phase} 繼續 {run}",
@@ -183,5 +183,6 @@
   "run.resume.delete": "刪除未完成的工作",
   "run.delete_which": "要刪除哪一個工作？",
   "run.delete_confirm": "刪除 {run} 及其中 {n} 個檔案？此動作無法復原。",
-  "run.deleted": "已刪除 {run}。"
+  "run.deleted": "已刪除 {run}。",
+  "run.banner_hint": "變更：ant-peer-review config models"
 }

@@ -15,7 +15,7 @@
   "setup.models": "Peer reviewer 模型（至少 2 个）：",
   "setup.model_unavailable": "模型 {model} 无法使用，未保存：{reason}",
   "setup.saved": "已保存至 {path}",
-  "run.banner": "Peer reviewers：{models}   （变更：ant-peer-review config models）",
+  "run.banner": "Peer reviewers：{models}",
   "run.resume_found": "发现尚未完成的任务：",
   "run.resume_choice": "要怎么处理？",
   "run.resume.continue": "从阶段 {phase} 继续 {run}",
@@ -183,5 +183,6 @@
   "run.resume.delete": "删除未完成的任务",
   "run.delete_which": "要删除哪一个任务？",
   "run.delete_confirm": "删除 {run} 及其中 {n} 个文件？此操作无法恢复。",
-  "run.deleted": "已删除 {run}。"
+  "run.deleted": "已删除 {run}。",
+  "run.banner_hint": "变更：ant-peer-review config models"
 }

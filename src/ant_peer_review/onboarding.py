@@ -4,7 +4,7 @@ from __future__ import annotations
 from .backends.base import Backend
 from .i18n import T
 from .store import AVAILABLE_BACKENDS, BACKENDS, LANGS, MIN_REVIEWERS, MODEL_ALIASES, Config, Store
-from .ui import IO, checkbox, radio
+from .ui import IO, checkbox, dim, info, radio
 
 LANG_LABELS = {"en": "English", "zh-TW": "繁體中文", "zh-CN": "简体中文"}
 
@@ -62,7 +62,8 @@ def first_use(io: IO, store: Store, backend_factory) -> Config:
 
 
 def banner(t: T, models: list[str]) -> str:
-    return t("run.banner", models=", ".join(models))
+    """The active reviewers, marked as information, with the change hint below."""
+    return info(t("run.banner", models=", ".join(models))) + "\n" + dim("  " + t("run.banner_hint"))
 
 
 def parse_models_override(value: str) -> list[str]:

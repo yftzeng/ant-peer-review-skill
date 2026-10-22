@@ -17,7 +17,7 @@ from .onboarding import banner, choose_backend, choose_lang, choose_models, effe
 from .pipeline import Ctx, run_pipeline
 from .refresh import factcheck_continue
 from .store import BACKENDS, LANGS, Config, Store
-from .ui import IO, ConsoleIO, confirm, radio
+from .ui import IO, ConsoleIO, ask_text, confirm, radio, section
 from .workspace import PHASES, Run, create_run, list_runs, unfinished_runs
 
 EXIT_OK, EXIT_PAUSED, EXIT_USAGE, EXIT_INTERRUPTED = 0, 3, 2, 130
@@ -165,7 +165,7 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
     t = T(cfg.lang)
     if not args.yes and not args.target:
         while pending := unfinished_runs(store.runs_dir):
-            io.say(t("run.resume_found"))
+            io.say(section(t("run.resume_found")))
             opts = []
             for r in pending[-5:]:
                 opts.append((f"c:{r.id}", t("run.resume.continue", run=r.id,
@@ -196,7 +196,7 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
     else:
         # Ask everything first: leaving midway must not leave an empty run behind.
         intake = run_intake_interactive(io, ctx.t, ctx.lang)
-        brand = io.ask(ctx.t("intake.brand") + " ").strip()
+        brand = ask_text(io, ctx.t("intake.brand")).strip()
         if brand:
             intake["brand"] = brand
     slug = slug_for(intake["targets"][0]["value"]) if intake["targets"] else "run"
@@ -204,6 +204,7 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
                      lang=ctx.lang)
     io.say(ctx.t("run.created", path=str(run.root)))
     write_json(run.path("00-intake.json"), intake)
+    run.mark("intake", "done")  # answered before the folder existed
     return finish(run_pipeline(run, ctx))
 
 
