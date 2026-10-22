@@ -35,6 +35,7 @@ class ClaudeCliBackend(Backend):
             "--setting-sources", "",
             "--no-session-persistence",
             "--disable-slash-commands",
+            "--strict-mcp-config",
             "--effort", effort,
         ]
         if tools:
@@ -108,6 +109,8 @@ def parse_output(stdout: str, *, streamed: bool) -> Result | None:
                     if isinstance(c, dict) and c.get("type") == "tool_result":
                         results.append(_flatten(c.get("content")))
             tur = rec.get("tool_use_result")
+            if isinstance(tur, dict) and isinstance(tur.get("code"), int) and tur["code"] >= 400:
+                continue  # a failed fetch is not evidence
             if isinstance(tur, (dict, list)):
                 results.append(json.dumps(tur, ensure_ascii=False))
         elif typ == "result":

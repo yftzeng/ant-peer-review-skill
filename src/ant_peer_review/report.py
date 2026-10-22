@@ -16,9 +16,22 @@ UNVERIFIED_CLAIMS = re.compile(r"\b(?:I|we) (?:have )?(?:verified|ran|executed|t
 PLACEHOLDER = re.compile(r"TODO|TBD|\{\{|\}\}|<placeholder>|\[insert", re.I)
 
 
+_MD_SPECIAL = re.compile(r"([\\`*_\[\]()!#|~])")
+
+
 def cell(text) -> str:
+    """Untrusted text as inert Markdown: HTML escaped, link/image/emphasis syntax escaped."""
     s = "" if text is None else str(text)
-    return s.replace("|", "\\|").replace("\n", " ").strip()
+    s = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    s = _MD_SPECIAL.sub(r"\\\1", s)
+    return " ".join(s.split())
+
+
+def source_urls(sources: list[dict]) -> str:
+    from .factcheck import norm_url
+    ok = [s["url"].strip() for s in sources if norm_url(s.get("url") or "")]
+    return " ".join(u.replace("|", "%7C").replace("<", "%3C").replace(">", "%3E")
+                    .replace(" ", "%20") for u in ok)
 
 
 def latest_version(run: Run) -> int:
@@ -150,8 +163,8 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     L.append("|---|---|---|---|---|")
     for c in ledger:
         st = c["status"] + (f" ({c['reason']})" if c["status"] == "cannot_verify" else "")
-        src = " ".join(s["url"] for s in c.get("sources", []))
-        L.append(f"| {c['id']} | {cell(c['anchor'])} | {cell(c['text'])} | {st} | {cell(src)} |")
+        src = source_urls(c.get("sources", []))
+        L.append(f"| {c['id']} | {cell(c['anchor'])} | {cell(c['text'])} | {st} | {src} |")
     if scan.get("flags"):
         L.append("")
         L.append(f"## {t('report.injection')}")

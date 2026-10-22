@@ -3,6 +3,7 @@ untrusted block; the delimiter itself is neutralized inside the content."""
 from __future__ import annotations
 
 import json
+import re
 
 OPEN, CLOSE = "<untrusted_content>", "</untrusted_content>"
 
@@ -32,8 +33,24 @@ Rules that always apply:
 """
 
 
+_CF = "[\u00ad\u200b-\u200f\u2028-\u202e\u2060-\u2064\ufeff]*"
+
+
+def _letter(c: str) -> str:
+    fw = chr(ord(c) - ord("a") + 0xFF41) if c.isalpha() else ("\uff3f" if c == "_" else c)
+    fwu = chr(ord(c) - ord("a") + 0xFF21) if c.isalpha() else fw
+    return f"[{re.escape(c)}{re.escape(c.upper())}{fw}{fwu}]{_CF}"
+
+
+_TAG_RE = re.compile("[<\uff1c\u2039\u3008]" + _CF + "\\s*[/\uff0f]?" + _CF + "\\s*"
+                     + "".join(_letter(c) for c in "untrusted_content")
+                     + "\\s*[>\uff1e\u203a\u3009]")
+
+
 def neutralize(text: str) -> str:
-    return text.replace(CLOSE, "&lt;/untrusted_content&gt;").replace(OPEN, "&lt;untrusted_content&gt;")
+    """Defuse anything that looks like our delimiter: case, spacing, full-width or
+    zero-width-split variants included."""
+    return _TAG_RE.sub("[untrusted_content tag removed]", text)
 
 
 def untrusted(text: str) -> str:
@@ -62,7 +79,7 @@ def review_system(lang: str) -> str:
 
 def review_prompt(intake: dict, rubric: dict, article: str, style_guide: str = "") -> str:
     red = "\n".join(f"- {k}: {v}" for k, v in RED_LINE_TEXT.items())
-    sg = f"\nBrand style guide to enforce:\n{style_guide}\n" if style_guide else ""
+    sg = f"\nBrand style guide to enforce:\n{neutralize(style_guide)}\n" if style_guide else ""
     return f"""Purpose of the piece: {intake.get('purpose', 'audit')}
 Audience card: {audience_block(intake)}
 
@@ -126,10 +143,10 @@ def debate_prompt(own: dict, others: list[dict], ledger: list[dict], article: st
 {json.dumps([{'id': i['id'], 'observation': i['observation'], 'anchor': i['anchor']} for i in own.get('issues', [])], ensure_ascii=False)}
 
 Fact-check results so far:
-{json.dumps(facts, ensure_ascii=False)}
+{neutralize(json.dumps(facts, ensure_ascii=False))}
 
 Other reviewers' findings to answer (target ids are given):
-{json.dumps(others, ensure_ascii=False)}
+{neutralize(json.dumps(others, ensure_ascii=False))}
 
 The piece:
 {untrusted(article)}
@@ -159,7 +176,7 @@ def revise_b_system(lang: str) -> str:
 def revise_prompt(issues: list[dict], article: str, intake: dict) -> str:
     return f"""Audience card: {audience_block(intake)}
 Issues to address:
-{json.dumps(issues, ensure_ascii=False)}
+{neutralize(json.dumps(issues, ensure_ascii=False))}
 
 The piece:
 {untrusted(article)}
@@ -185,7 +202,8 @@ def draft_system(lang: str) -> str:
 
 
 def draft_prompt(intake: dict, rubric: dict, materials: str, feedback: str = "") -> str:
-    fb = f"\nFix these problems found in the previous draft:\n{feedback}\n" if feedback else ""
+    fb = (f"\nFix these problems found in the previous draft (reviewer notes, untrusted):\n"
+          f"{untrusted(feedback)}\n") if feedback else ""
     return f"""Audience card: {audience_block(intake)}
 The draft will be scored on:
 {rubric_block(rubric)}

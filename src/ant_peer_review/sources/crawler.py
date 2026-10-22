@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import http.client
+import time
 import ipaddress
 import socket
 import ssl
@@ -22,6 +23,7 @@ DEFAULT_UA = "ant-peer-review/0.1 (+article review; respects robots.txt)"
 ALLOWED_TYPES = ("text/html", "application/xhtml+xml", "text/plain", "text/markdown",
                  "application/pdf")
 MAX_REDIRECTS = 5
+_V6_EMBEDDED_V4 = [ipaddress.ip_network(n) for n in ("64:ff9b::/96", "64:ff9b:1::/48", "::/96")]
 
 
 class FetchError(Exception):
@@ -57,8 +59,11 @@ def address_allowed(ip: str) -> bool:
         addr = ipaddress.ip_address(ip.split("%")[0])
     except ValueError:
         return False
-    if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped:
-        addr = addr.ipv4_mapped
+    if isinstance(addr, ipaddress.IPv6Address):
+        if addr.ipv4_mapped:
+            addr = addr.ipv4_mapped
+        elif any(addr in net for net in _V6_EMBEDDED_V4):
+            return False  # NAT64 / IPv4-compatible forms can reach internal IPv4
     return addr.is_global and not addr.is_multicast
 
 
@@ -84,13 +89,14 @@ class _PinnedHTTPS(http.client.HTTPSConnection):
 class Crawler:
     def __init__(self, *, resolver: Resolver = system_resolver, max_bytes: int = 10_000_000,
                  timeout: float = 20.0, site_profiles: dict | None = None,
-                 respect_robots: bool = True,
+                 respect_robots: bool = True, deadline: float = 120.0,
                  _allow_hosts_for_tests: frozenset[str] = frozenset()):
         self.resolver = resolver
         self.max_bytes = max_bytes
         self.timeout = timeout
         self.profiles = site_profiles or {}
         self.respect_robots = respect_robots
+        self.deadline = deadline
         self._test_hosts = _allow_hosts_for_tests
         self._robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
 
@@ -104,8 +110,12 @@ class Crawler:
             raise FetchError("robots", url)
         hops: list[str] = []
         current = url
+        until = time.monotonic() + self.deadline
         for _ in range(MAX_REDIRECTS + 1):
-            status, headers, body = self._request(current, ua)
+            if hops and self.respect_robots and _origin(current) != _origin(url) \
+                    and not self._robots_ok(current, ua):
+                raise FetchError("robots", current)
+            status, headers, body = self._request(current, ua, until)
             hops.append(current)
             if status in (301, 302, 303, 307, 308):
                 loc = headers.get("location")
@@ -131,7 +141,11 @@ class Crawler:
 
     # -- internals ----------------------------------------------------------
     def _target(self, url: str) -> tuple[str, str, int, str, str]:
-        parts = urlsplit(url)
+        try:
+            parts = urlsplit(url)
+            port_ = parts.port
+        except ValueError as e:
+            raise FetchError("bad_url", str(e))
         if parts.scheme not in ("http", "https"):
             raise FetchError("scheme", parts.scheme)
         if parts.username or parts.password:
@@ -139,7 +153,7 @@ class Crawler:
         host = parts.hostname
         if not host:
             raise FetchError("no_host")
-        port = parts.port or (443 if parts.scheme == "https" else 80)
+        port = port_ or (443 if parts.scheme == "https" else 80)
         ips = self.resolver(host, port)
         if host in self._test_hosts:
             allowed = ips
@@ -152,7 +166,8 @@ class Crawler:
             path += "?" + parts.query
         return parts.scheme, host, port, allowed[0], path
 
-    def _request(self, url: str, ua: str) -> tuple[int, dict, bytes]:
+    def _request(self, url: str, ua: str, until: float | None = None) -> tuple[int, dict, bytes]:
+        until = until or time.monotonic() + self.deadline
         scheme, host, port, ip, path = self._target(url)
         cls = _PinnedHTTPS if scheme == "https" else _PinnedHTTP
         conn = cls(host, ip, port=port, timeout=self.timeout)
@@ -164,9 +179,18 @@ class Crawler:
             length = headers.get("content-length")
             if length and length.isdigit() and int(length) > self.max_bytes:
                 raise FetchError("too_large", length)
-            body = resp.read(self.max_bytes + 1) if resp.status < 300 else b""
-            if len(body) > self.max_bytes:
-                raise FetchError("too_large", f">{self.max_bytes}")
+            chunks, size = [], 0
+            while resp.status < 300:
+                if time.monotonic() > until:
+                    raise FetchError("timeout", "total deadline exceeded")
+                chunk = resp.read1(65536)
+                if not chunk:
+                    break
+                size += len(chunk)
+                if size > self.max_bytes:
+                    raise FetchError("too_large", f">{self.max_bytes}")
+                chunks.append(chunk)
+            body = b"".join(chunks)
             return resp.status, headers, body
         except socket.timeout:
             raise FetchError("timeout", url)
@@ -178,8 +202,7 @@ class Crawler:
             conn.close()
 
     def _robots_ok(self, url: str, ua: str) -> bool:
-        parts = urlsplit(url)
-        origin = f"{parts.scheme}://{parts.netloc}"
+        origin = _origin(url)
         if origin not in self._robots:
             rp = urllib.robotparser.RobotFileParser()
             try:
@@ -195,3 +218,11 @@ class Crawler:
                 self._robots[origin] = None
         rp = self._robots[origin]
         return True if rp is None else rp.can_fetch(ua, url)
+
+
+def _origin(url: str) -> str:
+    try:
+        parts = urlsplit(url)
+    except ValueError as e:
+        raise FetchError("bad_url", str(e))
+    return f"{parts.scheme}://{parts.netloc}"

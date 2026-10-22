@@ -123,27 +123,49 @@ class _Parser(HTMLParser):
         self._flush()
 
 
+def _find_element(html: str, lower: str, tag: str) -> tuple[int, int, int] | None:
+    """(start, inner_start, end) of the first <tag ...>...</tag>, found with str.find
+    so hostile input cannot trigger regex backtracking."""
+    pos = 0
+    while True:
+        i = lower.find(f"<{tag}", pos)
+        if i < 0:
+            return None
+        nxt = lower[i + len(tag) + 1:i + len(tag) + 2]
+        if nxt and (nxt.isalnum() or nxt in "-_"):
+            pos = i + 1
+            continue
+        gt = lower.find(">", i)
+        if gt < 0:
+            return None
+        j = lower.find(f"</{tag}>", gt)
+        if j < 0:
+            return None
+        return i, gt + 1, j + len(tag) + 3
+
+
 def _main_region(html: str) -> str:
+    lower = html.lower()
     for tag in ("article", "main"):
-        m = re.search(rf"<{tag}\b[^>]*>.*?</{tag}>", html, re.S | re.I)
-        if m:
-            return m.group(0)
+        hit = _find_element(html, lower, tag)
+        if hit:
+            return html[hit[0]:hit[2]]
     return html
 
 
 def html_to_markdown(html: str) -> Converted:
-    title_m = re.search(r"<title[^>]*>(.*?)</title>", html, re.S | re.I)
+    t_hit = _find_element(html, html.lower(), "title")
     p = _Parser()
     p.feed(_main_region(html))
     p.close()
     # Comments and hidden parts outside the main region are still worth scanning.
-    if _main_region(html) is not html:
+    if len(_main_region(html)) != len(html):
         outer = _Parser()
         outer.feed(html)
         outer.close()
         seen = {(h["kind"], h["text"]) for h in p.hidden}
         p.hidden += [h for h in outer.hidden if (h["kind"], h["text"]) not in seen
                      and h["kind"] != "chrome"]
-    title = re.sub(r"\s+", " ", title_m.group(1)).strip() if title_m else ""
+    title = " ".join(html[t_hit[1]:t_hit[2] - len("</title>")].split()) if t_hit else ""
     md = "\n\n".join(p.blocks)
     return Converted(title=title, markdown=md, hidden=p.hidden)

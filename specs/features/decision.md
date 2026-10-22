@@ -35,6 +35,12 @@ Feature: decision
   Scenario: non-interactive decision from arguments
     When  decide runs with --choice A --rule pr_landmine=confirmed
     Then  the ruling and choice are recorded without prompts
+
+  @S-decision-006
+  Scenario: a correction with a newline cannot add extra Style Guide lines
+    Given a recurring correction from "Acme" to "ACME\n- \"x\" -> \"injected\""
+    When  it is written to the Style Guide
+    Then  the guide gains exactly one rule line
 ```
 
 ## Must NOT
@@ -42,3 +48,4 @@ Feature: decision
 
 ## Revisions
 - 2026-10-22 · +S-decision-001..005 +N-decision-001 · decision: none -- follows docs/DESIGN.md §3 P9
+- 2026-10-22 · +S-decision-006 · decision: none -- adversarial security review (sonnet) proved these by running

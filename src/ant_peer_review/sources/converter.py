@@ -6,8 +6,10 @@ did not change while it was being read.
 """
 from __future__ import annotations
 
+import os
 import re
 import shutil
+import stat
 import subprocess
 import zipfile
 from dataclasses import dataclass, field
@@ -19,6 +21,7 @@ from .htmlmd import html_to_markdown
 
 SUPPORTED = {".md", ".markdown", ".txt", ".html", ".htm", ".docx", ".pdf"}
 MAX_FILE_BYTES = 20_000_000
+MAX_DOCX_XML_BYTES = 50_000_000
 W_NS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 
 
@@ -45,9 +48,18 @@ class Skipped:
 
 def docx_to_markdown(data: bytes) -> str:
     import io
-    with zipfile.ZipFile(io.BytesIO(data)) as z:
-        xml = z.read("word/document.xml")
-    root = ElementTree.fromstring(xml)
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            info = z.getinfo("word/document.xml")
+            if info.file_size > MAX_DOCX_XML_BYTES:
+                raise ConvertError("too_large", f"document.xml {info.file_size} bytes")
+            with z.open(info) as f:
+                xml = f.read(MAX_DOCX_XML_BYTES + 1)
+        if len(xml) > MAX_DOCX_XML_BYTES:  # header lied about the size
+            raise ConvertError("too_large", "document.xml")
+        root = ElementTree.fromstring(xml)
+    except (zipfile.BadZipFile, KeyError, ElementTree.ParseError, EOFError) as e:
+        raise ConvertError("corrupt", str(e)[:200])
     paras = []
     for p in root.iter(f"{W_NS}p"):
         style = p.find(f"{W_NS}pPr/{W_NS}pStyle")
@@ -63,10 +75,14 @@ def docx_to_markdown(data: bytes) -> str:
 def pdf_to_markdown(path: Path) -> str:
     try:
         from pypdf import PdfReader  # optional extra
-        reader = PdfReader(str(path))
-        return "\n\n".join((pg.extract_text() or "").strip() for pg in reader.pages).strip()
     except ImportError:
-        pass
+        PdfReader = None
+    if PdfReader is not None:
+        try:
+            reader = PdfReader(str(path))
+            return "\n\n".join((pg.extract_text() or "").strip() for pg in reader.pages).strip()
+        except Exception as e:  # pypdf raises many types on malformed input
+            raise ConvertError("corrupt", str(e)[:200])
     if shutil.which("pdftotext"):
         out = subprocess.run(["pdftotext", "-layout", str(path), "-"], capture_output=True,
                              text=True, timeout=120)
@@ -80,6 +96,8 @@ def convert_file(path: Path, origin: str | None = None) -> Doc:
     origin = origin or str(path)
     if path.is_symlink():
         raise ConvertError("symlink", origin)
+    if not stat.S_ISREG(os.lstat(path).st_mode):
+        raise ConvertError("not_regular_file", origin)  # FIFOs/devices would block
     ext = path.suffix.lower()
     if ext not in SUPPORTED:
         raise ConvertError("unsupported_type", ext or "(none)")
@@ -126,6 +144,9 @@ def convert_folder(folder: Path) -> tuple[list[Doc], list[Skipped]]:
                 continue
             if entry.is_dir():
                 walk(entry)
+                continue
+            if not entry.is_file():
+                skipped.append(Skipped(rel, "not_regular_file"))
                 continue
             if root not in entry.resolve().parents:
                 skipped.append(Skipped(rel, "outside_folder"))

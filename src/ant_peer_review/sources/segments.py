@@ -18,14 +18,22 @@ def split_sentences(text: str) -> list[str]:
 
 def segment(markdown: str, doc: int) -> list[dict]:
     """Return [{"id", "kind": "heading"|"para", "text", "sentences": [{"id","text"}]}]."""
-    blocks = [b.strip() for b in re.split(r"\n\s*\n", markdown) if b.strip()]
+    blocks, cur = [], []
+    for line in markdown.splitlines():
+        if line.strip():
+            cur.append(line.strip())
+        elif cur:
+            blocks.append("\n".join(cur))
+            cur = []
+    if cur:
+        blocks.append("\n".join(cur))
     out = []
     for i, block in enumerate(blocks, 1):
         pid = f"D{doc}.P{i:02d}"
         if block.startswith("#"):
             out.append({"id": pid, "kind": "heading", "text": block, "sentences": []})
             continue
-        flat = re.sub(r"\s*\n\s*", " ", block)
+        flat = " ".join(" ".join(ln.split()) for ln in block.split("\n"))
         sents = [{"id": f"{pid}.S{j}", "text": s}
                  for j, s in enumerate(split_sentences(flat), 1)]
         out.append({"id": pid, "kind": "para", "text": flat, "sentences": sents})

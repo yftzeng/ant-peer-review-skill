@@ -64,6 +64,12 @@ Feature: fact-check ledger
     Given opus and sonnet both judge the stage "growth"
     When  the ledger is built
     Then  claim SC1 of type "s_curve_stage" states the growth stage
+
+  @S-factcheck-ledger-010
+  Scenario: partial, bare or input-only URLs never count as sources
+    Given tool results containing only "https://real.example/page" and a search query containing "https://made.up/x"
+    When  the checker cites "/", "https://real.example", "https://real.exam", "https://made.up/x" and "https://real.example/page/"
+    Then  only "https://real.example/page/" is kept
 ```
 
 ## Must NOT
@@ -71,3 +77,4 @@ Feature: fact-check ledger
 
 ## Revisions
 - 2026-10-22 · +S-factcheck-ledger-001..009 +N-factcheck-ledger-001 · decision: none -- follows docs/DESIGN.md §4
+- 2026-10-22 · +S-factcheck-ledger-010 · decision: none -- adversarial security review (sonnet) proved these by running

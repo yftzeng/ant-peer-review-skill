@@ -71,6 +71,42 @@ Feature: source acquisition
     Given robots.txt disallows "/private/" for every agent
     When  "/private/page" is fetched
     Then  it fails with reason "robots"
+
+  @S-source-acquisition-011
+  Scenario: NAT64 and IPv4-compatible IPv6 forms of internal addresses are refused
+    Given hosts resolving to "64:ff9b::7f00:1" and "::127.0.0.1"
+    When  each is fetched
+    Then  each fails with reason "blocked_address"
+
+  @S-source-acquisition-012
+  Scenario: a broken or oversized docx is skipped and the folder continues
+    Given a folder with "bad.docx" (not a zip), "bomb.docx" expanding past the cap and "ok.md"
+    When  it is converted
+    Then  "ok.md" is converted and the two docx files are skipped with reasons "corrupt" and "too_large"
+
+  @S-source-acquisition-013
+  Scenario: pathological input converts in linear time
+    Given HTML with 40000 unclosed "<article>" and "<title>" tags, and text with 200000 spaces between two words
+    When  each is converted and segmented
+    Then  each finishes within 3 seconds
+
+  @S-source-acquisition-014
+  Scenario: a malformed URL in a redirect is a fetch error, not a crash
+    Given a redirect to "http://example.com:99999/"
+    When  it is fetched
+    Then  it fails with reason "bad_url"
+
+  @S-source-acquisition-015
+  Scenario: a server that drips bytes hits the total deadline
+    Given a server that sends one byte every 0.2 seconds and a 1 second deadline
+    When  the page is fetched
+    Then  it fails with reason "timeout"
+
+  @S-source-acquisition-016
+  Scenario: non-regular files are not read
+    Given a FIFO named "pipe.txt" in the folder
+    When  it is converted
+    Then  it is skipped with reason "not_regular_file"
 ```
 
 ## Must NOT
@@ -78,3 +114,4 @@ Feature: source acquisition
 
 ## Revisions
 - 2026-10-22 · +S-source-acquisition-001..010 +N-source-acquisition-001 · decision: none -- follows docs/DESIGN.md §3 P4
+- 2026-10-22 · +S-source-acquisition-011..016 · decision: none -- adversarial security review (sonnet) proved these by running

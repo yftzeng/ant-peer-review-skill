@@ -104,13 +104,27 @@ def context_for(run: Run, anchor: str) -> str:
     return ""
 
 
-def _provenance_filter(sources: list[dict], tool_text: str) -> list[dict]:
-    kept = []
-    for s in sources:
-        url = (s.get("url") or "").strip()
-        if url and url.rstrip("/") in tool_text:
-            kept.append(s)
-    return kept
+_URL_RE = re.compile(r"https?://[^\s\"'<>\\\]\[)(]+", re.I)
+
+
+def norm_url(url: str) -> str | None:
+    """Comparable form of an http(s) URL, or None if it is not one."""
+    from urllib.parse import urlsplit
+    try:
+        p = urlsplit(url.strip().rstrip(".,;:"))
+    except ValueError:
+        return None
+    if p.scheme.lower() not in ("http", "https") or not p.hostname:
+        return None
+    path = p.path.rstrip("/")
+    return f"{p.hostname.lower()}{(':' + str(p.port)) if p.port else ''}{path}" + \
+        (f"?{p.query}" if p.query else "")
+
+
+def _provenance_filter(sources: list[dict], tool_results: list[str]) -> list[dict]:
+    """Keep a cited source only if the same URL appeared in a tool *result*."""
+    seen = {n for text in tool_results for u in _URL_RE.findall(text) if (n := norm_url(u))}
+    return [s for s in sources if (n := norm_url(s.get("url") or "")) and n in seen]
 
 
 def check_claim(backend: Backend, model: str, claim: dict, context: str, lang: str) -> dict:
@@ -132,10 +146,8 @@ def check_claim(backend: Backend, model: str, claim: dict, context: str, lang: s
     if not searched:
         c.update(status="cannot_verify", reason="no_search", sources=[])
         return c
-    tool_text = "\n".join(res.tool_results) + "\n" + json.dumps(
-        [t.get("input") for t in res.tool_calls], ensure_ascii=False)
     data = res.data
-    sources = _provenance_filter(data.get("sources", []), tool_text)
+    sources = _provenance_filter(data.get("sources", []), res.tool_results)
     status = data["status"]
     if status != "cannot_verify" and not sources:
         c.update(status="cannot_verify", reason="no_source", sources=[])

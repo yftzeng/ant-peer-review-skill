@@ -106,7 +106,8 @@ def write_style_rules(store: Store, brand: str, rules: list[dict]) -> None:
     p = guide_path(store, brand)
     text = p.read_text(encoding="utf-8") if p.exists() else f"# Style guide: {brand}\n\n"
     for r in rules:
-        text += f'- "{r["from"]}" -> "{r["to"]}"  (seen in {r["runs"]} runs)\n'
+        f, to = (" ".join(str(r[k]).split()).replace('"', "'") for k in ("from", "to"))
+        text += f'- "{f}" -> "{to}"  (seen in {r["runs"]} runs)\n'
     write_text_atomic(p, text)
 
 
