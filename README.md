@@ -119,4 +119,6 @@ state.json  00-intake.json  01-sources/{manifest.json,raw/,normalized/,segments.
 python3 -m pytest -q        # 100+ tests; specs live in specs/features/*.md (Gherkin)
 ```
 
+Try the tool from this checkout: `scripts/try.sh new --backend fake`. All data goes to `./workspaces/`, which git ignores and `.claude/settings.json` blocks Claude from reading, because it holds untrusted crawled content.
+
 The design and its decisions are in [docs/DESIGN.md](docs/DESIGN.md). The reference skills we studied, and what was borrowed from each, are listed in [docs/REFERENCES.md](docs/REFERENCES.md). The `anthropic-api` backend is reserved: its interface exists, and the build order puts it second.

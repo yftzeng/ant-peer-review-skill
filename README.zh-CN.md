@@ -118,4 +118,6 @@ style-guides/<品牌>.md      你确认过的 Style Guide 规则
 python3 -m pytest -q        # 100+ 个测试；行为规格写在 specs/features/*.md（Gherkin）
 ```
 
+在本目录直接试用：`scripts/try.sh new --backend fake`。所有数据都写入 `./workspaces/`。该目录已被 git 忽略，`.claude/settings.json` 也禁止 Claude 读取，因为里面存放的是抓取到的不可信内容。
+
 设计和各项决策见 [docs/DESIGN.md](docs/DESIGN.md)。参考过的 7 个 skill 清单及各自借鉴了什么，见 [docs/REFERENCES.md](docs/REFERENCES.md)。`anthropic-api` 后端的接口已预留，按开发顺序排在第二阶段实现。
