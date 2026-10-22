@@ -308,3 +308,14 @@ To be replaced with measured numbers from the prototype.
 | D-16 | The crawler pins the TCP connection to the IP it checked | urllib with a redirect hook: re-resolves DNS on connect (rebinding window) |
 
 `claude -p --json-schema` returns schema-valid output in `structured_output` (verified 2026-10-22); the CLI still validates and retries.
+
+## 11. Known limits
+
+- The prompt-injection scan is pattern-based (en/zh). A paraphrase or another language can slip past it. Reviewers are still told that the content is data, and the content stays inside the untrusted block.
+- These are not surfaced to the scan:
+  - docx hidden text (`w:vanish`), comments, headers and footers;
+  - visually hidden HTML that uses tricks other than inline style, `hidden` or `aria-hidden`, such as CSS classes or off-screen positioning.
+- During fact-checks, text in the claim or its context can steer which URLs the checker fetches. Only the claim and one paragraph of context are in that prompt.
+- Claims are de-duplicated by anchor and exact normalized text, so the same fact worded differently is checked twice.
+- Pages that need JavaScript to render are not supported. A thin page is flagged `thin_page_maybe_js_rendered`, and the domain can be recorded in `site-profiles.json`.
+- `anthropic-api` backend not built yet (interface reserved).
