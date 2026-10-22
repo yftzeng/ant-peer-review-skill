@@ -1,6 +1,6 @@
 # ant-peer-review — Design
 
-Status: draft, design agreed 2026-10-22, not yet implemented.
+Status: design agreed 2026-10-22; implemented 2026-10-22 (claude-cli backend). See §10 for what the implementation settled.
 
 An article **drafting** and **audit** workflow, shipped as a Claude skill plus a
 standalone Python CLI (`ant-peer-review`). Multiple Claude models review the
@@ -293,7 +293,18 @@ To be replaced with measured numbers from the prototype.
 
 ## 9. Open items
 
-- The grade thresholds (score cut-offs for Excellent / Good / Needs revision / Fail).
-- The default rubric weights for each audience profile.
-- N, the number of recurrences that triggers a Style Guide proposal.
-- Whether `claude -p` offers native schema-constrained output. Verify before relying on it; until then, validate and retry.
+- Default rubric weights per audience profile are a first table (`rubric.ADJUST`); tune with real runs.
+- The `anthropic-api` backend (reserved interface, fails loudly until built).
+
+## 10. Settled during implementation
+
+| ID | Decision | Rejected alternative, and why |
+|---|---|---|
+| D-11 | Several targets in one audit run are reviewed together as one submission; anchors carry the document (`D2.P03.S1`, folder files `D3-2.P01`) | One run per document: multiplies cost; users can start separate runs |
+| D-12 | Synthesis (tally, veto, score, grade) is deterministic code, not a model call | LLM synthesizer: can invent or drop comments; code is auditable and free to rerun, which is what makes D-7 cheap |
+| D-13 | Fact-check provenance is read from `claude -p --output-format stream-json`: a source counts only if its URL is in that call's tool results | Trusting the model's cited URLs: a probe showed the model answering "supported" with a URL without having searched (usage counters stay 0 for client-side WebSearch, so they cannot tell) |
+| D-14 | Model calls run in an empty temp dir with `--system-prompt`, `--setting-sources ""`, `--no-session-persistence`, and only the tools a step names | Default `claude -p`: user hooks and CLAUDE.md would leak into every review |
+| D-15 | Grade thresholds default 85/70/60 (Excellent/Good/Needs revision/Fail), Style Guide proposal after 3 runs; both in config.toml | — |
+| D-16 | The crawler pins the TCP connection to the IP it checked | urllib with a redirect hook: re-resolves DNS on connect (rebinding window) |
+
+`claude -p --json-schema` returns schema-valid output in `structured_output` (verified 2026-10-22); the CLI still validates and retries.
