@@ -75,6 +75,13 @@ Feature: cli
   Scenario: non-interactive feeds take the newest N articles
     When  "ant-peer-review new --yes --target <feed> --feed-limit 2" runs
     Then  two runs are created from the first two feed items
+
+  @S-cli-013
+  Scenario: a summary table compares every run
+    Given two runs with reports (totals 74.3 and 61.0) and one run without a report
+    When  "ant-peer-review runs --summary" runs, and again with "--format csv --out summary.csv"
+    Then  the Markdown table has one row per run with title, total, grade, confirmed red lines, findings and next phase
+    And   summary.csv holds the same rows with a header line
 ```
 
 ## Must NOT
@@ -85,3 +92,4 @@ Feature: cli
 - 2026-10-22 · +S-cli-008 · decision: none -- live run: a path target produced a slug of the temp directory
 - 2026-10-22 · +S-cli-009 +S-cli-010 · decision: none -- user saw an empty run left by an abandoned intake and stale dev runs in the start menu
 - 2026-10-22 · +S-cli-011..012 · decision: none -- user chose one run per ticked article (one report each) over one combined submission
+- 2026-10-22 · +S-cli-013 · decision: none -- re-evaluated references: tsingke's cross-paper summary sheet; feeds now create one run per article

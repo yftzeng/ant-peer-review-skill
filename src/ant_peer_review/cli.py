@@ -76,7 +76,10 @@ def build_parser() -> argparse.ArgumentParser:
     ls.add_argument("--enforced")
     ls.add_argument("--archived", action="store_true")
 
-    sub.add_parser("runs", parents=[common], help="list runs and their status")
+    rs = sub.add_parser("runs", parents=[common], help="list runs and their status")
+    rs.add_argument("--summary", action="store_true", help="one row per run: score, grade, red lines")
+    rs.add_argument("--format", choices=["md", "csv"], default="md")
+    rs.add_argument("--out", help="write the summary to this file instead of the screen")
     return p
 
 
@@ -374,7 +377,52 @@ def cmd_lessons(args, io, store, cfg) -> int:
     return EXIT_OK
 
 
+def summary_rows(store: Store) -> list[dict]:
+    from .report import latest_version
+    rows = []
+    for r in list_runs(store.runs_dir):
+        intake = read_json(r.path("00-intake.json"), default={})
+        first = (intake.get("targets") or [{}])[0]
+        title = first.get("title") or (first.get("value", "").strip().splitlines() or [""])[0]
+        title = title.lstrip("# ").strip()[:60]
+        v = latest_version(r)
+        meta = read_json(r.path(f"06-report.v{v}.json"), default={}) if v else {}
+        cons = read_json(r.path("05-consensus.json"), default={})
+        red = [k for k, s in meta.get("red_lines", {}).items() if s == "confirmed"]
+        nxt = r.first_incomplete()
+        rows.append({"run": r.id, "title": title, "report": f"v{v}" if v else "",
+                     "total": meta.get("total", ""), "grade": meta.get("grade", ""),
+                     "red_lines": " ".join(red), "findings": len(cons.get("findings", []))
+                     if cons else "", "next": nxt or "done"})
+    return rows
+
+
 def cmd_runs(args, io, store, cfg) -> int:
+    if args.summary:
+        import csv
+        import io as _io
+        rows = summary_rows(store)
+        cols = ["run", "title", "report", "total", "grade", "red_lines", "findings", "next"]
+        if args.format == "csv":
+            buf = _io.StringIO()
+            w = csv.DictWriter(buf, fieldnames=cols)
+            w.writeheader()
+            w.writerows(rows)
+            text = buf.getvalue()
+        else:
+            from .report import cell
+            lines = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
+            lines += ["| " + " | ".join(cell(row[c]) if c == "title" else str(row[c])
+                                        for c in cols) + " |" for row in rows]
+            text = "\n".join(lines) + "\n"
+        if args.out:
+            from pathlib import Path
+            from .jsonio import write_text_atomic
+            write_text_atomic(Path(args.out), text)
+            io.say(T(cfg.lang)("setup.saved", path=args.out))
+        else:
+            io.say(text.rstrip("\n"))
+        return EXIT_OK
     for r in list_runs(store.runs_dir):
         nxt = r.first_incomplete()
         intake = read_json(r.path("00-intake.json"), default={})

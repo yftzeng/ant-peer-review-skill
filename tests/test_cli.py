@@ -151,3 +151,32 @@ def test_delete_unfinished_run_from_menu(env):
     io = ScriptedIO(["2", "1", "y"])
     cli.main([], io=io, store=env)
     assert not run.root.exists()
+
+
+# @S-cli-013
+def test_runs_summary(env, tmp_path):
+    import csv
+    from ant_peer_review.jsonio import write_json
+    from ant_peer_review.workspace import create_run
+    for slug, total, grade, red in (("first", 74.3, "good", {}), ("second", 61.0, "fail",
+                                                                   {"illegal": "confirmed"})):
+        r = create_run(env.runs_dir, slug, models=["opus", "sonnet"], backend="fake", lang="en")
+        write_json(r.path("00-intake.json"), {"purpose": "audit", "targets": [
+            {"kind": "text", "value": f"# {slug.title()} Post\n\nbody"}], "audience": {}})
+        write_json(r.path("06-report.v1.json"), {"version": 1, "total": total, "grade": grade,
+                                                 "red_lines": dict({"hallucination": "clear"}, **red)})
+        write_json(r.path("05-consensus.json"), {"findings": [{}, {}, {}]})
+    create_run(env.runs_dir, "empty", models=["opus", "sonnet"], backend="fake", lang="en")
+    io = NoAskIO()
+    cli.main(["runs", "--yes", "--summary"], io=io, store=env)
+    rows = [ln for ln in io.text.splitlines() if ln.startswith("| 2026") or ln.startswith("| 20")]
+    assert len(rows) == 3
+    first = [ln for ln in rows if "First Post" in ln][0]
+    assert "74.3" in first and "good" in first and "| 3 |" in first
+    assert "illegal" in [ln for ln in rows if "Second Post" in ln][0]
+    out = tmp_path / "summary.csv"
+    cli.main(["runs", "--yes", "--summary", "--format", "csv", "--out", str(out)], io=NoAskIO(),
+             store=env)
+    data = list(csv.DictReader(out.open(encoding="utf-8")))
+    assert len(data) == 3 and {"run", "title", "total", "grade", "red_lines", "findings",
+                               "next"} <= set(data[0])
