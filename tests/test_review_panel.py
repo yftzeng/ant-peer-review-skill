@@ -189,3 +189,32 @@ def test_low_severity_flags_are_advisory():
     rl = cons["red_lines"]["hallucination"]
     assert rl["status"] == "advisory" and len(rl["comments"]) == 2
     assert cons["grade"] == "good" and cons["provisional"] is False
+
+
+# @S-review-panel-018
+def test_seats_by_roster_order(tmp_path):
+    run = make_run(tmp_path, models=("opus", "sonnet", "fable"))
+    b = ScriptBackend({("*", "review"): review_data()})
+    run_round1(run, b, ["opus", "sonnet", "fable"], "en", say=lambda *_: None)
+    sys = {c["model"]: c["system"] for c in b.calls}
+    assert "structure and argument" in sys["opus"]
+    assert "facts and compliance" in sys["sonnet"]
+    assert "devil's advocate" in sys["fable"]
+    for c in b.calls:
+        assert all(k in c["prompt"] for k in ("macro", "accuracy", "micro", "impact"))
+        assert all(k in c["prompt"] for k in ("illegal", "hallucination", "human_rights"))
+
+
+# @S-review-panel-019
+def test_two_reviewers_no_devils_advocate_and_disclosed(tmp_path):
+    from ant_peer_review.refresh import compute_consensus
+    from ant_peer_review.report import write_report
+    run = make_run(tmp_path)
+    b = ScriptBackend({("*", "review"): review_data()})
+    run_round1(run, b, ["opus", "sonnet"], "en", say=lambda *_: None)
+    assert all("devil's advocate" not in c["system"] for c in b.calls)
+    cons = compute_consensus(run, ["opus", "sonnet"], TH)
+    assert [p["seat"] for p in cons["provenance"]] == ["structure", "facts"]
+    meta = write_report(run, cons, lang="en")
+    md = run.path(f"06-report.v{meta['version']}.md").read_text()
+    assert "| Seat |" in md and "Structure and argument" in md

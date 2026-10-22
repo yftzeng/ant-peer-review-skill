@@ -110,6 +110,19 @@ Feature: review panel
     Given a finding anchored "absence: whole piece - expected sources" with no "checked:" part
     When  the report is linted
     Then  it is reported as "absence without checked surfaces"
+
+  @S-review-panel-018
+  Scenario: each reviewer gets a seat by roster order and still scores the whole rubric
+    Given reviewers opus, sonnet and fable
+    When  round 1 runs
+    Then  opus reviews from the "structure" seat, sonnet from "facts", fable as "devils_advocate"
+    And   every prompt still asks for all rubric dimensions and all six red lines
+
+  @S-review-panel-019
+  Scenario: with two reviewers there is no devil's advocate, and seats are disclosed
+    Given reviewers opus and sonnet
+    When  synthesis runs
+    Then  provenance lists seats "structure" and "facts" and the report shows a seat column
 ```
 
 ## Must NOT
@@ -120,3 +133,4 @@ Feature: review panel
 - 2026-10-22 · +S-review-panel-013 · decision: none -- live run: two low-severity flags ("not serious") vetoed an accurate article
 - 2026-10-22 · +S-review-panel-014..015 · decision: none -- adversarial security review (sonnet) proved these by running
 - 2026-10-22 · +S-review-panel-016..017 · decision: none -- re-evaluated references: K-Dense lint_review tone rules; Imbad/black-yt absence grammar with checked surfaces
+- 2026-10-22 · +S-review-panel-018..019 · decision: none -- re-evaluated references: Imbad's distinct reviewer roles and devil's advocate; same-vendor reviewers share errors, distinct lenses spread them

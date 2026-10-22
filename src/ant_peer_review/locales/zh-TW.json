@@ -190,5 +190,9 @@
   "ui.keys_custom": " · c 新增自訂",
   "feed.pick": "這是含 {n} 篇文章的 feed，要審哪幾篇？（每篇各開一個工作）",
   "feed.picked": "Feed：審最新的 {n} 篇（共 {total} 篇），每篇一個工作（用 --feed-limit 調整）",
-  "revision.coverage": "涵蓋：A 方案 {a}、B 方案 {b}、兩者 {both}、未處理 {none}（07-revision/coverage.json）"
+  "revision.coverage": "涵蓋：A 方案 {a}、B 方案 {b}、兩者 {both}、未處理 {none}（07-revision/coverage.json）",
+  "report.seat": "視角",
+  "seat.structure": "結構與論證",
+  "seat.facts": "事實與合規",
+  "seat.devils_advocate": "唱反調（Devil's advocate）"
 }

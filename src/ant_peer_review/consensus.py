@@ -56,7 +56,9 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
     rulings = rulings or {}
     active = [m for m in models if reviews.get(m, {}).get("status") == "ok"]
     n = len(active)
-    provenance = [{"model": m, "model_id": reviews.get(m, {}).get("model_id", ""),
+    from .prompts import assign_seats
+    seats = assign_seats(models)
+    provenance = [{"model": m, "seat": seats[m], "model_id": reviews.get(m, {}).get("model_id", ""),
                    "status": reviews.get(m, {}).get("status", "missing"),
                    "reason": reviews.get(m, {}).get("reason", ""),
                    "backend": reviews.get(m, {}).get("backend", "")} for m in models]

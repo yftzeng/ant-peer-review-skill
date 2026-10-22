@@ -80,13 +80,15 @@ def run_round1(run: Run, backend: Backend, models: list[str], lang: str, *,
     article = article_view(run)
     existing = load_records(run, "03-reviews")
     todo = [m for m in models if existing.get(m, {}).get("status") not in (OK, REFUSED)]
-    system = prompts.review_system(lang)
+    seats = prompts.assign_seats(models)
     prompt = prompts.review_prompt(intake, rubric, article, style_guide)
 
     def one(m: str) -> dict:
-        say(f"  … {m}")
+        say(f"  … {m} ({seats[m]})")
+        system = prompts.review_system(lang, seats[m])
         rec = _record(m, backend, lambda: backend.run(m, task="review", system=system,
                                                       prompt=prompt, schema=REVIEW))
+        rec["seat"] = seats[m]
         if rec["status"] == OK:
             rec["data"] = _clean_review(rec["data"])
         write_json(run.path(f"03-reviews/{m}.json"), rec)
@@ -126,9 +128,10 @@ def run_debate(run: Run, backend: Backend, models: list[str], lang: str, *,
     article = article_view(run)
     existing = load_records(run, "04-debate")
     todo = [m for m in active if existing.get(m, {}).get("status") not in (OK, REFUSED)]
-    system = prompts.debate_system(lang)
+    seats = prompts.assign_seats(models)
 
     def one(m: str) -> dict:
+        system = prompts.debate_system(lang, seats.get(m))
         others = debate_targets({k: reviews[k] for k in active}, m)
         prompt = prompts.debate_prompt(reviews[m]["data"], others, ledger, article)
         rec = _record(m, backend, lambda: backend.run(m, task="debate", system=system,

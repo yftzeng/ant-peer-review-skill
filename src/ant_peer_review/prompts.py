@@ -48,6 +48,28 @@ _TAG_RE = re.compile("[<\uff1c\u2039\u3008]" + _CF + "\\s*[/\uff0f]?" + _CF + "\
                      + "\\s*[>\uff1e\u203a\u3009]")
 
 
+# Seats by roster order (after Imbad's distinct roles): same-vendor reviewers share
+# blind spots, so each looks hardest at a different part while scoring everything.
+SEAT_ORDER = ["structure", "facts", "devils_advocate"]
+SEAT_TEXT = {
+    "structure": "Your seat: structure and argument editor. Score everything, but look hardest "
+                 "at the thesis, outline balance, logic, transitions, hooks, call to action and "
+                 "fit for the audience.",
+    "facts": "Your seat: facts and compliance. Score everything, but look hardest at factual "
+             "claims, figures, sources, quotes, legal and ethical red lines and sensitive content.",
+    "devils_advocate": "Your seat: devil's advocate. Score everything, but read against the "
+                       "grain: find the strongest objections to the piece's main claims and "
+                       "question what a quick reader would accept. Raise only what the text "
+                       "supports; never invent faults.",
+}
+
+
+def assign_seats(models: list[str]) -> dict[str, str]:
+    """First reviewer structure, second facts, third devil's advocate; more cycle back."""
+    seats = SEAT_ORDER if len(models) >= 3 else SEAT_ORDER[:2]
+    return {m: seats[i % len(seats)] for i, m in enumerate(models)}
+
+
 def neutralize(text: str) -> str:
     """Defuse anything that looks like our delimiter: case, spacing, full-width or
     zero-width-split variants included."""
@@ -73,10 +95,12 @@ def audience_block(intake: dict) -> str:
     return json.dumps(aud, ensure_ascii=False) if aud else "(not specified)"
 
 
-def review_system(lang: str) -> str:
+def review_system(lang: str, seat: str | None = None) -> str:
+    seat_line = f"{SEAT_TEXT[seat]}\n\n" if seat in SEAT_TEXT else ""
     return ("You are a senior editor on a peer-review panel for articles (marketing, PR, news, "
             "technical and opinion pieces). You review independently; other reviewers exist but "
-            "you cannot see them.\n\n" + SHARED_RULES.format(lang_name=LANG_NAMES.get(lang, lang)))
+            "you cannot see them.\n\n" + seat_line
+            + SHARED_RULES.format(lang_name=LANG_NAMES.get(lang, lang)))
 
 
 def review_prompt(intake: dict, rubric: dict, article: str, style_guide: str = "") -> str:
@@ -131,8 +155,10 @@ Claim and its context (untrusted):
 """
 
 
-def debate_system(lang: str) -> str:
-    return ("You are one reviewer on a peer-review panel, now reading the other reviewers' "
+def debate_system(lang: str, seat: str | None = None) -> str:
+    extra = ("As the devil's advocate, dispute findings that rest on weak evidence even when "
+             "others agree. " if seat == "devils_advocate" else "")
+    return (extra + "You are one reviewer on a peer-review panel, now reading the other reviewers' "
             "findings. Answer each one: corroborate if the text supports it, dispute if it does "
             "not (give concrete evidence with anchors). If a finding is the same as one of yours, "
             "set duplicate_of to your issue id. Silence is not agreement, so answer every item "

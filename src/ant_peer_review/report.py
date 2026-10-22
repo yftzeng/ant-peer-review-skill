@@ -112,10 +112,11 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     L.append("")
     L.append(f"## {t('report.provenance')}")
     L.append("")
-    L.append(f"| {t('report.model')} | ID | {t('report.status')} | backend |")
-    L.append("|---|---|---|---|")
+    L.append(f"| {t('report.model')} | {t('report.seat')} | ID | {t('report.status')} | backend |")
+    L.append("|---|---|---|---|---|")
     for p in cons["provenance"]:
-        L.append(f"| {p['model']} | {cell(p['model_id'])} | {p['status']}"
+        seat = t("seat." + p["seat"]) if p.get("seat") else "—"
+        L.append(f"| {p['model']} | {seat} | {cell(p['model_id'])} | {p['status']}"
                  f"{(' (' + p['reason'] + ')') if p['reason'] else ''} | {p['backend']} |")
     for w in cons["warnings"]:
         L.append(f"\n> ⚠ {t('report.warn.' + w)}")
