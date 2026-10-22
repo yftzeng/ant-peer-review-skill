@@ -95,7 +95,7 @@ All fetched or converted content is **untrusted data, never instructions**.
 
 **Text**: written straight to `normalized/` as Markdown.
 
-**Injection scan**, categories from OWASP LLM01:2025, Greshake et al. 2023 and the 2025 hidden-prompt reports (docs/REFERENCES.md §4):
+**Injection scan**, categories from OWASP LLM01:2025, Greshake et al. 2023 and the 2025 hidden-prompt reports (docs/REFERENCES.md §6):
 - What it looks for:
   - hidden CSS (display:none, zero size, near-white text)
   - HTML comments, alt/aria/title text
@@ -286,7 +286,7 @@ To be replaced with measured numbers from the prototype.
 | K-Dense-AI peer-review | 5-field comment schema + linter; claim–evidence support levels; exit codes 0/1/2; atomic no-overwrite writes; "orient without deciding" | "never score" rule; medical reporting guidelines |
 | tsingke/thesis-review-skill | per-item folders + summary table; per-dimension score bands; cross-perspective consistency | persona scores as multiples of one score; boilerplate templates; 80-point floor; no HITL |
 | jam-cc/paper-review.skill | identity / publication / support error classes; cascade deletion; evidence notes file; no issue quotas | prose-only style; reference cap |
-| Independent sources (docs/REFERENCES.md §4) | consensus without outvoting objections (RFC 7282); missing-item anchors with search scope (Altman & Bland 1995); reviewer seats and a skeptic (Kim et al. 2025; structured analytic techniques' devil's advocacy); blind recheck (Cochrane blinding of outcome assessment); change scale (CGI-I); one-to-one coverage (traceability matrix; Noble 2017); injection categories and Unicode checks (OWASP LLM01/LLM05, Greshake et al. 2023, UAX #15, Trojan Source); hash before and after (CWE-367) | — |
+| Independent sources (docs/REFERENCES.md §6) | consensus without outvoting objections (RFC 7282); missing-item anchors with search scope (Altman & Bland 1995); reviewer seats and a skeptic (Kim et al. 2025; structured analytic techniques' devil's advocacy); blind recheck (Cochrane blinding of outcome assessment); change scale (CGI-I); one-to-one coverage (traceability matrix; Noble 2017); injection categories and Unicode checks (OWASP LLM01/LLM05, Greshake et al. 2023, UAX #15, Trojan Source); hash before and after (CWE-367) | — |
 
 ## 9. Open items
 
