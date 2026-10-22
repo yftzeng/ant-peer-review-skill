@@ -188,8 +188,8 @@
   "ui.keys_radio": "↑↓ 移動 · Enter 選擇 · 數字鍵直接選 · Esc 取消",
   "ui.keys_multi": "↑↓ 移動 · 空白鍵 勾選 · Enter 確認 · Esc 取消",
   "ui.keys_custom": " · c 新增自訂",
-  "feed.pick": "這是含 {n} 篇文章的 feed，要審哪幾篇？（每篇各開一個工作）",
-  "feed.picked": "Feed：審最新的 {n} 篇（共 {total} 篇），每篇一個工作（用 --feed-limit 調整）",
+  "feed.pick": "這個 feed 列出 {n} 篇文章（feed 可能只列出最新的幾篇）。要審哪幾篇？每篇各開一個工作。",
+  "feed.picked": "Feed：審最新的 {n} 篇（feed 列出 {total} 篇，可能只是最新的幾篇），每篇一個工作；用 --feed-limit 調整",
   "revision.coverage": "涵蓋：A 方案 {a}、B 方案 {b}、兩者 {both}、未處理 {none}（07-revision/coverage.json）",
   "report.seat": "視角",
   "seat.structure": "結構與論證",
@@ -204,5 +204,14 @@
   "recheck.claim": "作者說法",
   "recheck.claim_ok": "說法成立",
   "recheck.done": "修改對照（相對於 {parent}）：{counts}",
-  "recheck.no_findings": "{run} 還沒有合議後的發現，請先完成該工作。"
+  "recheck.no_findings": "{run} 還沒有合議後的發現，請先完成該工作。",
+  "report.sources_title": "來源",
+  "report.doc": "文件",
+  "report.origin": "出處",
+  "report.chars": "字元數",
+  "report.quality": "內文取自",
+  "report.q.page": "原始網頁",
+  "report.q.feed_copy": "feed 副本，可能有缺漏（feed copy, may be lossy）",
+  "report.q.path": "檔案",
+  "report.q.text": "貼上的文字"
 }

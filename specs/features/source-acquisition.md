@@ -126,6 +126,24 @@ Feature: source acquisition
     Given a page whose text sits in a div with class "markdown__style" between navigation and footer blocks
     When  it is converted
     Then  the Markdown holds the article text and not the navigation text
+
+  @S-source-acquisition-020
+  Scenario: a challenge page served with HTTP 200 is a failure, a normal page with a challenge script is not
+    Given a 200 page "Just a moment..." with cf-chl markers and almost no text, and a long article page that embeds /cdn-cgi/challenge-platform
+    When  each is fetched and converted
+    Then  the first fails with reason "blocked_by_challenge" and the second is read normally
+
+  @S-source-acquisition-021
+  Scenario: soft 404s, login or paywalls and empty pages are failures with a reason
+    Given 200 pages titled "404 Not Found", asking to "Sign in to continue reading", and with no text
+    When  each is fetched
+    Then  they fail with reasons "soft_404", "login_or_paywall" and "empty_page"
+
+  @S-source-acquisition-022
+  Scenario: secrets in URL query strings never reach the manifest, the report or the screen
+    Given a target "https://ex.example/feed?token=abc123&page=2"
+    When  the run's sources phase and report are written
+    Then  manifest, report and progress output show "token=REDACTED&page=2" and never "abc123"
 ```
 
 ## Must NOT
@@ -136,3 +154,4 @@ Feature: source acquisition
 - 2026-10-22 · +S-source-acquisition-011..016 · decision: none -- adversarial security review (sonnet) proved these by running
 - 2026-10-22 · +S-source-acquisition-017..018 · decision: none -- user: an iThome series RSS URL failed with content_type application/rss+xml
 - 2026-10-22 · ~S-source-acquisition-018 +S-source-acquisition-019 · decision: none -- the iThome RSS strips punctuation (、) from content:encoded, which reviewers would score as errors; and its article pages have no article/main tag
+- 2026-10-22 · +S-source-acquisition-020..022 · decision: none -- K-Dense paper-lookup: APIs fail with HTTP 200, verify the shape; paginate.py redacts credentials in provenance; paperzilla: keep feed tokens out of logs and reports

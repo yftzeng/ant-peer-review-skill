@@ -123,6 +123,12 @@ Feature: review panel
     Given reviewers opus and sonnet
     When  synthesis runs
     Then  provenance lists seats "structure" and "facts" and the report shows a seat column
+
+  @S-review-panel-020
+  Scenario: the report states where each document's text came from
+    Given D1 read from its page, D2 from a feed copy and a URL that failed with "blocked_by_challenge"
+    When  the report is written
+    Then  its sources section lists D1 as "page", D2 as "feed copy, may be lossy" and the failed URL with its reason
 ```
 
 ## Must NOT
@@ -134,3 +140,4 @@ Feature: review panel
 - 2026-10-22 · +S-review-panel-014..015 · decision: none -- adversarial security review (sonnet) proved these by running
 - 2026-10-22 · +S-review-panel-016..017 · decision: none -- re-evaluated references: K-Dense lint_review tone rules; Imbad/black-yt absence grammar with checked surfaces
 - 2026-10-22 · +S-review-panel-018..019 · decision: none -- re-evaluated references: Imbad's distinct reviewer roles and devil's advocate; same-vendor reviewers share errors, distinct lenses spread them
+- 2026-10-22 · +S-review-panel-020 · decision: none -- paperzilla: label whether a summary used metadata, an abstract or the full text; the quality marks lived only in the manifest

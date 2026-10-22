@@ -188,8 +188,8 @@
   "ui.keys_radio": "↑↓ move · Enter choose · number keys pick directly · Esc cancel",
   "ui.keys_multi": "↑↓ move · Space tick · Enter confirm · Esc cancel",
   "ui.keys_custom": " · c add custom",
-  "feed.pick": "This is a feed with {n} articles. Which ones should be reviewed? (each becomes its own run)",
-  "feed.picked": "Feed: reviewing the newest {n} of {total} articles, one run each (change with --feed-limit)",
+  "feed.pick": "This feed lists {n} articles (a feed may show only the latest ones). Which should be reviewed? Each becomes its own run.",
+  "feed.picked": "Feed: reviewing the newest {n} of the {total} it lists (a feed may show only its latest items), one run each; change with --feed-limit",
   "revision.coverage": "Coverage: plan A {a}, plan B {b}, both {both}, not handled {none} (07-revision/coverage.json)",
   "report.seat": "Seat",
   "seat.structure": "Structure and argument",
@@ -204,5 +204,14 @@
   "recheck.claim": "Author's claim",
   "recheck.claim_ok": "Claim holds",
   "recheck.done": "Revision check against {parent}: {counts}",
-  "recheck.no_findings": "{run} has no consensus findings yet; finish it first."
+  "recheck.no_findings": "{run} has no consensus findings yet; finish it first.",
+  "report.sources_title": "Sources",
+  "report.doc": "Doc",
+  "report.origin": "Origin",
+  "report.chars": "Characters",
+  "report.quality": "Text taken from",
+  "report.q.page": "page",
+  "report.q.feed_copy": "feed copy, may be lossy",
+  "report.q.path": "file",
+  "report.q.text": "pasted text"
 }

@@ -144,6 +144,24 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
                  + (t("report.scurve_scored") if s["scored"] else t("report.scurve_not_scored")))
     if cons["split_scores"]:
         L.append(f"- {t('report.split_scores')}: {', '.join(cons['split_scores'])}")
+    L.append("")
+    L.append(f"## {t('report.sources_title')}")
+    L.append("")
+    L.append(f"| {t('report.doc')} | {t('report.origin')} | {t('report.chars')} | {t('report.quality')} |")
+    L.append("|---|---|---:|---|")
+    for it in manifest["items"]:
+        if it.get("status") != "ok":
+            L.append(f"| — | {cell(it.get('value', ''))[:120]} | — | ✗ {it.get('reason', '')} |")
+            continue
+        for d in it.get("docs", []):
+            if it.get("warning") == "feed_content_maybe_lossy":
+                q = t("report.q.feed_copy")
+            elif it["kind"] in ("url", "feed_item"):
+                q = t("report.q.page") + (f" ⚠ {it['warning']}" if it.get("warning") else "")
+            else:
+                q = t(f"report.q.{it['kind']}")
+            L.append(f"| {d['doc']} | {cell(d.get('origin') or d.get('title') or '')[:120]} | "
+                     f"{d.get('chars', '')} | {q} |")
     rc = read_json(run.path("05b-recheck.json"), default=None)
     if rc:
         L.append("")

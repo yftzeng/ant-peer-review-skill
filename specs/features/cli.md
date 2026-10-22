@@ -82,6 +82,12 @@ Feature: cli
     When  "ant-peer-review runs --summary" runs, and again with "--format csv --out summary.csv"
     Then  the Markdown table has one row per run with title, total, grade, confirmed red lines, findings and next phase
     And   summary.csv holds the same rows with a header line
+
+  @S-cli-014
+  Scenario: the feed picker says a feed may list only its latest items
+    Given a feed with 3 items
+    When  the article checkbox is shown
+    Then  its title says the feed lists 3 items and may show only the latest ones
 ```
 
 ## Must NOT
@@ -93,3 +99,4 @@ Feature: cli
 - 2026-10-22 · +S-cli-009 +S-cli-010 · decision: none -- user saw an empty run left by an abandoned intake and stale dev runs in the start menu
 - 2026-10-22 · +S-cli-011..012 · decision: none -- user chose one run per ticked article (one report each) over one combined submission
 - 2026-10-22 · +S-cli-013 · decision: none -- re-evaluated references: tsingke's cross-paper summary sheet; feeds now create one run per article
+- 2026-10-22 · +S-cli-014 · decision: none -- paperzilla: report partial pages honestly; the iThome series feed lists 15 of its articles

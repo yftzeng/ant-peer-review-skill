@@ -65,9 +65,9 @@ def test_feed_item_prefers_article_page(tmp_path):
     class Page:
         def fetch(self, url):
             assert url == "https://ex.example/a/3"
-            return FetchResult(url, url, 200, "text/html",
+            return FetchResult(url, url, 200, "text/html", (
                                "<nav>menu</nav><div class='post-content'><p>Gamma、page text.</p>"
-                               "<p>More page text here.</p></div>".encode(), [url])
+                               "<p>" + "More page text here. " * 40 + "</p></div>").encode(), [url])
     run, m = _feed_run(tmp_path, Page())
     segs = read_json(run.path("01-sources/segments.json"))["D1"]
     text = " ".join(s["text"] for s in segs)

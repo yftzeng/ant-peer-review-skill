@@ -16,6 +16,8 @@ from ..workspace import Run
 from .converter import ConvertError, convert_file, convert_folder, pdf_to_markdown
 from .crawler import Crawler, FetchError
 from .feeds import FEED_TYPES
+from .quality import page_problem
+from .urls import redact
 from .htmlmd import html_to_markdown
 from .injection import scan
 from .segments import segment
@@ -43,7 +45,11 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str) -> dict:
     if res.content_type in FEED_TYPES:
         raise FetchError("is_feed", "start a new run with this URL to pick its articles")
     if res.content_type in ("text/html", "application/xhtml+xml"):
-        conv = html_to_markdown(res.body.decode("utf-8", "replace"))
+        raw = res.body.decode("utf-8", "replace")
+        conv = html_to_markdown(raw)
+        problem = page_problem(raw, conv.title, conv.markdown)
+        if problem:
+            raise FetchError(problem, redact(res.final_url))
         md, hidden, title = conv.markdown, conv.hidden, conv.title
         ext = "html"
     elif res.content_type == "application/pdf":
@@ -55,9 +61,9 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str) -> dict:
     else:
         md = res.body.decode("utf-8", "replace")
         ext = "txt"
-    rec = _doc_record(run, doc_id, res.final_url, title or url, md, res.body,
+    rec = _doc_record(run, doc_id, redact(res.final_url), title or redact(url), md, res.body,
                       f"{doc_id}.{ext}", hidden)
-    item = {"docs": [rec], "final_url": res.final_url, "hops": res.hops}
+    item = {"docs": [rec], "final_url": redact(res.final_url), "hops": [redact(h) for h in res.hops]}
     if ext == "html" and len(md) < THIN_PAGE_CHARS:
         item["warning"] = "thin_page_maybe_js_rendered"
     return item
@@ -101,7 +107,7 @@ def _feed_item(run: Run, crawler: Crawler, idx: int, target: dict) -> dict:
     conv = html_to_markdown(target.get("html", ""))
     doc_id = f"D{idx}"
     raw_name = f"{doc_id}.feed.html"
-    return {"docs": [_doc_record(run, doc_id, target["value"], target.get("title") or conv.title,
+    return {"docs": [_doc_record(run, doc_id, redact(target["value"]), target.get("title") or conv.title,
                                  conv.markdown, target.get("html", "").encode("utf-8"),
                                  raw_name, conv.hidden)],
             "warning": "feed_content_maybe_lossy"}
@@ -122,10 +128,12 @@ def run_sources(run: Run, crawler: Crawler, *, on_progress=None) -> dict:
     items = []
     for idx, target in enumerate(intake["targets"], 1):
         old = prior.get(idx)
-        if old and old.get("status") == "ok" and old.get("value") == target["value"]:
+        key = sha256_bytes(target["value"].encode("utf-8"))
+        if old and old.get("status") == "ok" and old.get("value_sha256") == key:
             items.append(old)
             continue
-        entry = {"item": idx, "kind": target["kind"], "value": target["value"],
+        shown = redact(target["value"]) if target["kind"] in ("url", "feed_item") else target["value"]
+        entry = {"item": idx, "kind": target["kind"], "value": shown, "value_sha256": key,
                  "attempted_at": datetime.now().isoformat(timespec="seconds")}
         try:
             if target["kind"] == "url":
@@ -138,7 +146,7 @@ def run_sources(run: Run, crawler: Crawler, *, on_progress=None) -> dict:
                 entry.update(_text_item(run, idx, target["value"]))
             entry["status"] = "ok"
         except (FetchError, ConvertError) as e:
-            entry.update(status="failed", reason=e.reason, detail=str(e)[:300])
+            entry.update(status="failed", reason=e.reason, detail=redact(str(e))[:300])
         items.append(entry)
         if on_progress:
             on_progress(entry)
