@@ -11,6 +11,7 @@ from .schemas import RED_LINES
 SEV_ORDER = {"critical": 0, "major": 1, "minor": 2}
 LEVEL_ORDER = {"macro": 0, "meso": 1, "micro": 2}
 RL_SEV = {"none": 0, "low": 1, "medium": 2, "high": 3}
+VETO_MIN_SEV = RL_SEV["medium"]
 
 
 class _UF:
@@ -126,12 +127,14 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
     unsupported = [c for c in ledger if c["status"] == "unsupported"]
     red = {}
     for k in RED_LINES:
-        flaggers, sev, comments = [], 0, []
+        flaggers, advisory, sev, comments = [], [], 0, []
         for m in active:
             for rl in reviews[m]["data"].get("red_lines", []):
                 if rl["key"] == k and rl.get("flag"):
-                    flaggers.append(m)
-                    sev = max(sev, RL_SEV.get(rl.get("severity", "none"), 0))
+                    s = RL_SEV.get(rl.get("severity", "none"), 0)
+                    # Only a medium/high flag supports a veto; low is advisory.
+                    (flaggers if s >= VETO_MIN_SEV else advisory).append(m)
+                    sev = max(sev, s)
                     comments.append({"model": m, "comment": rl.get("comment", ""),
                                      "anchors": rl.get("anchors", [])})
         tgt = {f"{m}:redline:{k}" for m in flaggers}
@@ -142,7 +145,7 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
         evidence = [{"claim": c["id"], "text": c["text"]} for c in unsupported] \
             if k == "hallucination" else []
         if not supporters and not evidence:
-            status = "clear"
+            status = "advisory" if advisory else "clear"
         elif k == "hallucination" and evidence and supporters:
             status = "confirmed"          # evidence first: the ledger outranks a dispute
         elif len(supporters) >= 2 and not disputes:

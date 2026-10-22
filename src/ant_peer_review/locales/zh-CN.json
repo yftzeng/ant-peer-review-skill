@@ -173,5 +173,6 @@
   "decide.hint": "审稿完成。定稿请执行：ant-peer-review decide {run} --choice A|B|manual [--rule <红线>=confirmed|dismissed]",
   "run.resume_hint": "续跑：ant-peer-review resume {run}",
   "run.paused": "已暂停（{reason}）。续跑：ant-peer-review resume {run}",
-  "run.interrupted": "已中断，进度已保存。续跑：ant-peer-review resume {run}"
+  "run.interrupted": "已中断，进度已保存。续跑：ant-peer-review resume {run}",
+  "report.rl.advisory": "警示（低严重度，不否决）"
 }

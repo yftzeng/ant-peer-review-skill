@@ -47,6 +47,11 @@ Feature: cli
     Given one paused run
     When  "ant-peer-review runs" runs
     Then  the line for that run says "next: decision"
+
+  @S-cli-008
+  Scenario: the run folder is named after the target, not its full path
+    When  runs start with targets "/tmp/x/my-article.md", "https://example.com/blog/hello-world" and text "# Big News\nBody"
+    Then  the folder slugs are "my-article", "example-com-hello-world" and "big-news"
 ```
 
 ## Must NOT
@@ -54,3 +59,4 @@ Feature: cli
 
 ## Revisions
 - 2026-10-22 · +S-cli-001..007 +N-cli-001 · decision: none -- follows docs/DESIGN.md §2
+- 2026-10-22 · +S-cli-008 · decision: none -- live run: a path target produced a slug of the temp directory

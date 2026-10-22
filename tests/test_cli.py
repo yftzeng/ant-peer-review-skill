@@ -119,3 +119,12 @@ def test_models_override_recorded_in_run(env):
     run = list_runs(env.runs_dir)[-1]
     assert run.settings()[0] == ["opus", "fable"]
     assert env.load_config().models == ["opus", "sonnet"]
+
+
+# @S-cli-008
+def test_slug_from_target(env):
+    from ant_peer_review.cli import slug_for
+    from ant_peer_review.workspace import slugify
+    assert slugify(slug_for("/tmp/x/my-article.md")) == "my-article"
+    assert slugify(slug_for("https://example.com/blog/hello-world")) == "example-com-hello-world"
+    assert slugify(slug_for("# Big News\nBody")) == "big-news"

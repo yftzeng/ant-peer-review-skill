@@ -84,3 +84,14 @@ def test_no_b_without_macro_meso(tmp_path):
     assert [c["task"] for c in b.calls] == ["revise_a"]
     assert any("plan B skipped" in n for n in out["notes"])
     assert not run.path("07-revision/B.md").exists()
+
+
+# @S-revision-006
+def test_sentence_ids_and_inserts(tmp_path):
+    from ant_peer_review.revision import apply_changes, paragraphs, render_text
+    run = make_run(tmp_path, text="# T\n\nOld one. Keep two.\n\nLast para.")
+    paras = paragraphs(run)
+    rep, warn = apply_changes(paras, [{"id": "D1.P02.S1", "text": "New one."},
+                                      {"id": "D1.P02+", "text": "Inserted para."}])
+    assert warn == []
+    assert render_text(paras, rep) == "# T\n\nNew one. Keep two.\n\nInserted para.\n\nLast para.\n"

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 
 from . import __version__
@@ -87,6 +88,22 @@ def find_run(store: Store, ref: str) -> Run:
     raise SystemExit(f"run not found or ambiguous: {ref}")
 
 
+def slug_for(target: str) -> str:
+    """A short readable name for the run folder from its first target."""
+    from pathlib import Path
+    from urllib.parse import urlsplit
+    s = target.strip()
+    if re.match(r"https?://", s, re.I):
+        u = urlsplit(s)
+        last = [p for p in u.path.split("/") if p][-1:] or [""]
+        return f"{u.hostname or 'url'} {Path(last[0]).stem}".strip()
+    first = s.splitlines()[0] if s else "run"
+    looks_like_path = "\n" not in s and " " not in s and ("/" in s or "\\" in s)
+    if len(s) < 4096 and (looks_like_path or ("\n" not in s and Path(s).expanduser().exists())):
+        return Path(s).stem or Path(s).name
+    return first.lstrip("#").strip()[:40] or "run"
+
+
 def parse_weights(s: str | None) -> dict | None:
     if not s:
         return None
@@ -150,7 +167,7 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
                 return finish(run_pipeline(run, ctx))
     ctx = make_ctx(args, io, store, cfg)
     io.say(banner(ctx.t, ctx.models))
-    slug = args.target[0][:40] if args.target else "run"
+    slug = slug_for(args.target[0]) if args.target else "run"
     intake = None
     if args.target or args.yes:
         try:

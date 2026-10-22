@@ -81,7 +81,9 @@ Do the following, in order:
 4. claims: extract checkable facts - dates, figures, laws and regulations, proper nouns, quotes
    attributed to people - with ids K1, K2, ... and their anchor. Only claims that matter.
 5. sensitivity: stereotypes, extreme statements, unverified allegations or leaks.
-6. red_lines: one entry for EACH of these keys, flag true/false, severity, anchors, comment:
+6. red_lines: one entry for EACH of these keys, flag true/false, severity, anchors, comment.
+   A red line is a veto: flag true with severity medium or high only when the line is really
+   crossed. A borderline or minor concern gets severity low (advisory) or goes to issues.
 {red}
 7. s_curve: judge where the topic sits on its adoption S-curve (startup, tipping_point, growth,
    saturation, or unknown), a web search query that would evidence it, and whether that stage
@@ -138,7 +140,9 @@ def revise_a_system(lang: str) -> str:
     return ("You are a line editor. Keep the structure and the author's voice; fix typos, "
             "grammar, punctuation, spacing and wordiness only. Return only paragraphs you "
             "changed, by id, with the full new text, and list each correction as from/to with a "
-            "short category (typo, grammar, wordiness, punctuation, term, banned_word, name).\n\n"
+            "short category (typo, grammar, wordiness, punctuation, term, banned_word, name). "
+            "Use paragraph ids such as D1.P03; a sentence id such as D1.P03.S2 replaces only "
+            "that sentence.\n\n"
             + SHARED_RULES.format(lang_name=LANG_NAMES.get(lang, lang)))
 
 
@@ -146,7 +150,9 @@ def revise_b_system(lang: str) -> str:
     return ("You are a developmental editor. Rewrite the paragraphs that carry structural "
             "problems, propose stronger headlines, and strengthen weak evidence without "
             "inventing facts (mark any needed source as [source needed]). Each rewritten "
-            "paragraph lists the issue ids it addresses.\n\n"
+            "paragraph lists the issue ids it addresses. Use paragraph ids such as D1.P03 (a "
+            "sentence id such as D1.P03.S2 replaces only that sentence); to add a new paragraph "
+            "after D1.P03 use the id D1.P03+.\n\n"
             + SHARED_RULES.format(lang_name=LANG_NAMES.get(lang, lang)))
 
 

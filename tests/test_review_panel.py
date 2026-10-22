@@ -176,3 +176,16 @@ def test_debate_round_sees_others_findings(tmp_path):
     opus_debate = [c for c in b.calls if c["task"] == "debate" and c["model"] == "opus"][0]
     assert "OPUS-FINDING" in sonnet_debate["prompt"] and "opus:I1" in sonnet_debate["prompt"]
     assert "sonnet:redline:plagiarism" in opus_debate["prompt"]
+
+
+# @S-review-panel-013
+def test_low_severity_flags_are_advisory():
+    data = review_data(scores=(80, 80, 80, 80), flags=["hallucination"])
+    for rl in data["red_lines"]:
+        if rl["key"] == "hallucination":
+            rl["severity"] = "low"
+    reviews = {m: ok(m, data) for m in ("opus", "sonnet")}
+    cons = synth(reviews)
+    rl = cons["red_lines"]["hallucination"]
+    assert rl["status"] == "advisory" and len(rl["comments"]) == 2
+    assert cons["grade"] == "good" and cons["provisional"] is False

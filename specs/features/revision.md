@@ -37,6 +37,12 @@ Feature: revision
     Given only micro findings
     When  the revision phase runs
     Then  B is skipped with a note and no B call is made
+
+  @S-revision-006
+  Scenario: sentence ids and inserted paragraphs from a model are applied
+    Given paragraph D1.P02 with sentences S1 "Old one." and S2 "Keep two."
+    When  plan B returns id "D1.P02.S1" with "New one." and id "D1.P02+" with "Inserted para."
+    Then  D1.P02 reads "New one. Keep two." and "Inserted para." follows it as its own paragraph
 ```
 
 ## Must NOT
@@ -44,3 +50,4 @@ Feature: revision
 
 ## Revisions
 - 2026-10-22 · +S-revision-001..005 +N-revision-001 · decision: none -- follows docs/DESIGN.md §3 P8
+- 2026-10-22 · +S-revision-006 · decision: none -- live run: models returned sentence ids and new paragraphs, which were dropped
