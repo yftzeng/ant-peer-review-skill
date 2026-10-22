@@ -122,8 +122,11 @@ def make_feed_crawler(store: Store):
     return make_crawler(store)
 
 
+MAX_RUNS_WITHOUT_ASKING = 3
+
+
 def split_feeds(io: IO, t: T, intake: dict, store: Store, *, interactive: bool,
-                limit: int | None) -> list[dict]:
+                limit: int | None, reviewers: int = 2) -> list[dict]:
     """Turn each RSS/Atom URL into chosen articles; every article becomes its own intake.
     Non-feed targets stay together in one intake, as before."""
     from .sources.crawler import FetchError
@@ -152,6 +155,11 @@ def split_feeds(io: IO, t: T, intake: dict, store: Store, *, interactive: bool,
                     for i, it in enumerate(items)]
             picked = [items[int(i)] for i in checkbox(io, t, t("feed.pick", n=len(items)), opts,
                                                      [], min_selected=1)]
+            if len(picked) > MAX_RUNS_WITHOUT_ASKING:
+                io.say(info(t("feed.scale", n=len(picked), m=reviewers,
+                              calls=2 * reviewers + 3)))
+                if not confirm(io, t, t("feed.scale_confirm"), default=False):
+                    picked = []
         else:
             picked = items[:max(1, limit or 1)]
             io.say(info(t("feed.picked", n=len(picked), total=len(items))))
@@ -256,7 +264,10 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
         if brand:
             intake["brand"] = brand
     intakes = split_feeds(io, ctx.t, intake, store, interactive=not args.yes,
-                          limit=args.feed_limit)
+                          limit=args.feed_limit, reviewers=len(ctx.models))
+    if not intakes:
+        io.say(ctx.t("feed.nothing"))
+        return EXIT_OK
     runs = []
     for it in intakes:
         first = it["targets"][0]

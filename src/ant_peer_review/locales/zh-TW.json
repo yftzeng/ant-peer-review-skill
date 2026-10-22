@@ -213,5 +213,8 @@
   "report.q.page": "原始網頁",
   "report.q.feed_copy": "feed 副本，可能有缺漏（feed copy, may be lossy）",
   "report.q.path": "檔案",
-  "report.q.text": "貼上的文字"
+  "report.q.text": "貼上的文字",
+  "feed.scale": "這會建立 {n} 個工作、每個 {m} 位 reviewer；每個工作約 {calls} 次模型呼叫，另加事實查證。",
+  "feed.scale_confirm": "全部都要審嗎？",
+  "feed.nothing": "沒有要審的內容，未建立任何工作。"
 }

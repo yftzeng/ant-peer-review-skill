@@ -243,3 +243,22 @@ def test_robots_disallow(server):
     with pytest.raises(FetchError) as e:
         local_crawler().fetch(f"http://pub.example:{port}/private/page")
     assert e.value.reason == "robots"
+
+
+# @S-source-acquisition-023
+def test_same_host_requests_are_spaced(server):
+    import time
+    port = server.server_address[1]
+    Handler.routes["/p"] = (200, {"Content-Type": "text/html"}, b"<p>x</p>")
+    stamps = []
+    orig = Handler.do_GET
+
+    def stamped(self):
+        stamps.append(time.monotonic())
+        return orig(self)
+    Handler.do_GET = stamped
+    try:
+        local_crawler(min_interval=0.3).fetch(f"http://pub.example:{port}/p")  # robots, then page
+    finally:
+        Handler.do_GET = orig
+    assert len(stamps) == 2 and stamps[1] - stamps[0] >= 0.3

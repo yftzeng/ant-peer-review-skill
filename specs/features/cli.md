@@ -88,6 +88,13 @@ Feature: cli
     Given a feed with 3 items
     When  the article checkbox is shown
     Then  its title says the feed lists 3 items and may show only the latest ones
+
+  @S-cli-015
+  Scenario: ticking more than 3 feed articles asks first, with the scale of the work
+    Given a feed with 5 articles
+    When  the user ticks all 5
+    Then  they are told 5 runs with 2 reviewers each and asked to confirm, default no
+    And   declining creates no run; confirming creates 5
 ```
 
 ## Must NOT
@@ -100,3 +107,4 @@ Feature: cli
 - 2026-10-22 · +S-cli-011..012 · decision: none -- user chose one run per ticked article (one report each) over one combined submission
 - 2026-10-22 · +S-cli-013 · decision: none -- re-evaluated references: tsingke's cross-paper summary sheet; feeds now create one run per article
 - 2026-10-22 · +S-cli-014 · decision: none -- paperzilla: report partial pages honestly; the iThome series feed lists 15 of its articles
+- 2026-10-22 · +S-cli-015 · decision: none -- K-Dense paper-lookup: confirm a plan before work exceeds a bound; one run per article multiplies cost

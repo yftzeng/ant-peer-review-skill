@@ -24,6 +24,7 @@ ALLOWED_TYPES = ("text/html", "application/xhtml+xml", "text/plain", "text/markd
                  "application/pdf", "application/rss+xml", "application/atom+xml",
                  "application/xml", "text/xml", "application/rdf+xml")
 MAX_REDIRECTS = 5
+DEFAULT_MIN_INTERVAL = 1.0   # seconds between requests to one host (politeness)
 _V6_EMBEDDED_V4 = [ipaddress.ip_network(n) for n in ("64:ff9b::/96", "64:ff9b:1::/48", "::/96")]
 
 
@@ -91,6 +92,7 @@ class Crawler:
     def __init__(self, *, resolver: Resolver = system_resolver, max_bytes: int = 10_000_000,
                  timeout: float = 20.0, site_profiles: dict | None = None,
                  respect_robots: bool = True, deadline: float = 120.0,
+                 min_interval: float | None = None,
                  _allow_hosts_for_tests: frozenset[str] = frozenset()):
         self.resolver = resolver
         self.max_bytes = max_bytes
@@ -98,6 +100,8 @@ class Crawler:
         self.profiles = site_profiles or {}
         self.respect_robots = respect_robots
         self.deadline = deadline
+        self.min_interval = DEFAULT_MIN_INTERVAL if min_interval is None else min_interval
+        self._last_hit: dict[str, float] = {}
         self._test_hosts = _allow_hosts_for_tests
         self._robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
 
@@ -170,6 +174,10 @@ class Crawler:
     def _request(self, url: str, ua: str, until: float | None = None) -> tuple[int, dict, bytes]:
         until = until or time.monotonic() + self.deadline
         scheme, host, port, ip, path = self._target(url)
+        wait = self._last_hit.get(host, -1e9) + self.min_interval - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
+        self._last_hit[host] = time.monotonic()
         cls = _PinnedHTTPS if scheme == "https" else _PinnedHTTP
         conn = cls(host, ip, port=port, timeout=self.timeout)
         try:

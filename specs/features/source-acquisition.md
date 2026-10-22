@@ -144,6 +144,12 @@ Feature: source acquisition
     Given a target "https://ex.example/feed?token=abc123&page=2"
     When  the run's sources phase and report are written
     Then  manifest, report and progress output show "token=REDACTED&page=2" and never "abc123"
+
+  @S-source-acquisition-023
+  Scenario: requests to the same host are spaced out
+    Given a crawler with a minimum interval of 0.3 seconds per host
+    When  robots.txt and a page are fetched from one host
+    Then  the second request starts at least 0.3 seconds after the first
 ```
 
 ## Must NOT
@@ -155,3 +161,4 @@ Feature: source acquisition
 - 2026-10-22 · +S-source-acquisition-017..018 · decision: none -- user: an iThome series RSS URL failed with content_type application/rss+xml
 - 2026-10-22 · ~S-source-acquisition-018 +S-source-acquisition-019 · decision: none -- the iThome RSS strips punctuation (、) from content:encoded, which reviewers would score as errors; and its article pages have no article/main tag
 - 2026-10-22 · +S-source-acquisition-020..022 · decision: none -- K-Dense paper-lookup: APIs fail with HTTP 200, verify the shape; paginate.py redacts credentials in provenance; paperzilla: keep feed tokens out of logs and reports
+- 2026-10-22 · +S-source-acquisition-023 · decision: none -- K-Dense paper-lookup: serialize and rate-limit requests per host; a feed now fans out into many page fetches

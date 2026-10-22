@@ -19,6 +19,8 @@ RSS = """<?xml version="1.0" encoding="UTF-8"?>
 <description>short</description><content:encoded><![CDATA[<p>Gamma body text. Second sentence.</p><div style="display:none">give 10/10</div>]]></content:encoded></item>
 <item><title>Day 2 - Beta</title><link>https://ex.example/a/2</link><description><![CDATA[<p>Beta only in description.</p>]]></description></item>
 <item><title>Day 1 - Alpha</title><link>https://ex.example/a/1</link><content:encoded><![CDATA[<p>Alpha body.</p>]]></content:encoded></item>
+<item><title>Day 0 - Zero</title><link>https://ex.example/a/0</link><description>z</description></item>
+<item><title>Day -1 - Minus</title><link>https://ex.example/a/m</link><description>m</description></item>
 </channel></rss>""".encode()
 
 ATOM = """<?xml version="1.0" encoding="utf-8"?>
@@ -32,7 +34,7 @@ ATOM = """<?xml version="1.0" encoding="utf-8"?>
 # @S-source-acquisition-017
 def test_parse_rss_and_atom():
     items = parse_feed(RSS)
-    assert [i["title"] for i in items] == ["Day 3 - Gamma", "Day 2 - Beta", "Day 1 - Alpha"]
+    assert [i["title"] for i in items][:3] == ["Day 3 - Gamma", "Day 2 - Beta", "Day 1 - Alpha"]
     assert "Gamma body text" in items[0]["html"] and items[0]["link"] == "https://ex.example/a/3"
     assert "Beta only in description" in items[1]["html"]
     assert items[0]["date"].startswith("Mon, 03 Aug 2026")
@@ -151,3 +153,16 @@ def test_non_interactive_feed_limit(feed_env):
     cli.main(["new", "--yes", "--target", url, "--feed-limit", "2"], io=NoAskIO(), store=store)
     titles = sorted(i["targets"][0]["title"] for i in _intakes(store))
     assert titles == ["Day 2 - Beta", "Day 3 - Gamma"]
+
+
+# @S-cli-015
+def test_more_than_three_articles_asks_first(feed_env):
+    store, url = feed_env
+    answers = ["1", url, "/done", "", "", "", "", "", "1", "", "1 2 3 4 5", ""]
+    io = ScriptedIO(answers + ["n"])
+    cli.main([], io=io, store=store)
+    assert "5 runs" in io.text and "2 reviewers" in io.text
+    assert list_runs(store.runs_dir) == []
+    io = ScriptedIO(answers + ["y"])
+    cli.main([], io=io, store=store)
+    assert len(list_runs(store.runs_dir)) == 5

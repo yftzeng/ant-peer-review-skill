@@ -213,5 +213,8 @@
   "report.q.page": "page",
   "report.q.feed_copy": "feed copy, may be lossy",
   "report.q.path": "file",
-  "report.q.text": "pasted text"
+  "report.q.text": "pasted text",
+  "feed.scale": "That is {n} runs with {m} reviewers each; every run makes about {calls} model calls plus its fact checks.",
+  "feed.scale_confirm": "Go ahead with all of them?",
+  "feed.nothing": "Nothing to review; no run was created."
 }
