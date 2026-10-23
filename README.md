@@ -126,4 +126,26 @@ python3 -m pytest -q        # 100+ tests; specs live in specs/features/*.md (Ghe
 
 Try the tool from this checkout: `scripts/try.sh new --backend fake`. All data goes to `./workspaces/`, which git ignores and `.claude/settings.json` blocks Claude from reading, because it holds untrusted crawled content.
 
-The design and its decisions are in [docs/DESIGN.md](docs/DESIGN.md). The reference skills we studied, and what was borrowed from each, are listed in [docs/REFERENCES.md](docs/REFERENCES.md). The `anthropic-api` backend is reserved: its interface exists, and the build order puts it second.
+The design and its decisions are in [docs/DESIGN.md](docs/DESIGN.md); what it draws on is under [References](#references). The `anthropic-api` backend is reserved: its interface exists, and the build order puts it second.
+
+## References
+
+Full list, with what was borrowed and where it lives: [docs/REFERENCES.md](docs/REFERENCES.md).
+
+Review skills studied (all MIT; ideas only, no code or text copied):
+- [K-Dense-AI peer-review](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/peer-review/SKILL.md) (MIT)
+- [tsingke/thesis-review-skill](https://github.com/tsingke/thesis-review-skill) (MIT)
+- [jam-cc/paper-review.skill](https://github.com/jam-cc/paper-review.skill) (MIT)
+- [K-Dense-AI paperzilla](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paperzilla/SKILL.md) (MIT)
+- [K-Dense-AI paper-lookup](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paper-lookup/SKILL.md) (MIT)
+
+Independent public sources behind the other ideas: RFC 7282 (consensus), Altman & Bland 1995 (absence of evidence), Kim et al. 2025 (correlated LLM errors), the Cochrane Handbook (blinded assessment), the CGI-I scale, NASA SWE-059 (traceability), Noble 2017 (responding to reviewers), Toulmin (argument structure), NIST SP 800-86 and AI RMF, OWASP LLM01/LLM05:2025, Greshake et al. 2023 (indirect prompt injection), Unicode UAX #15 / UTS #39, Trojan Source and CWE-367. See [docs/REFERENCES.md §6](docs/REFERENCES.md#6-independent-sources-replace-rows-69).
+
+Four other skills were read during design, but their licences do not allow commercial use (CC BY-NC 4.0, or no licence). Every idea first seen there was traced to an independent source above and renamed; nothing from them is in this repo.
+
+## License
+
+[MIT](LICENSE) © 2026 Yi-Feng Tzeng. Commercial use is allowed.
+
+- No runtime dependencies. The optional extras keep their own licences: `pdf` → pypdf (BSD-3-Clause), `render` → Playwright (Apache-2.0), `test` → pytest (MIT).
+- Data fetched at run time (web pages, doi.org, Crossref, arXiv) stays under its owners' terms. The tool stores it in your workspace only; this licence does not cover it.

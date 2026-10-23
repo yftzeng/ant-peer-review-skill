@@ -125,4 +125,26 @@ python3 -m pytest -q        # 100+ 个测试；行为规格写在 specs/features
 
 在本目录直接试用：`scripts/try.sh new --backend fake`。所有数据都写入 `./workspaces/`。该目录已被 git 忽略，`.claude/settings.json` 也禁止 Claude 读取，因为里面存放的是抓取到的不可信内容。
 
-设计和各项决策见 [docs/DESIGN.md](docs/DESIGN.md)。参考过的 7 个 skill 清单及各自借鉴了什么，见 [docs/REFERENCES.md](docs/REFERENCES.md)。`anthropic-api` 后端的接口已预留，按开发顺序排在第二阶段实现。
+设计和各项决策见 [docs/DESIGN.md](docs/DESIGN.md)；参考来源见下方[参考来源](#参考来源)。`anthropic-api` 后端的接口已预留，按开发顺序排在第二阶段实现。
+
+## 参考来源
+
+完整清单、借鉴了什么、在本 repo 的哪里：[docs/REFERENCES.md](docs/REFERENCES.md)。
+
+参考过的审稿 skill（均为 MIT；只借鉴思路，未复制代码或文字）：
+- [K-Dense-AI peer-review](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/peer-review/SKILL.md) (MIT)
+- [tsingke/thesis-review-skill](https://github.com/tsingke/thesis-review-skill) (MIT)
+- [jam-cc/paper-review.skill](https://github.com/jam-cc/paper-review.skill) (MIT)
+- [K-Dense-AI paperzilla](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paperzilla/SKILL.md) (MIT)
+- [K-Dense-AI paper-lookup](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paper-lookup/SKILL.md) (MIT)
+
+其余思路依据的公开来源：RFC 7282 (consensus), Altman & Bland 1995 (absence of evidence), Kim et al. 2025 (correlated LLM errors), the Cochrane Handbook (blinded assessment), the CGI-I scale, NASA SWE-059 (traceability), Noble 2017 (responding to reviewers), Toulmin (argument structure), NIST SP 800-86 and AI RMF, OWASP LLM01/LLM05:2025, Greshake et al. 2023 (indirect prompt injection), Unicode UAX #15 / UTS #39, Trojan Source and CWE-367。详见 [docs/REFERENCES.md §6](docs/REFERENCES.md#6-independent-sources-replace-rows-69)。
+
+设计期间另读过 4 个 skill，但许可证不允许商用（CC BY-NC 4.0，或未声明许可证）。在那里看到的每个思路都已改用上述独立来源并重新命名，本 repo 不含它们的任何内容。
+
+## 许可证
+
+[MIT](LICENSE) © 2026 Yi-Feng Tzeng，可商用。
+
+- 运行时没有依赖包。可选依赖各有许可证：`pdf` → pypdf（BSD-3-Clause）、`render` → Playwright（Apache-2.0）、`test` → pytest（MIT）。
+- 运行时抓取的数据（网页、doi.org、Crossref、arXiv）仍归原权利人，工具只存入你的 workspace，不在本许可证范围内。
