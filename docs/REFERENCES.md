@@ -24,17 +24,21 @@ Do not paste text or code from rows marked "no" into this repo.
 
 | # | Repo | Kind | Licence | Main takeaway |
 |---|---|---|---|---|
-| 1 | [K-Dense-AI/scientific-agent-skills — peer-review](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/peer-review/SKILL.md) | scientific manuscript review | MIT | machine-checkable comment schema + linter |
-| 2 | [tsingke/thesis-review-skill](https://github.com/tsingke/thesis-review-skill) | thesis grading (zh-CN) | MIT | weighted dimensions with score bands, per-item folders |
-| 3 | [jam-cc/paper-review.skill](https://github.com/jam-cc/paper-review.skill) | ML paper review | MIT | citation verification discipline |
-| 4 | [K-Dense-AI/scientific-agent-skills — paperzilla](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paperzilla/SKILL.md) | CLI wrapper for a paper-recommendation service | MIT | label what a summary was built from; keep tokens out of logs; honest paging |
-| 5 | [K-Dense-AI/scientific-agent-skills — paper-lookup](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/paper-lookup/SKILL.md) | 18 scholarly APIs with provenance | MIT | "APIs can fail with HTTP 200"; identifier resolution; credential redaction; bounded work |
-| 6 | [black-yt/skills — rebuttal-writing](https://github.com/black-yt/skills/blob/main/rebuttal-writing/SKILL.md) | author rebuttal | none | superseded by §6 |
-| 7 | [black-yt/skills — paper-review-writing](https://github.com/black-yt/skills/tree/main/paper-review-writing) | review writing | none | superseded by §6 |
-| 8 | [black-yt/skills — paper-review-injection-audit](https://github.com/black-yt/skills/tree/main/paper-review-injection-audit) | prompt-injection audit | none | superseded by §6 |
+| 1 | [K-Dense-AI/scientific-agent-skills — peer-review @593377b](https://github.com/K-Dense-AI/scientific-agent-skills/tree/593377bb048752abb0152deab9fbb1083a6087df/skills/peer-review) | scientific manuscript review | MIT | machine-checkable comment schema + linter |
+| 2 | [tsingke/thesis-review-skill @15c9148](https://github.com/tsingke/thesis-review-skill/tree/15c9148bfc0d36ee0c6c52e936d4d5d2d94b8cee) | thesis grading (zh-CN) | MIT | weighted dimensions with score bands, per-item folders |
+| 3 | [jam-cc/paper-review.skill @bb9900f](https://github.com/jam-cc/paper-review.skill/tree/bb9900ff7a95e6a28092ab0a9e1d81098f41634e) | ML paper review | MIT | citation verification discipline |
+| 4 | [K-Dense-AI/scientific-agent-skills — paperzilla @593377b](https://github.com/K-Dense-AI/scientific-agent-skills/tree/593377bb048752abb0152deab9fbb1083a6087df/skills/paperzilla) | CLI wrapper for a paper-recommendation service | MIT | label what a summary was built from; keep tokens out of logs; honest paging |
+| 5 | [K-Dense-AI/scientific-agent-skills — paper-lookup @593377b](https://github.com/K-Dense-AI/scientific-agent-skills/tree/593377bb048752abb0152deab9fbb1083a6087df/skills/paper-lookup) | 18 scholarly APIs with provenance | MIT | "APIs can fail with HTTP 200"; identifier resolution; credential redaction; bounded work |
+| 6 | [black-yt/skills — rebuttal-writing @f462695](https://github.com/black-yt/skills/tree/f462695179aef1aaefec1d508b7506706756d1d0/rebuttal-writing) | author rebuttal | none | superseded by §6 |
+| 7 | [black-yt/skills — paper-review-writing @f462695](https://github.com/black-yt/skills/tree/f462695179aef1aaefec1d508b7506706756d1d0/paper-review-writing) | review writing | none | superseded by §6 |
+| 8 | [black-yt/skills — paper-review-injection-audit @f462695](https://github.com/black-yt/skills/tree/f462695179aef1aaefec1d508b7506706756d1d0/paper-review-injection-audit) | prompt-injection audit | none | superseded by §6 |
 | 9 | [Imbad0202/academic-research-skills — academic-paper-reviewer @3224a27](https://github.com/Imbad0202/academic-research-skills/tree/3224a27a2571cefef0fddfd437004cb006f2b0cb/academic-paper-reviewer) | multi-reviewer panel | CC BY-NC 4.0 | superseded by §6 |
 
-## 1. K-Dense-AI peer-review
+Commits: K-Dense-AI/scientific-agent-skills `593377bb048752abb0152deab9fbb1083a6087df`; tsingke/thesis-review-skill `15c9148bfc0d36ee0c6c52e936d4d5d2d94b8cee`; jam-cc/paper-review.skill `bb9900ff7a95e6a28092ab0a9e1d81098f41634e`; black-yt/skills `f462695179aef1aaefec1d508b7506706756d1d0`; Imbad0202/academic-research-skills `3224a27a2571cefef0fddfd437004cb006f2b0cb`. Rows 1–8 were first linked to the default branch; on 2026-10-24 each was pinned to the last commit on or before 2026-10-22, the day they were read. No commit between that one and the 2026-10-24 head touches the paths read, so the pinned files are the ones read.
+
+Upstream last checked: 2026-10-24, with `scripts/refs-drift.sh` (all 9 pinned paths unchanged). Run it before borrowing again; it only reports, and a moved pin is an edit made by hand after reading the change.
+
+## 1. K-Dense-AI peer-review (@593377b)
 
 | Borrowed | Where here |
 |---|---|
@@ -51,7 +55,7 @@ Do not paste text or code from rows marked "no" into this repo.
 | Never score; never give a verdict | We need a weighted total and a grade. The veto rule supplies the non-compensatory part. |
 | CONSORT and other medical reporting guidelines; confidentiality and conflict-of-interest paperwork | Academic only. |
 
-## 2. tsingke/thesis-review-skill
+## 2. tsingke/thesis-review-skill (@15c9148)
 
 | Borrowed | Where here |
 |---|---|
@@ -66,7 +70,7 @@ Do not paste text or code from rows marked "no" into this repo.
 | Fill-in-the-blank boilerplate praise; a score floor of 80 | Encourages generic, hallucination-prone text; the floor kills discrimination between pieces. |
 | Fully automatic, no confirmation | Conflicts with the HITL gates (audience card, rubric, decision). |
 
-## 3. jam-cc/paper-review.skill
+## 3. jam-cc/paper-review.skill (@bb9900f)
 
 | Borrowed | Where here |
 |---|---|
@@ -81,7 +85,7 @@ Do not paste text or code from rows marked "no" into this repo.
 | Prose-only reviews without bullets | Clashes with the anchored issues table. |
 | Reference caps; ML-venue formats | Academic only. |
 
-## 4. K-Dense-AI paperzilla
+## 4. K-Dense-AI paperzilla (@593377b)
 
 | Borrowed | Where here |
 |---|---|
@@ -94,7 +98,7 @@ Do not paste text or code from rows marked "no" into this repo.
 |---|---|
 | The `pz` CLI, account login, recommendation feedback | Specific to that service. |
 
-## 5. K-Dense-AI paper-lookup
+## 5. K-Dense-AI paper-lookup (@593377b)
 
 | Borrowed | Where here |
 |---|---|

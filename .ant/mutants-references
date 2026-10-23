@@ -1,0 +1,31 @@
+# every GitHub reference pinned; refs-drift per-path verdicts (S-references-001..003, N-references-001)
+@@ scripts/refs-drift.sh
+-   n=$(git -C "$dir" rev-list --count "$pin..$head" -- ${path:+"$path"})
++   n=$(git -C "$dir" rev-list --count "$pin..$head")
+@@ scripts/refs-drift.sh
+-   git -C "$dir" diff --no-renames --name-status "$pin" "$head" -- ${path:+"$path"} | sed 's/^/    /'
++   git -C "$dir" diff --no-renames --name-status "$pin" "$head" | sed 's/^/    /'
+@@ scripts/refs-drift.sh
+-   exit 1
++   exit 0
+@@ scripts/refs-drift.sh
+-   exit 2
++   exit 1
+@@ scripts/refs-drift.sh
+-   if [ "$head" = "$pin" ]; then
++   if [ "$head" != "$pin" ]; then
+@@ scripts/refs-drift.sh
+-     echo "$label moved, path unchanged (head ${head:0:12})"
++     echo "$label same"
+@@ scripts/refs-drift.sh
+-   echo "    https://github.com/$owner/$repo/compare/${pin:0:12}...${head:0:12}"
++   echo "    https://github.com/$owner/$repo/compare/${head:0:12}...${pin:0:12}"
+@@ scripts/refs-drift.sh
+- echo "refs-drift: PASS -- $total pinned paths, none changed upstream; set 'Upstream last checked' to $(date +%F)"
++ echo "refs-drift: PASS -- $total pinned paths"; echo x >> "$refs"
+@@ docs/REFERENCES.md
+- Upstream last checked: 2026-10-24, with `scripts/refs-drift.sh` (all 9 pinned paths unchanged). Run it before borrowing again; it only reports, and a moved pin is an edit made by hand after reading the change.
++ Upstream checked: 2026-10-24, with `scripts/refs-drift.sh` (all 9 pinned paths unchanged). Run it before borrowing again; it only reports, and a moved pin is an edit made by hand after reading the change.
+@@ docs/REFERENCES.md
+- | 2 | [tsingke/thesis-review-skill @15c9148](https://github.com/tsingke/thesis-review-skill/tree/15c9148bfc0d36ee0c6c52e936d4d5d2d94b8cee) | thesis grading (zh-CN) | MIT | weighted dimensions with score bands, per-item folders |
++ | 2 | [tsingke/thesis-review-skill @15c9148](https://github.com/tsingke/thesis-review-skill/tree/main) | thesis grading (zh-CN) | MIT | weighted dimensions with score bands, per-item folders |
