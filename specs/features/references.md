@@ -28,6 +28,12 @@ Feature: references
     When  refs-drift runs
     Then  each path is reported "same", the last line starts "refs-drift: PASS" and the exit code is 0
     And   when a referenced repo cannot be cloned the last line starts "refs-drift: FAIL" and the exit code is 2
+
+  @S-references-004
+  Scenario: a link to a moving version names the version read
+    Given a reference whose URL path has /current/, /latest/ or /stable/ (it follows the publisher's newest edition)
+    When  the test reads docs/REFERENCES.md
+    Then  the same line names the version read as v<number>, such as "Cochrane Handbook v6.5"
 ```
 
 ## Must NOT
@@ -36,3 +42,4 @@ Feature: references
 ## Revisions
 - 2026-10-23 · created · decision: none -- no feature covers docs/REFERENCES.md: how a reference is pinned to the commit read and how upstream drift is checked
 - 2026-10-24 · +S-references-001..003 +N-references-001 · decision: none -- user: 開工 (pin each reference to the commit read and check upstream drift with one command)
+- 2026-10-24 · +S-references-004 · decision: none -- user: 處理下Cochrane Handbook (its link follows the newest edition, so the line names the version read)

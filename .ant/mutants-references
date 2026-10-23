@@ -29,3 +29,12 @@
 @@ docs/REFERENCES.md
 - | 2 | [tsingke/thesis-review-skill @15c9148](https://github.com/tsingke/thesis-review-skill/tree/15c9148bfc0d36ee0c6c52e936d4d5d2d94b8cee) | thesis grading (zh-CN) | MIT | weighted dimensions with score bands, per-item folders |
 + | 2 | [tsingke/thesis-review-skill @15c9148](https://github.com/tsingke/thesis-review-skill/tree/main) | thesis grading (zh-CN) | MIT | weighted dimensions with score bands, per-item folders |
+@@ tests/test_references.py
+-             if MOVING.search(ln) and not re.search(r"\bv\d+(?:\.\d+)*\b", ln)]
++             if MOVING.search(ln) and not re.search(r"\d", ln)]
+@@ tests/test_references.py
+- MOVING = re.compile(r"https?://[^\s)>`\"]*/(?:current|latest|stable)(?:[/#?][^\s)>`\"]*)?(?=[\s)>`\"]|$)")
++ MOVING = re.compile(r"https?://[^\s)>`\"]*/(?:latest|stable)(?:[/#?][^\s)>`\"]*)?(?=[\s)>`\"]|$)")
+@@ docs/REFERENCES.md
+- | Judge a revision before reading the author's reply | [Cochrane Handbook v6.5 (2024), ch. 8, last updated October 2019](https://www.cochrane.org/authors/handbooks-and-manuals/handbook/current/chapter-08) (read 2026-10-22, when v6.5 was current; the link follows the newest edition, and earlier editions are under [previous versions](https://www.cochrane.org/authors/handbooks-and-manuals/handbook#previous-versions)): bias in measurement of the outcome, blinding of outcome assessors | `recheck` gate 1 never sees the reply; gate 2 compares claims |
++ | Judge a revision before reading the author's reply | [Cochrane Handbook (2024), ch. 8, last updated October 2019](https://www.cochrane.org/authors/handbooks-and-manuals/handbook/current/chapter-08) (read 2026-10-22, when it was current; the link follows the newest edition, and earlier editions are under [previous versions](https://www.cochrane.org/authors/handbooks-and-manuals/handbook#previous-versions)): bias in measurement of the outcome, blinding of outcome assessors | `recheck` gate 1 never sees the reply; gate 2 compares claims |

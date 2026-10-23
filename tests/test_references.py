@@ -92,3 +92,20 @@ def test_drift_passes_when_unmoved_and_fails_when_unreadable(tmp_path):
     r, lines = _drift(tmp_path, pin, repo="missing")
     assert r.returncode == 2, lines
     assert lines[-1].startswith("refs-drift: FAIL"), lines
+
+
+MOVING = re.compile(r"https?://[^\s)>`\"]*/(?:current|latest|stable)(?:[/#?][^\s)>`\"]*)?(?=[\s)>`\"]|$)")
+
+
+def unversioned_moving_links(text):
+    return [ln for ln in text.splitlines()
+            if MOVING.search(ln) and not re.search(r"\bv\d+(?:\.\d+)*\b", ln)]
+
+
+# @S-references-004
+def test_moving_links_name_the_version_read():
+    assert unversioned_moving_links("[H, ch. 8](https://x.org/handbook/current/chapter-08)")
+    assert not unversioned_moving_links("[H v6.5, ch. 8](https://x.org/handbook/current/chapter-08)")
+    assert not unversioned_moving_links("[RFC](https://x.org/rfc/rfc7282.html) concurrent")
+    refs = (ROOT / "docs" / "REFERENCES.md").read_text()
+    assert unversioned_moving_links(refs) == []
