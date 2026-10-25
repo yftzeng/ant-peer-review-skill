@@ -43,8 +43,13 @@ def test_ruling_recorded_and_new_report(tmp_path):
 def test_choice_becomes_final(tmp_path):
     run, store = setup(tmp_path)
     decide(run, store, ScriptedIO(["2"]))
-    assert run.path("final.md").read_text() == "B text\n"
-    assert read_json(run.path("08-decision.json"))["choice"] == "B"
+    assert run.path("audit.md").read_text() == "B text\n"
+    dec = read_json(run.path("08-decision.json"))
+    assert dec["choice"] == "B" and dec["final"].endswith("audit.md")
+    intake = read_json(run.path("00-intake.json"))
+    write_json(run.path("00-intake.json"), dict(intake, purpose="drafting"))
+    decide(run, store, ScriptedIO(["2"]))
+    assert run.path("draft.md").read_text() == "B text\n"
 
 
 ACME = [{"from": "Acme Corp", "to": "ACME", "category": "name"}]
@@ -82,7 +87,7 @@ def test_non_interactive(tmp_path):
     dec = decide(run, store, None, choice="A", rulings={"pr_landmine": "confirmed"})
     assert dec["choice"] == "A" and dec["rulings"] == {"pr_landmine": "confirmed"}
     assert read_json(run.path("05-consensus.json"))["grade"] == "fail"
-    assert run.path("final.md").read_text() == "A text\n"
+    assert run.path("audit.md").read_text() == "A text\n"
 
 
 def _unsupported_number(run):
@@ -124,7 +129,7 @@ def test_ruling_can_be_postponed(tmp_path):
         raise AssertionError("expected Postponed")
     except Postponed:
         pass
-    assert not run.path("08-decision.json").exists() and not run.path("final.md").exists()
+    assert not run.path("08-decision.json").exists() and not run.path("audit.md").exists()
 
 
 # @S-decision-008

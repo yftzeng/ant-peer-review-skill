@@ -1,7 +1,10 @@
 # Feature: decision
 
 The human gate: contested red lines are ruled on, then the editor adopts plan
-A, plan B or a manual edit, which becomes final.md. Corrections that keep
+A, plan B or a manual edit, which becomes audit.md (draft.md when drafting).
+Three kinds of output close the run: that text, review.md (one complete
+report: summary, key points and every check with its result and reason) and,
+for an audit, one ready-to-send reply per chosen style (reply-<style>.md). Corrections that keep
 recurring for a brand are proposed for its Style Guide and written only after
 confirmation.
 
@@ -14,10 +17,11 @@ Feature: decision
     Then  08-decision.json records the ruling and a new report version shows "Dismissed"
 
   @S-decision-002
-  Scenario: the chosen plan becomes final.md
+  Scenario: the chosen plan becomes audit.md, or draft.md when drafting
     Given plans A and B exist
     When  the editor chooses B
-    Then  final.md equals B.md and 08-decision.json records choice "B"
+    Then  audit.md equals B.md and 08-decision.json records choice "B" and that path
+    And   for a drafting run the same file is draft.md
 
   @S-decision-003
   Scenario: a recurring correction is proposed for the brand Style Guide
@@ -55,6 +59,41 @@ Feature: decision
     Given red line "pr_landmine" needs a ruling
     When  the editor chooses "decide later"
     Then  no ruling or plan is recorded, the decision phase stays pending, and the hint names the decide command
+
+  @S-decision-009
+  Scenario: review.md gathers every check into one report
+    Given a run with a report, a fact-check ledger, an injection scan and plans A and B
+    When  the plan is chosen
+    Then  review.md has a verdict, a summary, key points that each cite finding ids, a checks table with one row per
+          rubric dimension (score, pass / borderline / fail, the reviewers' reasons), one row per red line, and rows for
+          the fact-check, the injection scan and the report lint, then the findings, the review process and where the detail files are
+
+  @S-decision-010
+  Scenario: the summary only keeps what the findings back
+    Given the summary model returns a key point citing "F99", which does not exist, and one citing "F01"
+    When  review.md is written
+    Then  only the key point citing F01 is kept
+    And   when the summary call fails, review.md is still written and says the summary is missing
+
+  @S-decision-011
+  Scenario: an audit ends with one reply per chosen style
+    Given an audit run whose plan was just chosen
+    When  the editor keeps all five styles ticked in the reply checkbox
+    Then  reply-appreciative.md, reply-empathetic.md, reply-pragmatic.md, reply-socratic.md and reply-critical.md are written
+          from one model call that is told to write in the article's language,
+          with a length target per style that grows with the number and severity of findings
+    And   unticking styles writes only the ticked ones; a drafting run asks nothing and writes no reply
+
+  @S-decision-012
+  Scenario: replies are chosen by argument when not interactive
+    When  decide runs with --yes --choice A and then with --reply pragmatic,socratic, and with --reply none
+    Then  the first writes all five replies, the second only those two, the third none
+
+  @S-decision-013
+  Scenario: a reply that attacks the author is flagged
+    Given the reply model returns a critical reply containing "the author is clueless"
+    When  the replies are written
+    Then  the file is written with a warning at its top and the editor is told which style failed the tone check
 ```
 
 ## Must NOT
@@ -64,3 +103,4 @@ Feature: decision
 - 2026-10-22 · +S-decision-001..005 +N-decision-001 · decision: none -- follows docs/DESIGN.md §3 P9
 - 2026-10-22 · +S-decision-006 · decision: none -- adversarial security review (sonnet) proved these by running
 - 2026-10-25 · +S-decision-007..008 · decision: none -- user: the ruling prompt showed only "(b) ... —" with no reason, text or article, so the editor could not tell what to rule on
+- 2026-10-25 · ~S-decision-002 +S-decision-009..013 · decision: none -- user: end with audit (the best revision, like final), review (one detailed report with summary, key points and every check's score, result and reason) and reply files, one per style (appreciative, empathetic, pragmatic, socratic, critical), English names; drafting gets no reply

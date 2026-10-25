@@ -8,7 +8,7 @@ from datetime import datetime
 from .i18n import T
 from .jsonio import append_jsonl, read_json, read_jsonl, write_json, write_text_atomic
 from .store import Store
-from .ui import IO, confirm, radio, section
+from .ui import IO, checkbox, confirm, radio, section
 from .workspace import Run
 
 STYLE_CATEGORIES = {"term", "banned_word", "name"}
@@ -112,8 +112,10 @@ def available_plans(run: Run) -> list[str]:
 
 
 def write_final(run: Run, choice: str, manual_path: str | None = None) -> str:
+    """The adopted text: audit.md, or draft.md for a drafting run."""
+    from .deliver import output_name
     src = {"A": "07-revision/A.md", "B": "07-revision/B.md"}.get(choice)
-    final = run.path("final.md")
+    final = run.path(output_name(read_json(run.path("00-intake.json"))))
     if choice == "manual":
         if manual_path:
             shutil.copyfile(manual_path, final)
@@ -197,8 +199,11 @@ def propose_style_rules(io: IO, t: T, store: Store, run: Run, brand: str,
 
 def run_decision(io: IO | None, run: Run, store: Store, *, models: list[str], lang: str,
                  thresholds: dict[str, float], min_repeats: int, choice: str | None = None,
-                 rulings: dict[str, str] | None = None, manual_path: str | None = None) -> dict:
-    """Interactive when io is given and an argument is missing; otherwise from arguments."""
+                 rulings: dict[str, str] | None = None, manual_path: str | None = None,
+                 backend=None, reply_styles: list[str] | None = None) -> dict:
+    """Interactive when io is given and an argument is missing; otherwise from arguments.
+    With a backend, review.md and the replies are written after the plan is adopted;
+    reply_styles None means: ask (interactive audit) or all styles."""
     from .refresh import compute_consensus
     from .report import write_report
     t = T(lang)
@@ -229,5 +234,15 @@ def run_decision(io: IO | None, run: Run, store: Store, *, models: list[str], la
     dec = record_decision(run, choice=choice, rulings=rulings, final_path=final, brand=brand)
     if io is not None:
         dec["style_rules"] = propose_style_rules(io, t, store, run, brand, min_repeats)
+        write_json(run.path("08-decision.json"), dec)
+    if backend is not None:
+        from .deliver import STYLES, deliver
+        if reply_styles is None:
+            reply_styles = list(STYLES)
+            if io is not None and intake.get("purpose") != "drafting":
+                reply_styles = checkbox(io, t, t("deliver.pick"),
+                                        [(s, t("deliver.style." + s)) for s in STYLES], STYLES)
+        dec["delivered"] = deliver(run, backend, models, lang, thresholds, reply_styles,
+                                   say=io.say if io is not None else lambda *_: None)
         write_json(run.path("08-decision.json"), dec)
     return dec

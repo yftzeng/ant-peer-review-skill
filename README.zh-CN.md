@@ -67,7 +67,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | consensus | 用确定性程序统计各方立场：没提到不算同意；有异议的发现标为 SPLIT。随后执行红线否决，计算加权总分和等级。 |
 | report | 生成 `06-report.v<N>.md`：量化看板、红线、问题锚定表、分歧、事实核查账本、injection 扫描结果。 |
 | revision | A 方案为轻度润色，附逐字 diff，中文也能正确显示；B 方案为深度重构，由另一个模型复审。 |
-| decision | 由你裁决有争议的红线，再采用 A、B 或手动修改的版本，保存为 `final.md`。反复出现的修正会建议写入该品牌的 Style Guide。 |
+| decision | 由你裁决有争议的红线，再采用 A、B 或手动修改的版本，保存为 `audit.md`（撰写模式为 `draft.md`）。接着生成 `review.md`，把所有结果汇总成一份报告：结论、摘要、重点（每点附上依据的问题编号）、每个检查项的结果与原因、问题列表和审查过程。审核模式会让你勾选回复风格（默认五种全勾），每种生成一份可直接回复作者的文件：`reply-appreciative.md`（赏识激励型）、`reply-empathetic.md`（建设共情型）、`reply-pragmatic.md`（专业务实型）、`reply-socratic.md`（苏格拉底提问型）、`reply-critical.md`（批判挑刺型），语言与文章相同。`ant-peer-review deliver <run>` 可重新生成。反复出现的修正会建议写入该品牌的 Style Guide。 |
 
 ### 否决红线
 

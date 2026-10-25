@@ -63,9 +63,9 @@ def test_decide_then_resume(env):
     CountingFake.calls = []
     assert cli.main(["decide", run.id, "--yes", "--choice", "A"], io=NoAskIO(), store=env) == 0
     assert cli.main(["resume", run.id, "--yes"], io=NoAskIO(), store=env) == 0
-    assert run.path("final.md").read_text() == run.path("07-revision/A.md").read_text()
+    assert run.path("audit.md").read_text() == run.path("07-revision/A.md").read_text()
     assert all(run.status(p) == "done" for p in PHASES)
-    assert CountingFake.calls == []
+    assert sorted(task for _, task in CountingFake.calls) == ["reply", "summary"]
 
 
 # @S-cli-003
@@ -189,3 +189,17 @@ def test_runs_summary(env, tmp_path):
     data = list(csv.DictReader(out.open(encoding="utf-8")))
     assert len(data) == 3 and {"run", "title", "total", "grade", "red_lines", "findings",
                                "next"} <= set(data[0])
+
+
+# @S-cli-020
+def test_deliver_rewrites_outputs(env):
+    _, _, run = new_run(env)
+    cli.main(["decide", run.id, "--yes", "--choice", "A", "--reply", "none"], io=NoAskIO(), store=env)
+    assert not run.path("reply-critical.md").exists()
+    run.path("review.md").unlink()
+    before = run.path("audit.md").read_text()
+    assert cli.main(["deliver", run.id, "--reply", "critical"], io=NoAskIO(), store=env) == 0
+    assert run.path("review.md").exists() and run.path("reply-critical.md").exists()
+    assert not run.path("reply-socratic.md").exists()
+    assert run.path("audit.md").read_text() == before
+

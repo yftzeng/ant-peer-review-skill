@@ -67,7 +67,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | consensus | 用確定性的程式統計立場：沒提到不算同意，有異議就標成 SPLIT。接著套用紅線否決，算出加權總分和等級。 |
 | report | 產出 `06-report.v<N>.md`，內容包括量化看板、紅線、問題錨點表、分歧、事實查證帳本、injection 掃描結果。 |
 | revision | A 方案是輕度潤色，附逐字 diff，中文也能正確顯示。B 方案是深度重構，改完會由另一個模型複審。 |
-| decision | 由你裁決有爭議的紅線，再選擇採用 A、B 或手動修改的版本，存成 `final.md`。反覆出現的修正會建議寫進該品牌的 Style Guide。 |
+| decision | 由你裁決有爭議的紅線，再選擇採用 A、B 或手動修改的版本，存成 `audit.md`（撰寫模式為 `draft.md`）。接著產出 `review.md`，把所有結果彙整成一份報告：結論、摘要、重點（每點附上依據的問題編號）、每個檢查項的結果與原因、問題清單和審查過程。審核模式會讓你勾選回覆風格（預設五種全勾），每種產出一份可直接回覆作者的檔案：`reply-appreciative.md`（賞識激勵型）、`reply-empathetic.md`（建設共情型）、`reply-pragmatic.md`（專業務實型）、`reply-socratic.md`（蘇格拉底提問型）、`reply-critical.md`（批判挑刺型），語言與文章相同。`ant-peer-review deliver <run>` 可重新產出。反覆出現的修正會建議寫進該品牌的 Style Guide。 |
 
 ### 否決紅線
 

@@ -43,6 +43,16 @@ class FakeBackend(Backend):
     def _probe(self, *a):
         return {"ok": True}
 
+    def _summary(self, model, ids, paras, bias, prompt):
+        found = re.findall(r'"id": "(F\d+)"', prompt)
+        return {"summary": f"[fake:{model}] {len(found)} findings.",
+                "key_points": [{"text": "Fix the first finding.", "findings": found[:1]}] if found
+                else []}
+
+    def _reply(self, model, ids, paras, bias, prompt):
+        styles = re.findall(r"^- (\w+): about \d+ units", prompt, re.M)
+        return {"replies": [{"style": s, "text": f"[fake:{model}] {s} reply."} for s in styles]}
+
     def _profile(self, model, ids, paras, bias, prompt):
         # Suggests nothing for the audience, so the layers are asked as without analysis.
         return {"genre": "other", "topic": "", "brand": "", "notes": "",

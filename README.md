@@ -62,7 +62,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | consensus | A deterministic tally. Silence is not agreement; disputes are reported as SPLIT. Red-line veto; weighted total and grade. |
 | report | `06-report.v<N>.md`: scoreboard, red lines, anchored issues table, disagreements, ledger, injection scan. |
 | revision | Plan A is a line edit with a character-level diff, safe for CJK text. Plan B is a developmental edit, re-reviewed by a second model. |
-| decision | You rule on contested red lines and adopt A, B or a manual edit, which becomes `final.md`. Recurring corrections are proposed for the brand Style Guide. |
+| decision | You rule on contested red lines and adopt A, B or a manual edit, which becomes `audit.md` (`draft.md` when drafting). Then `review.md` gathers everything in one report: verdict, summary, key points (each citing its findings), every check with its result and reason, the findings and the review process. For an audit you tick reply styles (all five by default) and get one ready-to-send reply each: `reply-appreciative.md`, `reply-empathetic.md`, `reply-pragmatic.md`, `reply-socratic.md`, `reply-critical.md`, written in the article's language. `ant-peer-review deliver <run>` writes them again. Recurring corrections are proposed for the brand Style Guide. |
 
 ### Red lines (veto)
 
@@ -106,7 +106,7 @@ Run workspace:
 state.json  00-intake.json  01-sources/{manifest.json,raw/,normalized/,segments.json,injection-scan.json}
 02-rubric.json  03-reviews/<model>.json  factcheck/ledger.jsonl  04-debate/<model>.json
 05-consensus.json  06-report.v<N>.{md,json}  07-revision/{A.md,A.diff,B.md,B.diff,rereview.json}
-08-decision.json  final.md
+08-decision.json  audit.md (draft.md)  review.md  reply-*.md
 ```
 
 ## Safety

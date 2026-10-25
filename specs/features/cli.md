@@ -16,7 +16,8 @@ Feature: cli
   Scenario: resume skips finished phases and continues
     Given a run paused at the decision gate
     When  "ant-peer-review decide <run> --yes --choice A" runs, then "resume <run>"
-    Then  final.md equals A.md, every phase is done and no reviewer model is called again
+    Then  audit.md equals A.md, every phase is done, no reviewer is called again,
+          and the only model calls are one review summary and one call for the replies
 
   @S-cli-003
   Scenario: rerun from review calls the reviewers again and writes a new report
@@ -122,6 +123,12 @@ Feature: cli
     Given a run made from a feed
     When  it finishes
     Then  the output names "ant-peer-review more <run>"
+
+  @S-cli-020
+  Scenario: deliver rewrites the review and replies of a decided run
+    Given a decided run
+    When  "ant-peer-review deliver <run> --reply critical" runs
+    Then  review.md is written again and reply-critical.md is written, and the chosen plan is unchanged
 ```
 
 ## Must NOT
@@ -136,3 +143,4 @@ Feature: cli
 - 2026-10-22 · +S-cli-014 · decision: none -- paperzilla: report partial pages honestly; the iThome series feed lists 15 of its articles
 - 2026-10-22 · +S-cli-015 · decision: none -- K-Dense paper-lookup: confirm a plan before work exceeds a bound; one run per article multiplies cost
 - 2026-10-25 · +S-cli-016..019 · decision: none -- user: the article list is paged with counts, sorted oldest first; after a review the user can pick more articles without the intake questions, and an article reviewed before is marked but can be re-reviewed
+- 2026-10-25 · ~S-cli-002 +S-cli-020 · decision: none -- user: audit / review / reply outputs; decide now writes them, deliver rewrites them (also for runs decided before this)

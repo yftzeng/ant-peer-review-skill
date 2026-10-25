@@ -78,6 +78,13 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--choice", choices=["A", "B", "manual"])
     d.add_argument("--rule", action="append", default=[], help="red_line=confirmed|dismissed")
     d.add_argument("--file", help="your own final file for --choice manual")
+    d.add_argument("--reply", help="reply styles to write: all (default), none, or a comma list of "
+                                   "appreciative,empathetic,pragmatic,socratic,critical")
+
+    dl = sub.add_parser("deliver", parents=[common],
+                        help="write review.md and the replies again for a decided run")
+    dl.add_argument("run")
+    dl.add_argument("--reply", help="as for decide (default all)")
 
     c = sub.add_parser("config", parents=[common], help="change saved settings")
     c.add_argument("what", choices=["models", "backend", "lang", "show"])
@@ -446,9 +453,11 @@ def cmd_decide(args, io, store, cfg) -> int:
             return EXIT_USAGE
         rulings[k] = v
     try:
+        styles = parse_styles(args.reply)
         run_decision(None if args.yes else io, run, store, models=ctx.models, lang=ctx.lang,
                      thresholds=cfg.grade_thresholds, min_repeats=cfg.style_guide_min_repeats,
-                     choice=args.choice, rulings=rulings, manual_path=args.file)
+                     choice=args.choice, rulings=rulings, manual_path=args.file,
+                     backend=ctx.backend, reply_styles=styles)
     except ValueError as e:
         io.say(f"error: {e}")
         return EXIT_USAGE
@@ -459,6 +468,39 @@ def cmd_decide(args, io, store, cfg) -> int:
     io.say(ctx.t("run.done", path=str(run.root)))
     if feed_of(run):
         io.say(ctx.t("run.more_hint", run=run.id))
+    return EXIT_OK
+
+
+def parse_styles(value: str | None) -> list[str] | None:
+    """None = ask or all; 'all'; 'none'; or a comma list. ValueError on an unknown style."""
+    from .deliver import STYLES
+    if value is None:
+        return None
+    if value.strip() in ("all", ""):
+        return list(STYLES)
+    if value.strip() == "none":
+        return []
+    picked = [s.strip() for s in value.split(",") if s.strip()]
+    bad = [s for s in picked if s not in STYLES]
+    if bad:
+        raise ValueError(f"unknown reply style(s): {', '.join(bad)}; choose from {STYLES}")
+    return [s for s in STYLES if s in picked]
+
+
+def cmd_deliver(args, io, store, cfg) -> int:
+    from .deliver import STYLES, deliver
+    run = find_run(store, args.run)
+    ctx = run_ctx(args, io, store, cfg, run)
+    if not run.path("08-decision.json").exists():
+        io.say(ctx.t("deliver.undecided", run=run.id))
+        return EXIT_USAGE
+    try:
+        styles = parse_styles(args.reply)
+    except ValueError as e:
+        io.say(f"error: {e}")
+        return EXIT_USAGE
+    deliver(run, ctx.backend, ctx.models, ctx.lang, cfg.grade_thresholds,
+            list(STYLES) if styles is None else styles, say=io.say)
     return EXIT_OK
 
 
@@ -584,7 +626,7 @@ def cmd_runs(args, io, store, cfg) -> int:
 
 
 COMMANDS = {"new": cmd_new, "more": cmd_more, "resume": cmd_resume, "rerun": cmd_rerun,
-            "factcheck": cmd_factcheck, "decide": cmd_decide, "config": cmd_config,
+            "factcheck": cmd_factcheck, "decide": cmd_decide, "deliver": cmd_deliver, "config": cmd_config,
             "lessons": cmd_lessons, "runs": cmd_runs, "recheck": cmd_recheck}
 
 

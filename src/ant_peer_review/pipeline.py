@@ -301,7 +301,7 @@ def ph_decision(run: Run, ctx: Ctx) -> None:
     try:
         run_decision(ctx.io, run, ctx.store, models=ctx.models, lang=ctx.lang,
                      thresholds=ctx.cfg.grade_thresholds,
-                     min_repeats=ctx.cfg.style_guide_min_repeats)
+                     min_repeats=ctx.cfg.style_guide_min_repeats, backend=ctx.backend)
     except Postponed:
         ctx.say(ctx.t("decide.postponed", run=run.id))
         raise Stop("awaiting ruling")
