@@ -225,6 +225,7 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
         for f in splits:
             L.append(f"- **{f['id']}** ({', '.join(f['supporters'])}) — "
                      + "; ".join(f"{d['model']}: {cell(d['evidence'])}" for d in f["dissent"]))
+    L += process_section(run, cons, t)
     if cons["unverified_findings"]:
         L.append("")
         L.append(f"## {t('report.unverified')}")
@@ -261,6 +262,85 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     L.append("")
     L.append(f"<sub>ledger@{snapshot(ledger)}</sub>")
     return "\n".join(L) + "\n"
+
+
+def process_section(run: Run, cons: dict, t: T) -> list[str]:
+    """How the reviewers proposed, cross-reviewed and converged, from the stored records."""
+    from .consensus import _responses
+    from .review import load_records
+    active = cons["active"]
+    reviews = load_records(run, "03-reviews")
+    seats = {p["model"]: p.get("seat") for p in cons["provenance"]}
+    sep, comma, colon = (t("report.process." + k) for k in ("sep", "comma", "colon"))
+
+    def item(label: str, rest: str) -> str:
+        return f"- {label}{'' if label.endswith('：') else ' '}{rest}"
+
+    L = ["", f"## {t('report.process')}", ""]
+    L.append(item(t("report.process.proposals"), sep.join(
+        t("report.process.proposal", model=m,
+          seat=t("seat." + seats[m]) if seats.get(m) else "—",
+          issues=t("report.process.issues", n=len(reviews[m]["data"].get("issues", []))))
+        for m in active)))
+    if len(active) < 2:
+        L.append(item(t("report.process.debate"),
+                      t("report.process.no_debate", models=comma.join(active) or "—")))
+    else:
+        resp = _responses(load_records(run, "04-debate"), active)
+        L.append(item(t("report.process.debate"), sep.join(
+            m + colon + t("report.process.positions",
+                         s=sum(1 for w, r in resp if w == m and r["position"] == "support"),
+                         o=sum(1 for w, r in resp if w == m and r["position"] == "object"))
+            for m in active)))
+    tally: dict[str, int] = {}
+    for f in cons["findings"]:
+        tally[f["label"]] = tally.get(f["label"], 0) + 1
+    L.append(item(t("report.process.convergence"),
+                  comma.join(f"{k} ×{v}" for k, v in tally.items()) or "—"))
+    for f in (f for f in cons["findings"] if f["dissent"]):
+        L.append(f"  - {f['id']}{colon}" + sep.join(
+            [t("report.process.split", by=comma.join(f["supporters"]))]
+            + [t("report.process.objected", by=d["model"], why=cell(d["evidence"]))
+               for d in f["dissent"]]))
+    votes = []
+    for k, v in cons["red_lines"].items():
+        if v["status"] == "clear":
+            continue
+        parts = []
+        if v["supporters"]:
+            parts.append(t("report.process.flagged", by=comma.join(v["supporters"])))
+        parts += [t("report.process.objected", by=d["model"], why=cell(d["evidence"]))
+                  for d in v["dissent"]]
+        if v["evidence"]:
+            parts.append(t("report.process.rl_evidence",
+                           ids=comma.join(e["claim"] for e in v["evidence"])))
+        low = [c["model"] for c in v["comments"] if c["model"] not in v["supporters"]]
+        if low:
+            parts.append(t("report.process.rl_low", by=comma.join(low)))
+        if v.get("warnings"):
+            parts.append(t("report.process.rl_warnings",
+                           ids=comma.join(e["claim"] for e in v["warnings"])))
+        votes.append(f"  - {t('redline.' + k)}{colon}" + sep.join(parts)
+                     + f" → {t('report.rl.' + v['status'])}")
+    L.append(item(t("report.process.red_lines"), "" if votes else t("report.process.no_flags")))
+    L += votes
+    ledger = read_ledger(run)
+    counts: dict[str, int] = {}
+    for c in ledger:
+        counts[c["status"]] = counts.get(c["status"], 0) + 1
+    checkers = sorted({c.get("checked_by") for c in ledger if c.get("checked_by")})
+    L.append(item(t("report.process.factcheck_label"),
+                  t("report.process.factcheck", n=len(ledger), by=comma.join(checkers) or "—")
+                  + (colon + comma.join(f"{t('report.claim.' + k)} {v}" for k, v in counts.items())
+                     if counts else "")))
+    agreed = sum(1 for f in cons["findings"] if f["label"].startswith("CONSENSUS"))
+    vetoes = [t("redline." + k) for k, v in cons["red_lines"].items() if v["status"] == "confirmed"]
+    L.append(item(t("report.process.conclusion_label"),
+                  t("report.process.conclusion", total=cons["total"],
+                    grade=t("report.grade." + cons["grade"]), agreed=agreed,
+                    n=len(cons["findings"]), vetoes=comma.join(vetoes) or "—")
+                  + (" " + t("report.process.single") if len(active) < 2 else "")))
+    return L
 
 
 def write_report(run: Run, cons: dict, *, lang: str, changelog: list[str] | None = None) -> dict:

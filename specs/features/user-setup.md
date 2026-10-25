@@ -1,8 +1,9 @@
 # Feature: user setup
 
 On first use the CLI asks for the interface language, the backend and the
-peer reviewer models (checkbox: opus and sonnet preselected, fable optional,
-at least two), probes each chosen model, and saves the answers in the
+peer reviewer models (checkbox: opus and sonnet preselected, fable optional;
+two or more recommended so they split the work and review each other, one
+allowed after a warning), probes each chosen model, and saves the answers in the
 per-user store. Every later run prints the active reviewers and the command
 that changes them.
 
@@ -15,10 +16,10 @@ Feature: user setup
     Then  the saved reviewers are ["opus", "sonnet"]
 
   @S-user-setup-002
-  Scenario: fewer than two reviewers is refused
-    Given the reviewer checkbox
-    When  the user unticks "sonnet" leaving only "opus" and confirms
-    Then  the checkbox explains that at least 2 reviewers are needed and asks again
+  Scenario: no reviewer at all is refused, and the minimum is checked only after confirming
+    Given the reviewer checkbox, whose title recommends at least 2 models and states no minimum
+    When  the user unticks every model and confirms
+    Then  the user is told at least 1 reviewer is needed and the checkbox asks again
 
   @S-user-setup-003
   Scenario: every run prints the active reviewers and how to change them
@@ -56,6 +57,18 @@ Feature: user setup
     When  a question, the reviewer banner and a phase start are printed
     Then  the question starts on a new block with "? ", the banner line starts with "ℹ " and puts the change hint on its own line, and the phase line is a "━━" rule
     And   no ANSI escape codes are printed
+
+  @S-user-setup-009
+  Scenario: a single reviewer is allowed after a warning
+    Given the reviewer checkbox
+    When  the user leaves only "opus" ticked and confirms
+    Then  the user is told one reviewer means no peer review and a single opinion, and is asked to go on or choose again;
+          going on saves ["opus"], choosing again re-shows the checkbox
+
+  @S-user-setup-010
+  Scenario: a one-off single-reviewer override runs with a warning
+    When  a run starts with --models opus
+    Then  the run uses ["opus"] and the banner warns that there is no peer review
 ```
 
 ## Must NOT
@@ -64,3 +77,4 @@ Feature: user setup
 ## Revisions
 - 2026-10-22 · +S-user-setup-001..007 +N-user-setup-001 · decision: none -- first spec, decisions live in docs/DESIGN.md §1
 - 2026-10-22 · +S-user-setup-008 · decision: none -- user: consecutive questions ran together and the reviewer banner looked like an answer
+- 2026-10-25 · ~S-user-setup-002 +S-user-setup-009..010 · decision: none -- docs/DESIGN.md reviewer-roster row revised in place; user: at least 1 reviewer, checked after submit and not shown in the UI; the UI recommends 2 to split the work and cross-review

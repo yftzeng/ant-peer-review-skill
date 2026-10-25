@@ -17,7 +17,8 @@ DEFAULT_MODELS = ["opus", "sonnet"]
 BACKENDS = ["claude-cli", "anthropic-api"]
 AVAILABLE_BACKENDS = {"claude-cli"}  # anthropic-api is reserved (D-2 build order)
 LANGS = ["en", "zh-TW", "zh-CN"]
-MIN_REVIEWERS = 2
+MIN_REVIEWERS = 1
+RECOMMENDED_REVIEWERS = 2  # below this there is no cross-review
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 

@@ -39,6 +39,10 @@ def info(text: str) -> str:
     return _c("33", "ℹ " + text)
 
 
+def warn(text: str) -> str:
+    return _c("33", "⚠ " + text)
+
+
 def dim(text: str) -> str:
     return _c("2", text)
 

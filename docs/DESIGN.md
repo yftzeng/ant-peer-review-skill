@@ -18,7 +18,7 @@ and README.zh-CN.md.
 | D-1 | Standalone Python CLI owns interaction, state, crawling and model calls | Skill-only inside Claude Code: AskUserQuestion caps at 4 options/question; audience layers have 5-6 |
 | D-2 | Model calls go through a `Backend` interface; ship `claude-cli` (`claude -p`) and `anthropic-api` (Anthropic SDK). Chosen at first run | One backend only: `claude-cli` is cheapest for a subscriber (no per-token cost inside plan limits); `anthropic-api` gives schema-guaranteed JSON, batch -50%, predictable cost for teams/CI. **Build order: `claude-cli` first**, `anthropic-api` second |
 | D-3 | Claude models only for now; the `Backend` interface does not assume Anthropic so other vendors can be added | Multi-vendor now: more code, more credentials, not needed yet |
-| D-4 | Reviewer roster chosen by checkbox at first run (opus + sonnet preselected, fable optional), minimum 2, persisted | Fixed roster: fable costs ~2.5x opus per token; the user decides |
+| D-4 | Reviewer roster chosen by checkbox at first run (opus + sonnet preselected, fable optional), persisted. ~~minimum 2~~ revised 2026-10-25: minimum 1, checked after submit; 2+ recommended in the UI, and one reviewer needs a confirmation because it skips cross-review | Fixed roster: fable costs ~2.5x opus per token; the user decides. Hard minimum 2 (until 2026-10-25): blocked a cheap single-model pass the user wanted |
 | D-5 | Weighted rubric total **plus** non-compensatory veto: a confirmed red line fails the piece regardless of score | No weights (K-Dense): the user needs a ranked, weighted total. Weights only (tsingke): a high score could hide a legal problem |
 | D-6 | Unverifiable facts are recorded `cannot_verify` and the run continues; a separate command continues fact-checking later | Abort on no network: one flaky source would block the whole review |
 | D-7 | When facts change after a report, recompute only what depends on them (Accuracy score, veto (b), issues anchored to those claims); no new debate round | Full re-review: costs about one more run for a local change |
@@ -58,7 +58,7 @@ downstream phase are marked `stale`.
 HITL gates (the user must confirm before the run continues): P0 setup, P3 audience, P5 rubric, P9 final decision.
 
 ### P0 Setup and resume
-- First use: choose interface language, backend, reviewers (checkbox, minimum 2). Each chosen model gets a one-token probe call so an unavailable model fails here, not mid-review. Saved to the user config.
+- First use: choose interface language, backend, reviewers (checkbox, 2+ recommended; 1 allowed after a warning, D-4). Each chosen model gets a one-token probe call so an unavailable model fails here, not mid-review. Saved to the user config.
 - Every start: scan `runs/` for unfinished runs and offer **continue / rerun from a phase / start new**.
 - `state.json` records the models and backend actually used; resuming a run keeps them, so phases never mix rosters.
 

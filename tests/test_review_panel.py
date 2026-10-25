@@ -250,3 +250,53 @@ def test_unsupported_proper_noun_only_warns():
     num = dict(noun, id="C01", type="number")
     rl = synth(reviews, ledger=[noun, num])["red_lines"]["hallucination"]
     assert rl["status"] == "needs_ruling" and [e["claim"] for e in rl["evidence"]] == ["C01"]
+
+
+def _process_md(tmp_path, models, reviews, debates=(), ledger=()):
+    from ant_peer_review.jsonio import append_jsonl, write_json
+    from ant_peer_review.refresh import compute_consensus
+    from ant_peer_review.report import write_report
+    run = make_run(tmp_path, models=models)
+    for m, r in reviews.items():
+        write_json(run.path(f"03-reviews/{m}.json"), r)
+    for m, d in debates:
+        write_json(run.path(f"04-debate/{m}.json"), d)
+    for c in ledger:
+        append_jsonl(run.path("factcheck/ledger.jsonl"), c)
+    cons = compute_consensus(run, list(models), TH)
+    meta = write_report(run, cons, lang="en")
+    md = run.path(f"06-report.v{meta['version']}.md").read_text()
+    return md.split("## Review process", 1)[1].split("\n## ", 1)[0], cons
+
+
+# @S-review-panel-023
+def test_report_discloses_review_process(tmp_path):
+    reviews = {"opus": ok("opus", review_data(issues=[{"id": "I1"}, {"id": "I2",
+                                                                     "anchor": "D1.P03.S1"}])),
+               "sonnet": ok("sonnet", review_data(issues=[{"id": "I1", "anchor": "D1.P03.S2"}],
+                                                  flags=["pr_landmine"]))}
+    debates = [("sonnet", deb("sonnet", {"target": "opus:I1", "position": "support"},
+                              {"target": "opus:I2", "position": "object",
+                               "evidence": "the paragraph says the opposite"})),
+               ("opus", deb("opus", {"target": "sonnet:redline:pr_landmine",
+                                     "position": "object", "evidence": "tone is neutral"}))]
+    ledger = [{"id": "C01", "anchor": "D1.P03.S1", "text": "x", "type": "number",
+               "status": "supported", "reason": "", "sources": [], "refs": [],
+               "checked_by": "sonnet"}]
+    sec, cons = _process_md(tmp_path, ("opus", "sonnet"), reviews, debates, ledger)
+    assert "opus (Structure and argument): 2 issue(s)" in sec
+    assert "sonnet (Facts and compliance): 1 issue(s)" in sec
+    assert "sonnet: support 1, object 1" in sec and "opus: support 0, object 1" in sec
+    assert "CONSENSUS-2 ×1" in sec and "SPLIT ×1" in sec and "SINGLE ×1" in sec
+    split = next(f for f in cons["findings"] if f["label"] == "SPLIT")
+    assert f"{split['id']}: raised by opus; objected by sonnet: the paragraph says the opposite" in sec
+    assert "(c) Brand / PR landmine: flagged by sonnet; objected by opus" in sec
+    assert "1 statement(s) checked by sonnet: supported 1" in sec
+    assert f"total {cons['total']}" in sec and "all reviewers agreed on 1 of 3 finding(s)" in sec
+
+
+# @S-review-panel-024
+def test_report_process_with_one_reviewer(tmp_path):
+    sec, _ = _process_md(tmp_path, ("opus",), {"opus": ok("opus", review_data(
+        issues=[{"id": "I1"}]))})
+    assert "no cross-review" in sec and "single opinion" in sec

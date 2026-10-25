@@ -28,7 +28,7 @@ ant-peer-review            # interactive: setup on first use, then the whole wor
 On first use you choose:
 - the interface language: English, 繁體中文 or 简体中文;
 - the backend;
-- the peer-reviewer models. opus and sonnet are preselected, fable is optional, and at least 2 are needed. Each model gets a probe call before it is saved.
+- the peer-reviewer models. opus and sonnet are preselected, fable is optional. Pick 2 or more so the models split the work and review each other; 1 is allowed after a warning, but then there is no cross-review. Each model gets a probe call before it is saved.
 
 Menus use the arrow keys: ↑/↓ move, Enter chooses, Space ticks a checkbox, number keys also work, `c` adds a custom value, Esc cancels. When input is piped, or `ANT_PEER_REVIEW_PLAIN=1` is set, the menus fall back to typed numbers. Arrow keys are tested on Linux; the Windows key reader has no CI yet.
 

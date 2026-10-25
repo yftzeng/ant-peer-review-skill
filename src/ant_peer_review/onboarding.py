@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from .backends.base import Backend
 from .i18n import T
-from .store import AVAILABLE_BACKENDS, BACKENDS, LANGS, MIN_REVIEWERS, MODEL_ALIASES, Config, Store
-from .ui import IO, checkbox, dim, info, radio
+from .store import (AVAILABLE_BACKENDS, BACKENDS, LANGS, MIN_REVIEWERS, MODEL_ALIASES,
+                    RECOMMENDED_REVIEWERS, Config, Store)
+from .ui import IO, checkbox, confirm, dim, info, radio, warn
 
 LANG_LABELS = {"en": "English", "zh-TW": "繁體中文", "zh-CN": "简体中文"}
 
@@ -41,10 +42,15 @@ def choose_models(io: IO, cfg: Config, backend: Backend | None) -> list[str]:
                 io.say(t("setup.model_unavailable", model=m, reason=err[:200]))
             else:
                 ok.append(m)
-        if len(ok) >= MIN_REVIEWERS:
-            cfg.models = ok
-            return ok
-        io.say(t("ui.min_selected", n=MIN_REVIEWERS))
+        if len(ok) < MIN_REVIEWERS:
+            io.say(t("ui.min_selected", n=MIN_REVIEWERS))
+            continue
+        if len(ok) < RECOMMENDED_REVIEWERS and not confirm(
+                io, t, t("setup.single_reviewer", model=ok[0], n=RECOMMENDED_REVIEWERS),
+                default=False):
+            continue
+        cfg.models = ok
+        return ok
 
 
 def first_use(io: IO, store: Store, backend_factory) -> Config:
@@ -63,7 +69,10 @@ def first_use(io: IO, store: Store, backend_factory) -> Config:
 
 def banner(t: T, models: list[str]) -> str:
     """The active reviewers, marked as information, with the change hint below."""
-    return info(t("run.banner", models=", ".join(models))) + "\n" + dim("  " + t("run.banner_hint"))
+    out = info(t("run.banner", models=", ".join(models))) + "\n" + dim("  " + t("run.banner_hint"))
+    if len(models) < RECOMMENDED_REVIEWERS:
+        out += "\n  " + warn(t("run.banner_single", n=RECOMMENDED_REVIEWERS))
+    return out
 
 
 def parse_models_override(value: str) -> list[str]:

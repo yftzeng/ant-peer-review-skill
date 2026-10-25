@@ -19,12 +19,23 @@ def test_first_use_preselects_opus_and_sonnet(store):
 
 
 # @S-user-setup-002
-def test_fewer_than_two_is_refused(store):
-    io = ScriptedIO(["2", "", "3", ""])  # untick sonnet, confirm (refused), tick fable, confirm
+def test_no_reviewer_is_refused(store):
+    io = ScriptedIO(["1 2", "", "1 2", ""])  # untick both, confirm (refused), tick both, confirm
+    got = choose_models(io, Config(), ProbeBackend())
+    assert "at least 1" in io.text
+    assert got == ["opus", "sonnet"]
+    title = T("en")("setup.models")
+    assert "2" in title and "at least" not in title
+
+
+# @S-user-setup-009
+def test_single_reviewer_needs_confirmation(store):
+    # untick sonnet, confirm, choose again (re-shown from the saved choice), untick, confirm, go on
+    io = ScriptedIO(["2", "", "n", "2", "", "y"])
     cfg = Config()
     got = choose_models(io, cfg, ProbeBackend())
-    assert "at least 2" in io.text
-    assert got == ["opus", "fable"]
+    assert "no cross-review" in io.text
+    assert got == ["opus"] and cfg.models == ["opus"]
 
 
 # @S-user-setup-003
@@ -73,8 +84,8 @@ def test_override_does_not_change_saved(store):
     cfg = store.load_config()
     assert effective_models(cfg, "opus,fable") == ["opus", "fable"]
     assert store.load_config().models == ["opus", "sonnet"]
-    with pytest.raises(ValueError):
-        effective_models(cfg, "opus")
+    with pytest.raises(ValueError):  # one reviewer is allowed (S-user-setup-010); none is not
+        effective_models(cfg, ",")
 
 
 # @N-user-setup-001
@@ -104,3 +115,11 @@ def test_questions_info_and_phases_are_distinct():
     line = phase_line(T("zh-TW")("run.phase_start", phase="intake"))
     assert line.startswith("\n━━") and "intake" in line
     assert "\x1b[" not in b + io.text + line
+
+
+# @S-user-setup-010
+def test_single_reviewer_override_warns():
+    from ant_peer_review.onboarding import parse_models_override
+    assert parse_models_override("opus") == ["opus"]
+    assert "no cross-review" in banner(T("en"), ["opus"])
+    assert "no cross-review" not in banner(T("en"), ["opus", "sonnet"])

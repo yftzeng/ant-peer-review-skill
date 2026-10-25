@@ -141,6 +141,20 @@ Feature: review panel
     Given no reviewer flags "hallucination" and the ledger's only unsupported claim has type "proper_noun"
     When  synthesis runs
     Then  "hallucination" is "advisory" with that claim listed as a warning, not as veto evidence, and no ruling is asked
+
+  @S-review-panel-023
+  Scenario: the report discloses how the reviewers proposed, debated and converged
+    Given opus (structure) raised 2 issues and sonnet (facts) 1, sonnet supported one of opus's and objected to the other
+    When  the report is written
+    Then  its review-process section lists each reviewer's seat and issue count, each reviewer's support and object counts,
+          the tally of consensus labels, each split with who raised it, who objected and why, the red-line votes,
+          the fact-check counts, and a conclusion line with the total, the grade and how many findings all reviewers agreed on
+
+  @S-review-panel-024
+  Scenario: with one reviewer the review-process section says no peer review took place
+    Given only opus reviewed
+    When  the report is written
+    Then  the review-process section says there was no cross-review and every finding is a single opinion
 ```
 
 ## Must NOT
@@ -156,3 +170,4 @@ Feature: review panel
 - 2026-10-22 · ~S-review-panel-005..008 ~S-review-panel-017..019 +S-review-panel-021 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md); positions after RFC 7282 (objections are addressed, not outvoted), seat after the Red Team Handbook's devil's-advocacy and the black hat, missing-item grammar after Altman & Bland 1995 with the search scope stated
 - 2026-10-22 · ~S-review-panel-021 · decision: none -- user review: the Then read as if a new anchor needs no searched part; it means the old checked part still counts
 - 2026-10-25 · +S-review-panel-022 · decision: none -- user: live run asked for a veto ruling over a translated section title (C09) that no reviewer flagged; names and translations only warn
+- 2026-10-25 · +S-review-panel-023..024 · decision: none -- user: the report must disclose the models' proposals, debate and cross-review, with key points and the conclusion
