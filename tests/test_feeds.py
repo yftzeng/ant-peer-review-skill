@@ -118,11 +118,14 @@ RSS12 = _rss([(n, f"Art {n:02d}", f"Mon, {n:02d} Aug 2026 10:00:00 +0800") for n
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        from test_analysis import PAGE
         feeds = {"/feed": RSS, "/feed12": RSS12}
-        body = feeds.get(self.path, b"User-agent: *\nDisallow:\n")
+        body = feeds.get(self.path) or (PAGE.encode() if self.path == "/page" else
+                                        b"User-agent: *\nDisallow:\n")
         self.send_response(200)
         self.send_header("Content-Type", "application/rss+xml; charset=utf-8"
-                         if self.path in feeds else "text/plain")
+                         if self.path in feeds else "text/html; charset=utf-8"
+                         if self.path == "/page" else "text/plain")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -151,9 +154,9 @@ def _intakes(store):
 # @S-cli-011
 def test_interactive_feed_one_run_per_ticked_article(feed_env):
     store, url = feed_env
-    io = ScriptedIO(["1", url, "/done", "", "", "", "", "", "1", "", "",  # purpose, target, 5 layers, card, fact sources, brand
-                     "1 3", "",                                          # tick articles 1 and 3
-                     ])
+    io = ScriptedIO(["1", url, "/done",                      # purpose, target
+                     "1 3", "",                              # tick articles 1 and 3
+                     "", "", "", "", "", "1", "", ""])       # 5 layers, card, fact sources, brand
     cli.main([], io=io, store=store)
     ins = _intakes(store)
     assert [i["targets"][0]["title"] for i in ins] == ["Day 3 - Gamma", "Day 1 - Alpha"] or \
@@ -173,21 +176,19 @@ def test_non_interactive_feed_limit(feed_env):
 # @S-cli-015
 def test_more_than_three_articles_asks_first(feed_env):
     store, url = feed_env
-    answers = ["1", url, "/done", "", "", "", "", "", "1", "", "", "1 2 3 4 5", ""]
+    answers = ["1", url, "/done", "1 2 3 4 5", ""]
     io = ScriptedIO(answers + ["n"])
     cli.main([], io=io, store=store)
     assert "5 runs" in io.text and "2 reviewers" in io.text
     assert list_runs(store.runs_dir) == []
-    io = ScriptedIO(answers + ["y"])
+    io = ScriptedIO(answers + ["y", "", "", "", "", "", "1", "", ""])
     cli.main([], io=io, store=store)
     assert len(list_runs(store.runs_dir)) == 5
 
 
-INTAKE_ANSWERS = ["1", None, "/done", "", "", "", "", "", "1", "", ""]
-
-
-def _answers(url, *more):
-    return [url if a is None else a for a in INTAKE_ANSWERS] + list(more)
+def _answers(url, *picks):
+    """purpose, target, the article list, then 5 layers, card, fact sources, brand"""
+    return ["1", url, "/done", *picks, "", "", "", "", "", "1", "", ""]
 
 
 def _past_run(store, link, *, title="Day 1 - Alpha", total=61.8, grade="revise", feed=None,

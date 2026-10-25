@@ -5,20 +5,22 @@ import argparse
 import re
 import shutil
 import sys
+from datetime import datetime
 
 from . import __version__
 from .backends.base import get_backend
 from .articles import article_key, feed_of, latest_feed_run, oldest_first, reviewed_articles
 from .decision import Postponed, run_decision
 from .i18n import T
-from .intake import build_intake_from_args, run_intake_interactive
+from .intake import (ask_audience, ask_fact_sources, ask_purpose, build_intake_from_args,
+                     collect_targets)
 from .jsonio import read_json, write_json
 from .lessons import add_lesson, all_lessons, archive_lesson, lessons_for, promote_if_repeated
 from .onboarding import banner, choose_backend, choose_lang, choose_models, effective_models, first_use
 from .pipeline import Ctx, run_pipeline
 from .refresh import factcheck_continue
 from .store import BACKENDS, LANGS, Config, Store
-from .ui import IO, ConsoleIO, ask_text, checkbox, confirm, info, radio, section
+from .ui import IO, ConsoleIO, ask_text, checkbox, confirm, dim, info, radio, section
 from .workspace import PHASES, Run, create_run, list_runs, unfinished_runs
 
 EXIT_OK, EXIT_PAUSED, EXIT_USAGE, EXIT_INTERRUPTED = 0, 3, 2, 130
@@ -140,9 +142,10 @@ FEED_PAGE_SIZE = 10
 
 
 def split_feeds(io: IO, t: T, intake: dict, store: Store, *, interactive: bool,
-                limit: int | None, reviewers: int = 2) -> list[dict]:
+                limit: int | None, reviewers: int = 2, peeks: dict | None = None) -> list[dict]:
     """Turn each RSS/Atom URL into chosen articles; every article becomes its own intake.
-    Non-feed targets stay together in one intake, as before."""
+    Non-feed targets stay together in one intake, as before. Pages fetched on the way
+    are kept in peeks (url -> body) for the content analysis."""
     from .sources.crawler import FetchError
     from .sources.feeds import FEED_TYPES, parse_feed
     crawler = make_feed_crawler(store)
@@ -158,6 +161,8 @@ def split_feeds(io: IO, t: T, intake: dict, store: Store, *, interactive: bool,
             plain.append(tgt)  # the sources phase reports the failure
             continue
         if res.content_type not in FEED_TYPES:
+            if peeks is not None:
+                peeks[tgt["value"]] = res.body
             plain.append(tgt)
             continue
         try:
@@ -291,13 +296,61 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
             intake["brand"] = args.brand
     else:
         # Ask everything first: leaving midway must not leave an empty run behind.
-        intake = run_intake_interactive(io, ctx.t, ctx.lang)
-        brand = ask_text(io, ctx.t("intake.brand")).strip()
-        if brand:
-            intake["brand"] = brand
+        return start_runs(io, store, ctx, interactive_intakes(io, store, ctx))
     intakes = split_feeds(io, ctx.t, intake, store, interactive=not args.yes,
                           limit=args.feed_limit, reviewers=len(ctx.models))
     return start_runs(io, store, ctx, intakes)
+
+
+def interactive_intakes(io: IO, store: Store, ctx: Ctx) -> list[dict]:
+    """Purpose, targets, feed articles, the content checklist, then the audience, fact
+    sources and brand, preselected from the checklist."""
+    t = ctx.t
+    base = {"purpose": ask_purpose(io, t), "targets": collect_targets(io, t), "lang": ctx.lang}
+    peeks: dict = {}
+    groups = split_feeds(io, t, base, store, interactive=True, limit=None,
+                         reviewers=len(ctx.models), peeks=peeks)
+    if not groups:
+        return []
+    flat = [tgt for g in groups for tgt in g["targets"]]
+    res = content_analysis(io, ctx, flat, peeks)
+    sug = res.get("audience") or {}
+    audience = ask_audience(io, t, initial=sug if any(sug.values()) else None)
+    fact_sources = ask_fact_sources(io, t, res.get("fact_sources", []))
+    default = res.get("brand", "")
+    brand = ask_text(io, t("intake.brand_default", brand=default) if default
+                     else t("intake.brand")).strip() or default
+    out, i = [], 0
+    for g in groups:
+        it = dict(g, audience=audience, fact_sources=fact_sources)
+        if brand:
+            it["brand"] = brand
+        if res.get("targets"):
+            n = len(g["targets"])
+            it["analysis"] = {k: res[k] for k in ("model", "genre", "topic", "notes") if k in res}
+            it["analysis"].update(targets=res["targets"][i:i + n],
+                                  sampling=res["sampling"][i])
+            i += n
+        out.append(it)
+    return out
+
+
+def content_analysis(io: IO, ctx: Ctx, targets: list[dict], peeks: dict) -> dict:
+    from .analysis import analyse, checklist
+    from .backends.base import BackendError
+    io.say(section(ctx.t("analysis.title")))
+    try:
+        res = analyse(targets, peeks, ctx.backend, ctx.models, ctx.lang,
+                      seed=datetime.now().strftime("%Y%m%d%H%M"))
+    except BackendError as e:
+        res = getattr(e, "partial", {})
+        io.say("  " + ctx.t("analysis.skipped", reason=str(e)[:200]))
+    if res.get("targets"):
+        for line in checklist(ctx.t, res):
+            io.say(line)
+    if res.get("model"):
+        io.say(dim("  " + ctx.t("analysis.preselected")))
+    return res
 
 
 def start_runs(io: IO, store: Store, ctx: Ctx, intakes: list[dict]) -> int:

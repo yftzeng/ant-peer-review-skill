@@ -24,10 +24,19 @@ class NoAskIO(ScriptedIO):
         raise AssertionError(f"prompted in non-interactive mode: {prompt}")
 
 
+class OfflineCrawler:
+    """Tests never reach the network: every URL fails like an unreachable host."""
+
+    def fetch(self, url):
+        from ant_peer_review.sources.crawler import FetchError
+        raise FetchError("offline", url)
+
+
 @pytest.fixture
 def env(tmp_path, monkeypatch):
     CountingFake.calls = []
     monkeypatch.setattr(cli, "get_backend", lambda name: CountingFake())
+    monkeypatch.setattr(cli, "make_feed_crawler", lambda store: OfflineCrawler())
     return Store(tmp_path / "home")
 
 

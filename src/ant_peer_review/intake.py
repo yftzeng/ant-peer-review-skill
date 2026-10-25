@@ -145,10 +145,10 @@ def parse_audience(spec: str | None) -> dict:
 FACT_SOURCES = ["academic"]
 
 
-def ask_fact_sources(io: IO, t: T) -> list[str]:
+def ask_fact_sources(io: IO, t: T, selected=()) -> list[str]:
     """Optional extra fact-check sources; nothing ticked means web search only."""
     return checkbox(io, t, t("intake.fact_sources"),
-                    [(s, t(f"intake.fact_sources.{s}")) for s in FACT_SOURCES], [])
+                    [(s, t(f"intake.fact_sources.{s}")) for s in FACT_SOURCES], list(selected))
 
 
 def build_intake_from_args(purpose: str, targets: list[str], audience: str | None,

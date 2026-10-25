@@ -43,6 +43,13 @@ class FakeBackend(Backend):
     def _probe(self, *a):
         return {"ok": True}
 
+    def _profile(self, model, ids, paras, bias, prompt):
+        # Suggests nothing for the audience, so the layers are asked as without analysis.
+        return {"genre": "other", "topic": "", "brand": "", "notes": "",
+                "identity": {k: "" for k in ("title", "author", "organization", "email", "date")},
+                "audience": {k: [] for k in ("expertise", "role", "lens", "trust", "purpose")},
+                "fact_sources": []}
+
     def _review(self, model, ids, paras, bias, prompt):
         keys = re.findall(r"^- (\S+) \(weight \d+\)", prompt, re.M) or \
             ["macro", "accuracy", "micro", "impact"]
