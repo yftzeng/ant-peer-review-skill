@@ -135,6 +135,12 @@ Feature: review panel
     Given stored debate positions "corroborate" and "dispute" and a finding anchored "absence: P02 - expected a date; checked: P01-P03"
     When  synthesis runs and the report is linted
     Then  they count as "support" and "object", and the old "checked:" part counts as "searched:" so the anchor passes lint
+
+  @S-review-panel-022
+  Scenario: an unsupported proper noun or translated name alone only warns on the hallucination red line
+    Given no reviewer flags "hallucination" and the ledger's only unsupported claim has type "proper_noun"
+    When  synthesis runs
+    Then  "hallucination" is "advisory" with that claim listed as a warning, not as veto evidence, and no ruling is asked
 ```
 
 ## Must NOT
@@ -149,3 +155,4 @@ Feature: review panel
 - 2026-10-22 · +S-review-panel-020 · decision: none -- paperzilla: label whether a summary used metadata, an abstract or the full text; the quality marks lived only in the manifest
 - 2026-10-22 · ~S-review-panel-005..008 ~S-review-panel-017..019 +S-review-panel-021 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md); positions after RFC 7282 (objections are addressed, not outvoted), seat after the Red Team Handbook's devil's-advocacy and the black hat, missing-item grammar after Altman & Bland 1995 with the search scope stated
 - 2026-10-22 · ~S-review-panel-021 · decision: none -- user review: the Then read as if a new anchor needs no searched part; it means the old checked part still counts
+- 2026-10-25 · +S-review-panel-022 · decision: none -- user: live run asked for a veto ruling over a translated section title (C09) that no reviewer flagged; names and translations only warn

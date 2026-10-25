@@ -8,7 +8,7 @@ import sys
 
 from . import __version__
 from .backends.base import get_backend
-from .decision import run_decision
+from .decision import Postponed, run_decision
 from .i18n import T
 from .intake import build_intake_from_args, run_intake_interactive
 from .jsonio import read_json, write_json
@@ -357,6 +357,9 @@ def cmd_decide(args, io, store, cfg) -> int:
     except ValueError as e:
         io.say(f"error: {e}")
         return EXIT_USAGE
+    except Postponed:
+        io.say(ctx.t("decide.postponed", run=run.id))
+        return EXIT_OK
     run.mark("decision", "done")
     io.say(ctx.t("run.done", path=str(run.root)))
     return EXIT_OK

@@ -8,7 +8,7 @@ from datetime import datetime
 from .i18n import T
 from .jsonio import append_jsonl, read_json, read_jsonl, write_json, write_text_atomic
 from .store import Store
-from .ui import IO, confirm, radio
+from .ui import IO, confirm, radio, section
 from .workspace import Run
 
 STYLE_CATEGORIES = {"term", "banned_word", "name"}
@@ -18,17 +18,87 @@ def pending_rulings(cons: dict) -> list[str]:
     return [k for k, v in cons["red_lines"].items() if v["status"] == "needs_ruling"]
 
 
-def ask_rulings(io: IO, t: T, cons: dict) -> dict[str, str]:
+class Postponed(Exception):
+    """The editor chose to rule later; nothing is recorded."""
+
+
+def _segment_text(segs: dict, anchor: str) -> str:
+    """The sentence at a P.S anchor, else its paragraph."""
+    pid = ".".join(anchor.split(".")[:2])
+    for doc in segs.values():
+        for p in doc:
+            if p["id"] == pid:
+                for sen in p.get("sentences", []):
+                    if sen["id"] == anchor:
+                        return sen["text"]
+                return p["text"]
+    return ""
+
+
+def _docs(run: Run) -> dict[str, dict]:
+    out = {}
+    for it in read_json(run.path("01-sources/manifest.json"), default={}).get("items", []):
+        page = it.get("value", "") if it.get("kind") in ("url", "feed_item") else ""
+        for d in it.get("docs", []):
+            out[d["doc"]] = {"title": d.get("title", ""), "url": d.get("origin") or page}
+    return out
+
+
+def ruling_context(run: Run, t: T, key: str, v: dict) -> list[str]:
+    """What the editor needs to rule: meaning, effect, why, the text, each reviewer's view."""
+    L = [t("decide.rl.means", what=t("decide.rl.desc." + key)), t("decide.rl.effect")]
+    if v["evidence"] and not v["supporters"]:
+        L.append(t("decide.rl.why_ledger", n=len(v["evidence"])))
+    elif v["dissent"]:
+        L.append(t("decide.rl.why_dissent", who=", ".join(v["supporters"]),
+                   against=", ".join(d["model"] for d in v["dissent"])))
+    else:
+        L.append(t("decide.rl.why_single", who=", ".join(v["supporters"])))
+    ledger = {c["id"]: c for c in read_jsonl(run.path("factcheck/ledger.jsonl"))}
+    segs = read_json(run.path("01-sources/segments.json"), default={})
+    docs = _docs(run)
+    for e in v["evidence"]:
+        c = ledger.get(e["claim"], {"anchor": "", "reason": "", "sources": []})
+        doc = docs.get(c["anchor"].split(".")[0], {})
+        L.append(f"  ● {e['claim']} [{c.get('type', '')}] {e['text']}")
+        if doc:
+            L.append("    " + t("decide.rl.article", title=doc["title"] or "—",
+                                url=doc["url"] or "—"))
+        L.append("    " + t("decide.rl.original", anchor=c["anchor"],
+                            text=_segment_text(segs, c["anchor"]) or "—"))
+        if c.get("reason"):
+            L.append("    " + t("decide.rl.reason", text=c["reason"]))
+        for src in c.get("sources", []):
+            L.append(f"    ↳ {src.get('url', '')}  {src.get('supporting_excerpt', '')}".rstrip())
+    for w in v.get("warnings", []):
+        L.append(f"  ⚠ {w['claim']} {w['text']} ({t('decide.rl.warning_only')})")
+    L.append(t("decide.rl.reviewers"))
+    reviews = {p.stem: read_json(p) for p in sorted(run.path("03-reviews").glob("*.json"))}
+    for m, rec in reviews.items():
+        for rl in rec.get("data", {}).get("red_lines", []):
+            if rl["key"] == key:
+                verdict = t("decide.rl.flagged", sev=rl.get("severity", "none")) if rl.get("flag") \
+                    else t("decide.rl.not_flagged")
+                L.append(f"  {m}: {verdict}" + (f" — {rl['comment']}" if rl.get("comment") else ""))
+    for d in v["dissent"]:
+        L.append(f"  ✗ {d['model']}: {d['evidence']}")
+    return L
+
+
+def ask_rulings(io: IO, t: T, cons: dict, run: Run) -> dict[str, str]:
+    """Raises Postponed when the editor chooses to rule later."""
     rulings = {}
     for k in pending_rulings(cons):
         v = cons["red_lines"][k]
-        io.say(f"{t('redline.' + k)} — {', '.join(v['supporters'])}")
-        for c in v["comments"]:
-            io.say(f"  {c['model']}: {c['comment']}")
-        for d in v["dissent"]:
-            io.say(f"  ✗ {d['model']}: {d['evidence']}")
-        rulings[k] = radio(io, t, t("decide.rule"), [("confirmed", t("report.rl.confirmed")),
-                                                     ("dismissed", t("report.rl.dismissed"))])
+        io.say(section(t("redline." + k)))
+        for line in ruling_context(run, t, k, v):
+            io.say(line)
+        ans = radio(io, t, t("decide.rule"), [("confirmed", t("report.rl.confirmed")),
+                                              ("dismissed", t("report.rl.dismissed")),
+                                              ("later", t("decide.later"))])
+        if ans == "later":
+            raise Postponed(k)
+        rulings[k] = ans
     return rulings
 
 
@@ -139,7 +209,7 @@ def run_decision(io: IO | None, run: Run, store: Store, *, models: list[str], la
     missing = [k for k in pending_rulings(cons) if k not in rulings]
     if missing and io is not None:
         rulings.update(ask_rulings(io, t, {**cons, "red_lines": {
-            k: v for k, v in cons["red_lines"].items() if k in missing}}))
+            k: v for k, v in cons["red_lines"].items() if k in missing}}, run))
     if rulings:
         record_decision(run, choice="pending", rulings=rulings, final_path=None, brand=brand)
         cons = compute_consensus(run, models, thresholds)

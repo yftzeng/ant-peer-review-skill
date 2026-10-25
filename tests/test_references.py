@@ -61,11 +61,12 @@ def _drift(tmp_path, pin, repo="r"):
     before = refs.read_bytes()
     env = {**os.environ, "REFS_GIT_BASE": f"file://{tmp_path / 'base'}"}
     r = subprocess.run(["bash", str(DRIFT), str(refs)], env=env, capture_output=True, text=True)
-    assert refs.read_bytes() == before  # @N-references-001
+    assert refs.read_bytes() == before
     return r, r.stdout.strip().splitlines()
 
 
 # @S-references-002
+# @N-references-001
 def test_drift_reports_the_changed_path(tmp_path):
     pin, head = _upstream(tmp_path, change_b=True)
     r, lines = _drift(tmp_path, pin)

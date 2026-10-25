@@ -83,3 +83,61 @@ def test_non_interactive(tmp_path):
     assert dec["choice"] == "A" and dec["rulings"] == {"pr_landmine": "confirmed"}
     assert read_json(run.path("05-consensus.json"))["grade"] == "fail"
     assert run.path("final.md").read_text() == "A text\n"
+
+
+def _unsupported_number(run):
+    from ant_peer_review.jsonio import append_jsonl
+    append_jsonl(run.path("factcheck/ledger.jsonl"), {
+        "id": "C09", "anchor": "D1.P03.S1", "text": "Revenue grew 40% in 2025",
+        "type": "number", "status": "unsupported", "reason": "The filing says 12%.",
+        "sources": [{"url": "https://example.org/filing", "supporting_excerpt": "grew 12%",
+                     "accessed_at": "2026-10-25T08:00:00"}],
+        "extracted_by": ["opus"], "refs": ["opus:K1"], "checked_by": "sonnet", "updated_at": ""})
+    write_report(run, compute_consensus(run, M, TH), lang="en")
+
+
+# @S-decision-007
+def test_ruling_prompt_shows_context(tmp_path):
+    run, store = setup(tmp_path)
+    _unsupported_number(run)
+    io = ScriptedIO(["2", "2"])  # dismiss, then choose B
+    decide(run, store, io)
+    out = io.text
+    for want in ("Serious factual error",            # the red line
+                 "veto",                              # what confirming does
+                 "no reviewer flagged",               # why a ruling is needed
+                 "Title",                             # the article
+                 "D1.P03.S1", "Revenue grew 40% in 2025.",   # where, and the original sentence
+                 "The filing says 12%.", "https://example.org/filing",  # checker reason, source
+                 "opus: not flagged", "sonnet: not flagged"):   # every reviewer's verdict
+        assert want in out, want
+    assert read_json(run.path("08-decision.json"))["rulings"] == {"hallucination": "dismissed"}
+
+
+# @S-decision-008
+def test_ruling_can_be_postponed(tmp_path):
+    from ant_peer_review.decision import Postponed
+    run, store = setup(tmp_path, flags_opus=["pr_landmine"])
+    io = ScriptedIO(["3"])  # decide later
+    try:
+        decide(run, store, io)
+        raise AssertionError("expected Postponed")
+    except Postponed:
+        pass
+    assert not run.path("08-decision.json").exists() and not run.path("final.md").exists()
+
+
+# @S-decision-008
+def test_postponed_ruling_pauses_the_phase(tmp_path):
+    from ant_peer_review.pipeline import Ctx, ph_decision, Stop
+    from ant_peer_review.store import Config
+    run, store = setup(tmp_path, flags_opus=["pr_landmine"])
+    io = ScriptedIO(["3"])
+    ctx = Ctx(io=io, store=store, cfg=Config(), backend=None, models=M, lang="en",
+              interactive=True)
+    try:
+        ph_decision(run, ctx)
+        raise AssertionError("expected Stop")
+    except Stop:
+        pass
+    assert f"ant-peer-review decide {run.id}" in io.text

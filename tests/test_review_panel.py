@@ -235,3 +235,18 @@ def test_old_positions_and_absence_anchor_still_read():
     old = {"id": "F01", "anchor": "absence: P02 - expected a date; checked: P01-P03",
            "observation": "obs", "standard": "std", "why_it_matters": "why", "action": "act"}
     assert lint_report({"findings": [old], "unverified_findings": []}, "# R\n", []) == []
+
+
+# @S-review-panel-022
+def test_unsupported_proper_noun_only_warns():
+    reviews = {m: ok(m, review_data()) for m in ("opus", "sonnet")}
+    noun = {"id": "C09", "anchor": "D1.P02.S1", "text": "Node Shutdowns is labelled X",
+            "type": "proper_noun", "status": "unsupported", "reason": "", "sources": [],
+            "refs": []}
+    rl = synth(reviews, ledger=[noun])["red_lines"]["hallucination"]
+    assert rl["status"] == "advisory" and rl["evidence"] == []
+    assert [w["claim"] for w in rl["warnings"]] == ["C09"]
+    # a number still asks for a ruling: only names and translations are demoted
+    num = dict(noun, id="C01", type="number")
+    rl = synth(reviews, ledger=[noun, num])["red_lines"]["hallucination"]
+    assert rl["status"] == "needs_ruling" and [e["claim"] for e in rl["evidence"]] == ["C01"]

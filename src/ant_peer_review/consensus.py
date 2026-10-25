@@ -12,6 +12,7 @@ SEV_ORDER = {"critical": 0, "major": 1, "minor": 2}
 LEVEL_ORDER = {"macro": 0, "meso": 1, "micro": 2}
 RL_SEV = {"none": 0, "low": 1, "medium": 2, "high": 3}
 VETO_MIN_SEV = RL_SEV["medium"]
+WARN_ONLY_CLAIMS = {"proper_noun"}  # names and translated titles: warn, do not veto
 
 
 class _UF:
@@ -145,10 +146,14 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
         disputes = [{"model": w, "evidence": r.get("evidence", "")} for w, r in resp
                     if r["target"] in tgt and r["position"] == "object" and w not in flaggers]
         supporters = sorted(set(flaggers) | corrob, key=active.index)
-        evidence = [{"claim": c["id"], "text": c["text"]} for c in unsupported] \
-            if k == "hallucination" else []
+        evidence, warns = [], []
+        if k == "hallucination":
+            for c in unsupported:
+                # A name or translation that does not match is a warning, never veto evidence.
+                (warns if c.get("type") in WARN_ONLY_CLAIMS else evidence).append(
+                    {"claim": c["id"], "text": c["text"]})
         if not supporters and not evidence:
-            status = "advisory" if advisory else "clear"
+            status = "advisory" if advisory or warns else "clear"
         elif k == "hallucination" and evidence and supporters:
             status = "confirmed"          # evidence first: the ledger outranks an objection
         elif len(supporters) >= 2 and not disputes:
@@ -162,7 +167,8 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
             ruled = False
         red[k] = {"status": status, "supporters": supporters, "dissent": disputes,
                   "severity": [s for s, v in RL_SEV.items() if v == sev][0],
-                  "comments": comments, "evidence": evidence, "human_ruling": ruled}
+                  "comments": comments, "evidence": evidence, "warnings": warns,
+                  "human_ruling": ruled}
 
     # ---- scores ----------------------------------------------------------------
     scores = {}

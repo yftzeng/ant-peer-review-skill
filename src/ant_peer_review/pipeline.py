@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from . import prompts
 from .backends.base import Backend, BackendError
-from .decision import guide_text, run_decision
+from .decision import Postponed, guide_text, run_decision
 from .factcheck import build_ledger, pick_checker, read_ledger, run_checks, write_ledger
 from .i18n import T
 from .intake import run_intake_interactive
@@ -297,9 +297,13 @@ def ph_decision(run: Run, ctx: Ctx) -> None:
     if not ctx.interactive:
         ctx.say(ctx.t("decide.hint", run=run.id))
         raise Stop("awaiting decision")
-    run_decision(ctx.io, run, ctx.store, models=ctx.models, lang=ctx.lang,
-                 thresholds=ctx.cfg.grade_thresholds,
-                 min_repeats=ctx.cfg.style_guide_min_repeats)
+    try:
+        run_decision(ctx.io, run, ctx.store, models=ctx.models, lang=ctx.lang,
+                     thresholds=ctx.cfg.grade_thresholds,
+                     min_repeats=ctx.cfg.style_guide_min_repeats)
+    except Postponed:
+        ctx.say(ctx.t("decide.postponed", run=run.id))
+        raise Stop("awaiting ruling")
 
 
 class Restart(Exception):
