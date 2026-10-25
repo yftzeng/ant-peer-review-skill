@@ -282,5 +282,13 @@
   "report.process.factcheck_label": "事实核查：",
   "report.process.conclusion_label": "结论：",
   "report.process.proposal": "{model}（{seat}）：{issues}",
-  "report.process.colon": "："
+  "report.process.colon": "：",
+  "ui.page": "第 {p}/{n} 页",
+  "ui.keys_page": " · ←→ 翻页",
+  "ui.toggle_page": "n/p = 下一页/上一页；",
+  "feed.reviewed": "[已审 {date} · {total} {grade}]",
+  "feed.status": "共 {n} 篇 · 已审 {done} 篇",
+  "more.no_feed": "任务 {run} 不是从 feed 创建的，没有文章列表可以回去挑。请改用：ant-peer-review new --target <feed 网址>",
+  "run.more_hint": "要再从这个 feed 挑其他文章：ant-peer-review more {run}",
+  "report.rereview": "重审，前次为 {runs}"
 }

@@ -282,5 +282,13 @@
   "report.process.factcheck_label": "Fact-check:",
   "report.process.conclusion_label": "Conclusion:",
   "report.process.proposal": "{model} ({seat}): {issues}",
-  "report.process.colon": ": "
+  "report.process.colon": ": ",
+  "ui.page": "page {p}/{n}",
+  "ui.keys_page": " · ←→ page",
+  "ui.toggle_page": "n/p = next/previous page;",
+  "feed.reviewed": "[reviewed {date} · {total} {grade}]",
+  "feed.status": "{n} articles · {done} reviewed",
+  "more.no_feed": "Run {run} was not made from a feed, so there is no article list to return to. Start one with: ant-peer-review new --target <feed URL>",
+  "run.more_hint": "To review more articles from this feed: ant-peer-review more {run}",
+  "report.rereview": "Re-review of {runs}"
 }

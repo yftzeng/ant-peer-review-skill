@@ -170,3 +170,30 @@ def test_real_pty_arrow_keys(tmp_path):
         os.close(fd)
     run = next((home / "runs").iterdir())
     assert json.loads((run / "00-intake.json").read_text())["purpose"] == "drafting"
+
+
+MANY = [(f"o{i}", f"Option {i}") for i in range(1, 24)]
+
+
+# @S-menus-009
+def test_checkbox_pages_keep_ticks():
+    term = FakeTerm(["space", "right", "space", "left", "enter"])
+    got = checkbox(term, t, "Articles:", MANY, [], page_size=10)
+    assert got == ["o1", "o11"]
+    frames = [f for f in term.screen.split("\x1b[J") if "Articles:" in f]
+    assert all(sum(1 for ln in f.splitlines() if "Option " in ln) <= 10 for f in frames[:-1])
+    assert "page 1/3" in term.screen and "page 2/3" in term.screen
+    st = MenuState(values=[v for v, _ in MANY], labels=[lb for _, lb in MANY], multi=True,
+                   cursor=22, chosen=[], page_size=10)
+    lines = render_menu(st, "Articles:", t, 80)
+    assert sum("Option " in ln for ln in lines) == 3 and any("page 3/3" in ln for ln in lines)
+
+
+# @S-menus-010
+def test_line_mode_pages_with_global_numbers():
+    io = ScriptedIO(["n", "12", ""])
+    got = checkbox(io, t, "Articles:", MANY, [], page_size=10)
+    assert got == ["o12"]
+    assert "11) [ ] Option 11" in io.text and "20) [ ] Option 20" in io.text
+    first_page = io.text.split("page 2/3")[0]
+    assert "Option 11" not in first_page and "10) [ ] Option 10" in first_page

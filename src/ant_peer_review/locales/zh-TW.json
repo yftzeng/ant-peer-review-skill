@@ -282,5 +282,13 @@
   "report.process.factcheck_label": "事實查核：",
   "report.process.conclusion_label": "結論：",
   "report.process.proposal": "{model}（{seat}）：{issues}",
-  "report.process.colon": "："
+  "report.process.colon": "：",
+  "ui.page": "第 {p}/{n} 頁",
+  "ui.keys_page": " · ←→ 換頁",
+  "ui.toggle_page": "n/p = 下一頁/上一頁；",
+  "feed.reviewed": "[已審 {date} · {total} {grade}]",
+  "feed.status": "共 {n} 篇 · 已審 {done} 篇",
+  "more.no_feed": "工作 {run} 不是從 feed 建立的，沒有文章清單可以回去挑。請改用：ant-peer-review new --target <feed 網址>",
+  "run.more_hint": "要再從這個 feed 挑其他文章：ant-peer-review more {run}",
+  "report.rereview": "重審，前次為 {runs}"
 }

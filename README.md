@@ -81,6 +81,7 @@ Every run lives in its own folder, with `state.json` recording each phase's inpu
 | Command | What it does |
 |---|---|
 | `ant-peer-review resume <run>` | Continue from the first unfinished phase. |
+| `ant-peer-review more [<run>]` | Pick more articles from the feed of an earlier run (default: the latest feed run), reusing its purpose, audience, brand and fact sources. The list shows 10 a page, oldest first, and marks articles already reviewed; ticking one again re-reviews it. |
 | `ant-peer-review rerun <run> --from review` | Redo the run from a chosen phase. |
 | `ant-peer-review factcheck <run> --continue` | Retry unverified claims. When it stops, choose **continue another time** or **stop and finalize**. Finalize writes the next report version, with a changelog, only if facts changed. No reviewer is called again. |
 | `ant-peer-review runs` | List runs and the next phase of each. |

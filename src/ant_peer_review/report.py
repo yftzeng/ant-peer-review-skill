@@ -131,6 +131,9 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     L.append("")
     L.append(f"- {t('report.run')}: `{run.id}`  ·  {datetime.now():%Y-%m-%d %H:%M}")
     L.append(f"- {t('report.purpose')}: {t('intake.purpose.' + intake['purpose'])}")
+    previous = [r for tgt in intake["targets"] for r in tgt.get("previous_runs", [])]
+    if previous:
+        L.append(f"- {t('report.rereview', runs=', '.join(f'`{r}`' for r in previous))}")
     audience = normalize_audience(intake.get("audience"))
     aud = "; ".join(f"{t('aud.' + k).rstrip(':：')}: {cell(audience_label(t, k, audience[k]))}"
                     for k in LAYER_KEYS if audience[k])

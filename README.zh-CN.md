@@ -86,6 +86,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | 命令 | 用途 |
 |---|---|
 | `ant-peer-review resume <run>` | 从第一个未完成的阶段继续。 |
+| `ant-peer-review more [<run>]` | 从之前某个任务的 feed 再挑文章（默认是最近一个 feed 任务），沿用它的用途、受众卡、品牌与事实来源，直接跳到文章列表。列表每页 10 篇、由旧到新，已审过的会注明；再勾一次就是重审。 |
 | `ant-peer-review rerun <run> --from review` | 从指定阶段重跑。 |
 | `ant-peer-review factcheck <run> --continue` | 补查尚未核实的事实。中途停止时，可选择「下次再继续」或「终止并完成」。选择「终止并完成」时，只有事实确实发生变化才会生成新版报告并附变更记录，且不会重新调用 reviewer。 |
 | `ant-peer-review runs` | 列出所有任务及其下一个阶段。 |

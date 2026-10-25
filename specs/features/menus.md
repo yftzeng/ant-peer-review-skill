@@ -55,6 +55,18 @@ Feature: menus
     Given the CLI running in a pty with a saved config
     When  Down, Enter is sent at the purpose question
     Then  the run's intake purpose is "drafting"
+
+  @S-menus-009
+  Scenario: a long checkbox shows 10 rows a page and keeps ticks across pages
+    Given a checkbox of 23 options with page size 10
+    When  Space ticks option 1, Right moves to page 2, Space ticks option 11, Left returns, Enter confirms
+    Then  each frame shows at most 10 options and "page 1/3" or "page 2/3", and the answer is options 1 and 11
+
+  @S-menus-010
+  Scenario: in line mode n and p change page and numbers stay global
+    Given the same checkbox without a menu-capable terminal
+    When  the user types "n", then "12", then an empty line
+    Then  page 2 lists options 11-20 numbered 11-20, and the answer is option 12
 ```
 
 ## Must NOT
@@ -62,3 +74,4 @@ Feature: menus
 
 ## Revisions
 - 2026-10-22 · +S-menus-001..008 +N-menus-001 · decision: none -- user chose stdlib arrow menus (option B) over adding questionary/prompt_toolkit: keeps zero runtime deps and the in-list custom entry
+- 2026-10-25 · +S-menus-009..010 · decision: none -- user: the article list shows 10 a page with previous/next page

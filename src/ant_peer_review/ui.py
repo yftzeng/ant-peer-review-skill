@@ -173,6 +173,20 @@ class MenuState:
     custom: bool = False      # a "+ custom…" row and the c key
     skip: bool = False        # radio only: a "skip" row
     message: str = ""
+    page_size: int = 0        # 0 = one page; else options shown this many at a time
+    status: str = ""          # a line under the title, before the page number
+
+    @property
+    def page(self) -> int:
+        return self.cursor // self.page_size if self.page_size else 0
+
+    @property
+    def pages(self) -> int:
+        return max(1, -(-len(self.values) // self.page_size)) if self.page_size else 1
+
+    def on_page(self, i: int) -> bool:
+        """Is row i drawn? Extra rows (custom, skip) show on every page."""
+        return not self.page_size or i >= len(self.values) or i // self.page_size == self.page
 
     def rows(self) -> list:
         extra = (["__custom__"] if self.custom else []) + (["__skip__"] if self.skip else [])
@@ -186,8 +200,13 @@ class MenuState:
             self.cursor = (self.cursor - 1) % len(rows)
         elif key in ("down", "j"):
             self.cursor = (self.cursor + 1) % len(rows)
-        elif key.isdigit() and 1 <= int(key) <= len(self.values):
-            i = int(key) - 1
+        elif key in ("right", "left") and self.pages > 1:
+            step = 1 if key == "right" else -1
+            page = (self.page + step) % self.pages
+            self.cursor = min(page * self.page_size + self.cursor % self.page_size,
+                              len(self.values) - 1)
+        elif key.isdigit() and 1 <= self.page * self.page_size + int(key) <= len(self.values):
+            i = self.page * self.page_size + int(key) - 1
             if not self.multi:
                 return ("select", self.values[i])
             self.cursor = i
@@ -217,7 +236,13 @@ class MenuState:
 
 def render_menu(st: MenuState, title: str, t: T, width: int) -> list[str]:
     lines = ["", _c("1;36", cut("? " + title, width))]
+    if st.status or st.pages > 1:
+        lines.append(_c("2", cut(" · ".join(x for x in (
+            st.status, t("ui.page", p=st.page + 1, n=st.pages) if st.pages > 1 else "") if x),
+            width)))
     for i, row in enumerate(st.rows()):
+        if not st.on_page(i):
+            continue
         cur = i == st.cursor
         if row == "__custom__":
             label = "+ " + t("ui.custom")
@@ -230,6 +255,8 @@ def render_menu(st: MenuState, title: str, t: T, width: int) -> list[str]:
         text = cut(("❯ " if cur else "  ") + label, width)
         lines.append(_c("36", text) if cur else text)
     hint = t("ui.keys_multi" if st.multi else "ui.keys_radio")
+    if st.pages > 1:
+        hint += t("ui.keys_page")
     if st.custom:
         hint += t("ui.keys_custom")
     lines.append(_c("2", cut(hint, width)))
@@ -373,21 +400,36 @@ def radio(io: IO, t: T, title: str, options: Sequence[tuple[str, str]],
 def checkbox(io: IO, t: T, title: str, options: Sequence[tuple[str, str]],
              selected: Sequence[str], *, min_selected: int = 0,
              validate: Callable[[list[str]], str | None] | None = None,
-             allow_custom: bool = False) -> list[str]:
+             allow_custom: bool = False, page_size: int = 0, status: str = "") -> list[str]:
     """Toggle by number; empty line confirms. Keeps option order in the result.
-    With allow_custom, 'c' adds a free-text option, returned as 'custom:<text>'."""
+    With allow_custom, 'c' adds a free-text option, returned as 'custom:<text>'.
+    With page_size, options show that many at a time (Left/Right, or n/p in line mode)."""
     options = list(options)
     chosen = [v for v, _ in options if v in set(selected)]
     if _menu_capable(io):
         st = MenuState(values=[v for v, _ in options], labels=[lb for _, lb in options],
-                       multi=True, cursor=0, chosen=chosen, custom=allow_custom)
+                       multi=True, cursor=0, chosen=chosen, custom=allow_custom,
+                       page_size=page_size, status=status)
         return run_menu(io, t, title, st, min_selected=min_selected, validate=validate)
+    page = 0
     while True:
+        pages = max(1, -(-len(options) // page_size)) if page_size else 1
+        page = min(page, pages - 1)
+        lo, hi = (page * page_size, (page + 1) * page_size) if page_size else (0, len(options))
         io.say(question(title))
-        for i, (val, label) in enumerate(options, 1):
+        if status or pages > 1:
+            io.say(dim("  " + " · ".join(x for x in (
+                status, t("ui.page", p=page + 1, n=pages) if pages > 1 else "") if x)))
+        for i, (val, label) in enumerate(options[lo:hi], lo + 1):
             box = "[x]" if val in chosen else "[ ]"
             io.say(f"  {i}) {box} {label}")
-        ans = io.ask(prompt(t("ui.toggle_custom" if allow_custom else "ui.toggle"))).strip()
+        hint = t("ui.toggle_custom" if allow_custom else "ui.toggle")
+        if pages > 1:
+            hint = t("ui.toggle_page") + " " + hint
+        ans = io.ask(prompt(hint)).strip()
+        if pages > 1 and ans.lower() in ("n", "p"):
+            page = (page + (1 if ans.lower() == "n" else -1)) % pages
+            continue
         if allow_custom and ans.lower() == "c":
             txt = " ".join(io.ask(prompt(t("ui.custom_prompt"))).split())
             if txt and f"custom:{txt}" not in chosen:

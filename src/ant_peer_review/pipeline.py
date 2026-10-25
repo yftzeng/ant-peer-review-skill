@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 
 from . import prompts
 from .backends.base import Backend, BackendError
+from .articles import feed_of
 from .decision import Postponed, guide_text, run_decision
 from .factcheck import build_ledger, pick_checker, read_ledger, run_checks, write_ledger
 from .i18n import T
@@ -344,6 +345,8 @@ def run_pipeline(run: Run, ctx: Ctx) -> str:
                     return "interrupted"
                 run.mark(ph, "done")
             ctx.say(ctx.t("run.done", path=str(run.root)))
+            if feed_of(run):
+                ctx.say(ctx.t("run.more_hint", run=run.id))
             return "done"
         except Restart:
             continue

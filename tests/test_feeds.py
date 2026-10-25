@@ -102,12 +102,27 @@ def test_content_container_heuristic():
     assert "Login" not in md and "Copyright" not in md
 
 
+def _rss(items):
+    body = "".join(f"<item><title>{t}</title><link>https://ex.example/b/{n}</link>"
+                   + (f"<pubDate>{d}</pubDate>" if d else "") + "<description>x</description></item>"
+                   for n, t, d in items)
+    return (f'<?xml version="1.0"?><rss version="2.0"><channel><title>S</title>{body}'
+            '</channel></rss>').encode()
+
+
+# newest first, as feeds usually are; "Undated" sits in the middle
+RSS12 = _rss([(n, f"Art {n:02d}", f"Mon, {n:02d} Aug 2026 10:00:00 +0800") for n in range(11, 5, -1)]
+             + [(99, "Undated", "")]
+             + [(n, f"Art {n:02d}", f"Mon, {n:02d} Aug 2026 10:00:00 +0800") for n in range(5, 0, -1)])
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        body = RSS if self.path == "/feed" else b"User-agent: *\nDisallow:\n"
+        feeds = {"/feed": RSS, "/feed12": RSS12}
+        body = feeds.get(self.path, b"User-agent: *\nDisallow:\n")
         self.send_response(200)
         self.send_header("Content-Type", "application/rss+xml; charset=utf-8"
-                         if self.path == "/feed" else "text/plain")
+                         if self.path in feeds else "text/plain")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -166,3 +181,101 @@ def test_more_than_three_articles_asks_first(feed_env):
     io = ScriptedIO(answers + ["y"])
     cli.main([], io=io, store=store)
     assert len(list_runs(store.runs_dir)) == 5
+
+
+INTAKE_ANSWERS = ["1", None, "/done", "", "", "", "", "", "1", "", ""]
+
+
+def _answers(url, *more):
+    return [url if a is None else a for a in INTAKE_ANSWERS] + list(more)
+
+
+def _past_run(store, link, *, title="Day 1 - Alpha", total=61.8, grade="revise", feed=None,
+              brand=None, fact_sources=("web",)):
+    from ant_peer_review.jsonio import write_json
+    from ant_peer_review.workspace import create_run
+    run = create_run(store.runs_dir, title, models=["opus", "sonnet"], backend="fake", lang="en")
+    tgt = {"kind": "feed_item", "value": link, "title": title, "html": "<p>x</p>"}
+    if feed:
+        tgt["feed"] = feed
+    intake = {"purpose": "audit", "targets": [tgt], "lang": "en",
+              "audience": {"expertise": ["expert"], "role": [], "lens": [], "trust": [],
+                           "purpose": ["trend"]}, "fact_sources": list(fact_sources)}
+    if brand:
+        intake["brand"] = brand
+    write_json(run.path("00-intake.json"), intake)
+    from ant_peer_review.workspace import PHASES
+    for ph in PHASES:  # a finished run: the start menu does not offer it
+        run.mark(ph, "done")
+    write_json(run.path("06-report.v1.json"), {"version": 1, "total": total, "grade": grade,
+                                                "red_lines": {}, "scores": {}, "lint": []})
+    return run
+
+
+# @S-cli-016
+def test_feed_picker_oldest_first_with_counts(feed_env):
+    store, url = feed_env
+    url12 = url + "12"
+    _past_run(store, "https://ex.example/b/3?utm_source=rss", title="Art 03")
+    io = ScriptedIO(_answers(url12))          # stops at the article list (EOF)
+    cli.main([], io=io, store=store)
+    text = io.text
+    assert "12 articles" in text and "1 reviewed" in text and "page 1/2" in text
+    pos = [text.index(f"Art {n:02d}") for n in range(1, 11)]
+    assert pos == sorted(pos)                 # oldest first
+    assert "Undated" not in text.split("page 1/2")[1].split("Art 10")[0]
+
+
+# @S-cli-017
+def test_reviewed_article_marked_and_rereviewed(feed_env):
+    store, url = feed_env
+    r1 = _past_run(store, "https://ex.example/a/1")
+    io = ScriptedIO(_answers(url, "3", ""))   # Gamma (dated), Beta, Alpha, ...: Alpha is 3
+    cli.main([], io=io, store=store)
+    line = next(ln for ln in io.text.splitlines() if "Day 1 - Alpha" in ln)
+    assert "reviewed" in line and "61.8" in line and r1.state()["created_at"][:10] in line
+    new = [r for r in list_runs(store.runs_dir) if r.id != r1.id]
+    assert len(new) == 1
+    intake = read_json(new[0].path("00-intake.json"))
+    assert intake["targets"][0]["previous_runs"] == [r1.id]
+    cli.main(["resume", new[0].id, "--yes"], io=NoAskIO(), store=store)  # on to the report
+    md = sorted(new[0].root.glob("06-report.v*.md"))[-1].read_text()
+    assert f"Re-review of `{r1.id}`" in md
+
+
+# @S-cli-018
+def test_more_reuses_the_intake_and_goes_to_the_list(feed_env):
+    from ant_peer_review.jsonio import write_json
+    from ant_peer_review.workspace import create_run
+    store, url = feed_env
+    r1 = _past_run(store, "https://ex.example/a/1", feed=url, brand="acme",
+                   fact_sources=("web", "official"))
+    plain = create_run(store.runs_dir, "plain", models=["opus"], backend="fake", lang="en")
+    write_json(plain.path("00-intake.json"), {"purpose": "audit", "lang": "en", "audience": {},
+                                              "targets": [{"kind": "text", "value": "hi"}]})
+    io = ScriptedIO(["2", ""])                # tick Beta
+    cli.main(["more", r1.id], io=io, store=store)
+    assert "Purpose" not in io.text and "audience" not in io.text.lower().split("articles")[0]
+    new = [r for r in list_runs(store.runs_dir) if r.id not in (r1.id, plain.id)]
+    assert len(new) == 1
+    old, got = read_json(r1.path("00-intake.json")), read_json(new[0].path("00-intake.json"))
+    for k in ("purpose", "audience", "brand", "fact_sources"):
+        assert got[k] == old[k], k
+    assert got["targets"][0]["title"] == "Day 2 - Beta" and got["targets"][0]["feed"] == url
+    io = ScriptedIO([])                       # no run named: the latest run made from a feed
+    cli.main(["more"], io=io, store=store)
+    assert "Day 2 - Beta" in io.text
+    io = ScriptedIO([])
+    assert cli.main(["more", plain.id], io=io, store=store) == cli.EXIT_USAGE
+    assert "not made from a feed" in io.text
+
+
+# @S-cli-019
+def test_finished_feed_run_names_more(feed_env):
+    store, url = feed_env
+    cli.main(["new", "--yes", "--target", url, "--feed-limit", "1"], io=NoAskIO(), store=store)
+    run = list_runs(store.runs_dir)[0]
+    io = NoAskIO()
+    cli.main(["decide", run.id, "--yes", "--choice", "A"], io=io, store=store)
+    assert f"ant-peer-review more {run.id}" in io.text
+

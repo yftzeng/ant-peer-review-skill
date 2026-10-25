@@ -8,6 +8,7 @@ import sys
 
 from . import __version__
 from .backends.base import get_backend
+from .articles import article_key, feed_of, latest_feed_run, oldest_first, reviewed_articles
 from .decision import Postponed, run_decision
 from .i18n import T
 from .intake import build_intake_from_args, run_intake_interactive
@@ -51,6 +52,12 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--feed-limit", type=int, default=None,
                    help="for an RSS/Atom target: review the newest N articles, one run each "
                         "(default 1 with --yes)")
+
+    mo = sub.add_parser("more", parents=[common],
+                        help="pick more articles from an earlier run's feed, with its intake answers")
+    mo.add_argument("run", nargs="?", help="default: the latest run made from a feed")
+    mo.add_argument("--feed-limit", type=int, default=None,
+                    help="with --yes: review the newest N articles (default 1)")
 
     r = sub.add_parser("resume", parents=[common], help="continue a run")
     r.add_argument("run")
@@ -129,6 +136,7 @@ def make_feed_crawler(store: Store):
 
 
 MAX_RUNS_WITHOUT_ASKING = 3
+FEED_PAGE_SIZE = 10
 
 
 def split_feeds(io: IO, t: T, intake: dict, store: Store, *, interactive: bool,
@@ -138,6 +146,7 @@ def split_feeds(io: IO, t: T, intake: dict, store: Store, *, interactive: bool,
     from .sources.crawler import FetchError
     from .sources.feeds import FEED_TYPES, parse_feed
     crawler = make_feed_crawler(store)
+    seen = reviewed_articles(store.runs_dir)
     plain, articles = [], []
     for tgt in intake["targets"]:
         if tgt["kind"] != "url":
@@ -157,10 +166,19 @@ def split_feeds(io: IO, t: T, intake: dict, store: Store, *, interactive: bool,
             plain.append(tgt)
             continue
         if interactive:
-            opts = [(str(i), f"{it['title']}" + (f"  ({it['date']})" if it["date"] else ""))
-                    for i, it in enumerate(items)]
-            picked = [items[int(i)] for i in checkbox(io, t, t("feed.pick", n=len(items)), opts,
-                                                     [], min_selected=1)]
+            items = oldest_first(items)
+            opts = []
+            for i, it in enumerate(items):
+                label = it["title"] + (f"  ({it['date']})" if it["date"] else "")
+                if past := seen.get(article_key(it["link"])):
+                    p = past[-1]
+                    label += "  " + t("feed.reviewed", date=p["date"], total=p["total"] or "—",
+                                      grade=t("report.grade." + p["grade"]) if p["grade"] else "—")
+                opts.append((str(i), label))
+            n_seen = sum(1 for it in items if article_key(it["link"]) in seen)
+            picked = [items[int(i)] for i in checkbox(
+                io, t, t("feed.pick", n=len(items)), opts, [], min_selected=1,
+                page_size=FEED_PAGE_SIZE, status=t("feed.status", n=len(items), done=n_seen))]
             if len(picked) > MAX_RUNS_WITHOUT_ASKING:
                 io.say(info(t("feed.scale", n=len(picked), m=reviewers,
                               calls=2 * reviewers + 3)))
@@ -169,8 +187,12 @@ def split_feeds(io: IO, t: T, intake: dict, store: Store, *, interactive: bool,
         else:
             picked = items[:max(1, limit or 1)]
             io.say(info(t("feed.picked", n=len(picked), total=len(items))))
-        articles += [{"kind": "feed_item", "value": it["link"], "title": it["title"],
-                      "html": it["html"]} for it in picked]
+        for it in picked:
+            art = {"kind": "feed_item", "value": it["link"], "title": it["title"],
+                   "html": it["html"], "feed": tgt["value"]}
+            if past := seen.get(article_key(it["link"])):
+                art["previous_runs"] = [p["run"] for p in past]
+            articles.append(art)
     out = [dict(intake, targets=plain)] if plain else []
     out += [dict(intake, targets=[a]) for a in articles]
     return out
@@ -275,6 +297,10 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
             intake["brand"] = brand
     intakes = split_feeds(io, ctx.t, intake, store, interactive=not args.yes,
                           limit=args.feed_limit, reviewers=len(ctx.models))
+    return start_runs(io, store, ctx, intakes)
+
+
+def start_runs(io: IO, store: Store, ctx: Ctx, intakes: list[dict]) -> int:
     if not intakes:
         io.say(ctx.t("feed.nothing"))
         return EXIT_OK
@@ -296,6 +322,22 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
         if status == "paused":
             worst = "paused"
     return finish(worst)
+
+
+def cmd_more(args, io: IO, store: Store, cfg: Config) -> int:
+    """Pick more articles from an earlier run's feed, with that run's intake answers."""
+    t = T(cfg.lang)
+    base = find_run(store, args.run) if args.run else latest_feed_run(store.runs_dir)
+    if base is None or not feed_of(base):
+        io.say(t("more.no_feed", run=base.id if base else "—"))
+        return EXIT_USAGE
+    ctx = make_ctx(args, io, store, cfg)
+    io.say(banner(ctx.t, ctx.models))
+    intake = dict(read_json(base.path("00-intake.json")),
+                  targets=[{"kind": "url", "value": feed_of(base)}])
+    intakes = split_feeds(io, ctx.t, intake, store, interactive=not args.yes,
+                          limit=args.feed_limit, reviewers=len(ctx.models))
+    return start_runs(io, store, ctx, intakes)
 
 
 def cmd_resume(args, io, store, cfg) -> int:
@@ -362,6 +404,8 @@ def cmd_decide(args, io, store, cfg) -> int:
         return EXIT_OK
     run.mark("decision", "done")
     io.say(ctx.t("run.done", path=str(run.root)))
+    if feed_of(run):
+        io.say(ctx.t("run.more_hint", run=run.id))
     return EXIT_OK
 
 
@@ -486,7 +530,7 @@ def cmd_runs(args, io, store, cfg) -> int:
     return EXIT_OK
 
 
-COMMANDS = {"new": cmd_new, "resume": cmd_resume, "rerun": cmd_rerun,
+COMMANDS = {"new": cmd_new, "more": cmd_more, "resume": cmd_resume, "rerun": cmd_rerun,
             "factcheck": cmd_factcheck, "decide": cmd_decide, "config": cmd_config,
             "lessons": cmd_lessons, "runs": cmd_runs, "recheck": cmd_recheck}
 
