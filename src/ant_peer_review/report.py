@@ -52,8 +52,17 @@ def source_urls(sources: list[dict]) -> str:
         u = s["url"].strip().replace("|", "%7C").replace("<", "%3C").replace(">", "%3E") \
             .replace(" ", "%20")
         date = str(s.get("accessed_at", ""))[:10]
-        out.append(f"{u} ({date})" if date else u)
+        grade = f"[{s['grade']}] " if s.get("grade") in ("A", "B", "C") else ""
+        out.append(grade + (f"{u} ({date})" if date else u))
     return " ".join(out)
+
+
+def ledger_status(t: T, c: dict) -> str:
+    """The ledger's status cell: the reason when it could not be verified, else the
+    strength of its sources (S-factcheck-ledger-016)."""
+    if c["status"] == "cannot_verify":
+        return f"{c['status']} ({c['reason']})"
+    return c["status"] + (f" · {t('strength.' + c['strength'])}" if c.get("strength") else "")
 
 
 def latest_version(run: Run) -> int:
@@ -243,7 +252,7 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
              f"{t('report.sources')} |")
     L.append("|---|---|---|---|---|")
     for c in ledger:
-        st = c["status"] + (f" ({c['reason']})" if c["status"] == "cannot_verify" else "")
+        st = ledger_status(t, c)
         src = source_urls(c.get("sources", []))
         L.append(f"| {c['id']} | {cell(c['anchor'])} | {cell(c['text'])} | {st} | {src} |")
     if scan.get("flags"):

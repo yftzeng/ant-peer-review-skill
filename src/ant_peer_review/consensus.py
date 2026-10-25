@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from .rubric import final_impact, s_curve_fit
 from .schemas import OLD_POSITIONS, RED_LINES
+from .sources.grade import is_evidence
 
 SEV_ORDER = {"critical": 0, "major": 1, "minor": 2}
 LEVEL_ORDER = {"macro": 0, "meso": 1, "micro": 2}
@@ -149,8 +150,10 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
         evidence, warns = [], []
         if k == "hallucination":
             for c in unsupported:
-                # A name or translation that does not match is a warning, never veto evidence.
-                (warns if c.get("type") in WARN_ONLY_CLAIMS else evidence).append(
+                # A name or translation that does not match is a warning, never veto evidence;
+                # so is a claim only C sources back (S-review-panel-025).
+                (warns if c.get("type") in WARN_ONLY_CLAIMS or not is_evidence(c)
+                 else evidence).append(
                     {"claim": c["id"], "text": c["text"]})
         if not supporters and not evidence:
             status = "advisory" if advisory or warns else "clear"

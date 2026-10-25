@@ -90,7 +90,7 @@ class FakeBackend(Backend):
     def _factcheck(self, *a):
         return {"status": "supported", "reason": "fake",
                 "sources": [{"url": "https://example.org/fake-source",
-                             "supporting_excerpt": "fake excerpt"}]}
+                             "supporting_excerpt": "fake excerpt", "kind": "independent"}]}
 
     def _debate(self, model, ids, paras, bias, prompt):
         targets = re.findall(r'"target": "([^"]+)"', prompt)

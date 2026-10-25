@@ -17,6 +17,7 @@ from xml.etree import ElementTree
 
 from .factcheck import RETRYABLE, read_ledger, write_ledger
 from .jsonio import read_json
+from .sources.grade import strength
 from .sources.crawler import Crawler, FetchError
 from .workspace import Run
 
@@ -162,7 +163,8 @@ def verify_identifiers(run: Run, crawler=None, *, say=lambda *_: None) -> list[d
             out = {"status": "cannot_verify", "reason": reason, "sources": []}
         c.update(out, checked_by="doi.org+crossref" if item["kind"] == "doi" else "arxiv",
                  updated_at=now)
-        c["sources"] = [dict(s, accessed_at=now) for s in c["sources"]]
+        c["sources"] = [dict(s, accessed_at=now, kind="academic", grade="A") for s in c["sources"]]
+        c["strength"] = strength(c["sources"])
         say(f"  … {c['id']} {item['ident']} → {c['status']}"
             + (f" ({c['reason']})" if c["reason"] else ""))
         write_ledger(run, ledger)

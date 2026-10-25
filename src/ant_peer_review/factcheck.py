@@ -12,6 +12,7 @@ from . import prompts
 from .backends.base import Backend, BackendError
 from .jsonio import read_json, write_text_atomic
 from .schemas import FACTCHECK
+from .sources.grade import grade_source, strength
 from .workspace import Run
 
 LEDGER = "factcheck/ledger.jsonl"
@@ -147,7 +148,7 @@ def check_claim(backend: Backend, model: str, claim: dict, context: str, lang: s
         c.update(status="cannot_verify", reason="no_search", sources=[])
         return c
     data = res.data
-    sources = [dict(s, accessed_at=c["updated_at"])
+    sources = [dict(s, accessed_at=c["updated_at"], grade=grade_source(s["url"], s.get("kind")))
                for s in _provenance_filter(data.get("sources", []), res.tool_results)]
     status = data["status"]
     if status != "cannot_verify" and not sources:
@@ -157,6 +158,7 @@ def check_claim(backend: Backend, model: str, claim: dict, context: str, lang: s
              else (data.get("reason") or "no_source"), sources=sources)
     if c["status"] == "cannot_verify" and c["reason"] not in ("no_source", "refused"):
         c["reason"] = "no_source"
+    c["strength"] = strength(c["sources"])  # S-factcheck-ledger-016
     return c
 
 

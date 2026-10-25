@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .sources.grade import SOURCE_KINDS
+
 _TYPES = {
     "object": dict, "array": list, "string": str, "boolean": bool,
     "integer": int, "number": (int, float), "null": type(None),
@@ -107,7 +109,8 @@ REVIEW = obj({
 FACTCHECK = obj({
     "status": {"type": "string", "enum": FACT_STATUS},
     "reason": STR,
-    "sources": arr(obj({"url": STR, "supporting_excerpt": STR})),
+    "sources": arr(obj({"url": STR, "supporting_excerpt": STR,
+                        "kind": {"type": "string", "enum": list(SOURCE_KINDS)}})),
 })
 
 # A debate answer supports a finding or objects to it (cf. RFC 7282: objections are

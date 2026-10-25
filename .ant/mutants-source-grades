@@ -1,0 +1,25 @@
+# graded sources and graded veto evidence (S-factcheck-ledger-016, S-review-panel-025)
+@@ src/ant_peer_review/sources/grade.py
+-     return "A" if OFFICIAL.search(host(url)) else "C"
++     return "A"
+@@ src/ant_peer_review/sources/grade.py
+-         return "A" if SCHOLARLY.search(host(url)) else "B"  # a publisher's page: independent
++         return "A"  # a publisher's page: independent
+@@ src/ant_peer_review/sources/grade.py
+-     if "A" in grades or grades.count("B") >= 2:
++     if "A" in grades or grades.count("B") >= 1:
+@@ src/ant_peer_review/sources/grade.py
+-         o = outlet(s.get("url") or "")
++         o = s.get("url") or ""
+@@ src/ant_peer_review/sources/grade.py
+-     return strength(claim.get("sources") or []) != "weak"
++     return True
+@@ src/ant_peer_review/consensus.py
+-                 (warns if c.get("type") in WARN_ONLY_CLAIMS or not is_evidence(c)
++                 (warns if c.get("type") in WARN_ONLY_CLAIMS
+@@ src/ant_peer_review/factcheck.py
+-     c["strength"] = strength(c["sources"])  # S-factcheck-ledger-016
++     c["strength"] = ""  # S-factcheck-ledger-016
+@@ src/ant_peer_review/report.py
+-         grade = f"[{s['grade']}] " if s.get("grade") in ("A", "B", "C") else ""
++         grade = ""

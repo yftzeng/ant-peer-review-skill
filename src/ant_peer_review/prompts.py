@@ -143,7 +143,12 @@ def factcheck_system(lang: str) -> str:
             "needs reading) before answering. Cite only URLs that appeared in your search or "
             "fetch results in this session; never cite from memory. A search snippet is a lead: "
             "prefer a fetched page for the supporting excerpt. If nothing reliable is found, "
-            "answer cannot_verify with reason no_source.\n\n"
+            "answer cannot_verify with reason no_source. Give each source its kind: "
+            "law_database, court, regulator, registry, exchange_filing (official records), "
+            "academic (a paper), independent (a news outlet or analyst not paid by a party), "
+            "company_claim (a party's own page or release), aggregator (a site republishing "
+            "others), or lead (a forum, social post or anything else). Code checks the host: "
+            "an official kind on an unofficial host counts as a claim.\n\n"
             + SHARED_RULES.format(lang_name=LANG_NAMES.get(lang, lang)))
 
 

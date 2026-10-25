@@ -100,6 +100,14 @@ Feature: fact-check ledger
     Given arXiv answers 200 with a feed that has no entry, or with an entry titled "Error"
     When  the id is verified
     Then  it is unsupported "identifier_not_found"
+
+  @S-factcheck-ledger-016
+  Scenario: every kept source is graded, and every claim has a strength
+    Given the checker cites a law database on law.moj.gov.tw, a "regulator" page on a blog host, a news report, a company page and a forum post, each with its kind
+    When  the claim is checked
+    Then  the grades are A, C (an official kind on a host that is not official), B, C and C; doi.org and arxiv.org sources from the identifier checks are A, an academic kind on another host is B
+    And   the claim's strength is strong with one A or two B from different outlets, single with one B, weak with only C, and ungraded when no source has a kind (a ledger from before this change)
+    And   the report's ledger shows each source's grade and the claim's strength
 ```
 
 ## Must NOT
@@ -110,3 +118,4 @@ Feature: fact-check ledger
 - 2026-10-22 · +S-factcheck-ledger-010 · decision: none -- adversarial security review (sonnet) proved these by running
 - 2026-10-22 · +S-factcheck-ledger-011 · decision: none -- re-evaluated references: K-Dense source ledger keeps a verification date per source
 - 2026-10-22 · +S-factcheck-ledger-012..015 · decision: none -- K-Dense paper-lookup: resolve identifiers against authoritative APIs and check retraction notices; opt-in per run (user)
+- 2026-10-26 · +S-factcheck-ledger-016 · decision: none -- user: 按你建議 (grade claim sources as the company profile grades competitor evidence: the checker names the kind, code checks the host, one outlet is one source)

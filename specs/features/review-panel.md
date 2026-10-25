@@ -155,6 +155,13 @@ Feature: review panel
     Given only opus reviewed
     When  the report is written
     Then  the review-process section says there was no cross-review and every finding is a single opinion
+
+  @S-review-panel-025
+  Scenario: only graded evidence confirms the hallucination red line
+    Given opus flags "hallucination" and the ledger holds an unsupported claim whose sources are weak (only C)
+    When  synthesis runs
+    Then  that claim is a warning, not evidence, so the red line is not confirmed by it
+    And   with an unsupported claim whose strength is strong, single or ungraded, "hallucination" is "confirmed" with it as evidence, as before
 ```
 
 ## Must NOT
@@ -171,3 +178,4 @@ Feature: review panel
 - 2026-10-22 · ~S-review-panel-021 · decision: none -- user review: the Then read as if a new anchor needs no searched part; it means the old checked part still counts
 - 2026-10-25 · +S-review-panel-022 · decision: none -- user: live run asked for a veto ruling over a translated section title (C09) that no reviewer flagged; names and translations only warn
 - 2026-10-25 · +S-review-panel-023..024 · decision: none -- user: the report must disclose the models' proposals, debate and cross-review, with key points and the conclusion
+- 2026-10-26 · +S-review-panel-025 · decision: none -- user: 按你建議 (a single C-grade page may no longer confirm a veto)
