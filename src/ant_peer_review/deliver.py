@@ -4,6 +4,7 @@ written by the decision."""
 from __future__ import annotations
 
 import json
+import re
 
 from . import prompts
 from .backends.base import Backend, BackendError
@@ -89,6 +90,21 @@ def _dim_status(mean: float, th: dict) -> str:
     return "pass" if mean >= th["good"] else "borderline" if mean >= th["revise"] else "fail"
 
 
+_FIGURE = re.compile(r"\d+(?:[.,:/]\d+)*")
+
+
+def draft_figures(run: Run) -> list[str]:
+    """S-drafting-004: figures in the latest draft that no material holds."""
+    drafts = sorted(run.path("01-sources").glob("draft.v*.md"),
+                    key=lambda p: int(re.sub(r"\D", "", p.stem) or 0))
+    materials = read_json(run.path("01-sources/materials.json"), default=None)
+    if not drafts or materials is None:
+        return []
+    have = set(_FIGURE.findall(json.dumps(materials, ensure_ascii=False)))
+    return list(dict.fromkeys(x for x in _FIGURE.findall(drafts[-1].read_text(encoding="utf-8"))
+                              if x not in have))
+
+
 def checks(run: Run, cons: dict, t: T, thresholds: dict) -> list[str]:
     from .review import load_records
     from .rubric import display_name
@@ -125,6 +141,9 @@ def checks(run: Run, cons: dict, t: T, thresholds: dict) -> list[str]:
     row(t("review.factcheck"), status,
         "、".join(f"{t('report.claim.' + k)} {v}" for k, v in counts.items()) or "—",
         "; ".join(f"{c['id']}: {c['text']}" for c in ledger if c["status"] == "unsupported"))
+    if read_json(run.path("00-intake.json"), default={}).get("purpose") == "drafting":
+        new = draft_figures(run)
+        row(t("review.figures"), "fail" if new else "pass", str(len(new)), ", ".join(new[:10]))
     scan = read_json(run.path("01-sources/injection-scan.json"), default={"flags": []})
     flags = scan.get("flags", [])
     row(t("review.injection"), "borderline" if flags else "pass", str(len(flags)),

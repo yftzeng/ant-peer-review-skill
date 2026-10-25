@@ -340,6 +340,7 @@
   "review.status.fail": "✗ fail",
   "review.score": "{mean} (weight {weight}, spread {spread})",
   "review.factcheck": "Fact-check",
+  "review.figures": "Figures not in the materials",
   "review.injection": "Injection scan",
   "review.lint": "Report lint",
   "review.files": "Detail files",

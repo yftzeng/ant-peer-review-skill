@@ -24,6 +24,13 @@ Feature: drafting
     Given every review scores 90
     When  the run completes
     Then  only draft.v1.md exists
+
+  @S-drafting-004
+  Scenario: a figure the materials do not hold is caught in code
+    Given the material "Revenue was 12 million in 2025." and a first draft saying "Revenue was 15 million in 2025."
+    When  the draft is reviewed
+    Then  it is rewritten once even with a good grade, and the rewrite prompt names "15" as a figure the materials do not hold
+    And   review.md's check table has the row "figures not in the materials", failing with "15" while a draft still has one and passing once every figure appears in the materials; an audit run has no such row
 ```
 
 ## Must NOT
@@ -31,3 +38,4 @@ Feature: drafting
 
 ## Revisions
 - 2026-10-22 · +S-drafting-001..003 +N-drafting-001 · decision: none -- follows docs/DESIGN.md §3 Drafting mode
+- 2026-10-26 · +S-drafting-004 · decision: none -- user: 開工 (port from ant-pr-review: a draft may not carry a figure the materials do not hold, checked in code instead of the prompt alone)

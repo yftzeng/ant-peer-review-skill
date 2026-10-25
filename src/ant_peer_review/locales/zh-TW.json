@@ -340,6 +340,7 @@
   "review.status.fail": "✗ 未通過",
   "review.score": "{mean}（權重 {weight}，分歧 {spread}）",
   "review.factcheck": "事實查核",
+  "review.figures": "材料裡沒有的數字",
   "review.injection": "注入掃描",
   "review.lint": "報告檢查",
   "review.files": "詳細檔案",

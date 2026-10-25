@@ -1,0 +1,16 @@
+# a figure the materials do not hold (S-drafting-004)
+@@ src/ant_peer_review/pipeline.py
+-     if intake["purpose"] == "drafting" and (cons["grade"] not in ("excellent", "good") or new) \
++     if intake["purpose"] == "drafting" and (cons["grade"] not in ("excellent", "good")) \
+@@ src/ant_peer_review/pipeline.py
+-         if new:  # S-drafting-004
++         if False:  # S-drafting-004
+@@ src/ant_peer_review/deliver.py
+-     return list(dict.fromkeys(x for x in _FIGURE.findall(drafts[-1].read_text(encoding="utf-8"))
++     return list(dict.fromkeys(x for x in _FIGURE.findall(drafts[0].read_text(encoding="utf-8"))
+@@ src/ant_peer_review/deliver.py
+-         row(t("review.figures"), "fail" if new else "pass", str(len(new)), ", ".join(new[:10]))
++         row(t("review.figures"), "borderline" if new else "pass", str(len(new)), ", ".join(new[:10]))
+@@ src/ant_peer_review/deliver.py
+-     if read_json(run.path("00-intake.json"), default={}).get("purpose") == "drafting":
++     if True:
