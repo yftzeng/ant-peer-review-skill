@@ -55,6 +55,21 @@ def verdict(cons: dict) -> str:
     return {"excellent": "pass", "good": "pass", "revise": "revise"}.get(cons["grade"], "fail")
 
 
+def share_verdict(cons: dict, ledger: list[dict]) -> tuple[str, list[str]]:
+    """S-share-009: (veto | caution | pass, unsupported claims). Scores play no part."""
+    if any(v["status"] == "confirmed" for v in cons["red_lines"].values()):
+        return "veto", []
+    bad = [c["text"] for c in ledger if c["status"] == "unsupported"]
+    return ("caution" if bad else "pass"), bad
+
+
+def share_digest(cons: dict, ledger: list[dict]) -> dict:
+    """What the share writer gets: red lines and findings, no score or grade."""
+    d = {k: v for k, v in _digest(cons).items() if k not in ("total", "grade", "scores")}
+    d["verdict"] = share_verdict(cons, ledger)[0]
+    return d
+
+
 # ---- review.md ---------------------------------------------------------------------
 SUMMARY_SCHEMA = obj({"summary": STR, "key_points": arr(obj({"text": STR,
                                                              "findings": arr(STR)}))})
@@ -120,7 +135,8 @@ def checks(run: Run, cons: dict, t: T, thresholds: dict) -> list[str]:
         L.append(f"| {cell(name)} | {t('review.status.' + status)} | {cell(detail)} | "
                  f"{cell(reason) or '—'} |")
 
-    for k, v in cons["scores"].items():
+    share = read_json(run.path("00-intake.json"), default={}).get("purpose") == "share"
+    for k, v in ({} if share else cons["scores"]).items():
         why = "; ".join(f"{m}: {s['rationale']}" for m in cons["active"]
                         for s in reviews.get(m, {}).get("data", {}).get("scores", [])
                         if s["dimension"] == k and s.get("rationale"))
@@ -170,12 +186,14 @@ def render_review(run: Run, cons: dict, t: T, thresholds: dict, summary: dict | 
     L = [f"# {t('review.title')} — {cell(title)}", "",
          f"- {t('report.run')}: `{run.id}` · {t('report.purpose')}: "
          f"{t('intake.purpose.' + intake['purpose'])}", "",
-         f"## {t('review.verdict')}", "",
-         f"**{t('review.verdict.' + verdict(cons))}** — {t('report.total')} {cons['total']} · "
-         f"{t('report.grade')} {t('report.grade.' + cons['grade'])}"
-         + (f" ({t('report.provisional')})" if cons.get("provisional") else ""), ""]
+         f"## {t('review.verdict')}", ""]
     if intake["purpose"] == "share":
-        L += [f"**{t('review.share.' + verdict(cons))}**", ""]
+        sv, bad = share_verdict(cons, read_ledger(run))
+        L += [f"**{t('review.share.' + sv, claims='; '.join(bad))}**", ""]
+    else:
+        L += [f"**{t('review.verdict.' + verdict(cons))}** — {t('report.total')} {cons['total']} · "
+              f"{t('report.grade')} {t('report.grade.' + cons['grade'])}"
+              + (f" ({t('report.provisional')})" if cons.get("provisional") else ""), ""]
     L += [
          f"## {t('review.summary')}", ""]
     if summary is None:

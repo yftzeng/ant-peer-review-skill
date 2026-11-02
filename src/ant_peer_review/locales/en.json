@@ -389,9 +389,7 @@
   "share.written": "Share posts: {files}",
   "share.gate_failed": "{file} failed the writing check ({reasons}); it is marked, edit it before posting.",
   "review.share.pass": "Fit to share.",
-  "review.share.revise": "Fit to share with a stated reservation.",
-  "review.share.fail": "Not fit to share.",
-  "review.share.veto": "Not fit to share (red-line veto).",
+  "review.share.veto": "Not fit to share (red line veto).",
   "voice.paste": "Paste 3-5 of your past {platform} posts. Put a line with --- between posts; /done to finish:",
   "voice.none": "No posts were pasted; nothing saved.",
   "voice.allow": "Words you use that are not 'AI taste' (comma-separated, Enter to skip):",
@@ -413,5 +411,8 @@
   "outlang.ask": "Final output languages (tick one or more):",
   "outlang.source": "The article is written in {lang}.",
   "deliver.finals": "Adopted text: {files}",
-  "gate.final": "adopted text"
+  "gate.final": "adopted text",
+  "review.share.caution": "Fit to share, leaving out: {claims} (no source supports it).",
+  "report.done_share": "Report: {path}",
+  "report.process.conclusion_share": "all reviewers agreed on {agreed} of {n} finding(s); veto: {vetoes}; not scored (share)."
 }

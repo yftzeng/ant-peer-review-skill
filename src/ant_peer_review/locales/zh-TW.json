@@ -389,8 +389,6 @@
   "share.written": "分享文：{files}",
   "share.gate_failed": "{file} 未通過文字檢查（{reasons}），已在檔頭標示，發文前請修改。",
   "review.share.pass": "適合分享。",
-  "review.share.revise": "可以分享，但建議註明保留。",
-  "review.share.fail": "不適合分享。",
   "review.share.veto": "不適合分享（紅線否決）。",
   "voice.paste": "貼上 3–5 篇你在 {platform} 發過的貼文，貼文之間用一行 --- 分隔，輸入 /done 結束：",
   "voice.none": "沒有貼上任何貼文，未儲存。",
@@ -413,5 +411,8 @@
   "outlang.ask": "最終產出語言（可多選）：",
   "outlang.source": "原文語言：{lang}。",
   "deliver.finals": "定稿：{files}",
-  "gate.final": "定稿"
+  "gate.final": "定稿",
+  "review.share.caution": "可以分享，但請避開：{claims}（查無依據）。",
+  "report.done_share": "報告：{path}",
+  "report.process.conclusion_share": "{n} 項問題中有 {agreed} 項全體同意；否決：{vetoes}；分享模式不評分。"
 }

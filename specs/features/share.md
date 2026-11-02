@@ -74,6 +74,15 @@ Feature: share
     When  the user ticks X and chooses "neutral, and never ask again for this platform"
     Then  the X post is written with no voice even though Threads' could be borrowed,
           and the next share intake does not ask about X's voice
+
+  @S-share-009
+  Scenario: a share run neither weighs nor scores the article; fitness rests on red lines and facts
+    Given an interactive share run, and a share run whose article has no confirmed red line and one unsupported claim
+    When  the run goes from the sources to the decision
+    Then  no structure-weight step is asked (and --weights is ignored),
+          the report and review.md show no total, grade or per-dimension scores, and the writer is not given them
+    And   review.md says the article can be shared while leaving out the unsupported claim, which it names;
+          with no unsupported claim it says fit to share, and with a confirmed red line not fit to share, whatever the scores
 ```
 
 ## Must NOT
@@ -85,3 +94,4 @@ Feature: share
 - 2026-11-02 · ~S-share-004 · decision: none -- live share run: the shared link kept ithelp's ?sc=rss.iron tracking parameter
 - 2026-11-02 · ~S-share-001 +S-share-007..008 · decision: none -- user: the voice should come up during the interaction, not only through a separate command; it is asked only for platforms without one, then applied automatically
 - 2026-11-02 · ~S-share-001 · decision: none -- user: platform order Facebook, Threads, Instagram, X/Twitter, LinkedIn, LINE
+- 2026-11-02 · +S-share-009 · decision: none -- user: share mode should skip the structure weights and not score the article; whether to share it rests on red lines and the fact-check, not on writing quality

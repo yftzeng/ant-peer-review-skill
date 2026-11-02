@@ -159,30 +159,31 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     for w in cons["warnings"]:
         L.append(f"\n> ⚠ {t('report.warn.' + w)}")
     L.append("")
-    L.append(f"## {t('report.dashboard')}")
-    L.append("")
-    models = cons["active"]
-    L.append(f"| {t('report.dimension')} | {t('report.weight')} | {t('report.score')} | "
-             f"{t('report.spread')} | " + " | ".join(models) + " |")
-    L.append("|---|---:|---:|---:|" + "---:|" * len(models))
-    from .rubric import display_name
-    names = {d["key"]: display_name(t, d) for d in rubric["dimensions"]}
-    for k, v in cons["scores"].items():
-        L.append(f"| {cell(names.get(k, k))} | {v['weight']} | {v['mean']} | {v['spread']} | "
-                 + " | ".join(str(v["by_model"].get(m, "—")) for m in models) + " |")
-    grade = t("report.grade." + cons["grade"])
-    if cons["provisional"]:
-        grade += f" ({t('report.provisional')})"
-    L.append("")
-    L.append(f"**{t('report.total')}: {cons['total']}  ·  {t('report.grade')}: {grade}**")
-    if cons.get("impact_s_curve"):
-        s = cons["impact_s_curve"]
+    if intake.get("purpose") != "share":   # S-share-009: a share run is not scored
+        L.append(f"## {t('report.dashboard')}")
         L.append("")
-        L.append(f"- S-curve: {s['stage']} ({s['stage_status']}), fit {s['fit']}, "
-                 + (t("report.scurve_scored") if s["scored"] else t("report.scurve_not_scored")))
-    if cons["split_scores"]:
-        L.append(f"- {t('report.split_scores')}: {', '.join(cons['split_scores'])}")
-    L.append("")
+        models = cons["active"]
+        L.append(f"| {t('report.dimension')} | {t('report.weight')} | {t('report.score')} | "
+                 f"{t('report.spread')} | " + " | ".join(models) + " |")
+        L.append("|---|---:|---:|---:|" + "---:|" * len(models))
+        from .rubric import display_name
+        names = {d["key"]: display_name(t, d) for d in rubric["dimensions"]}
+        for k, v in cons["scores"].items():
+            L.append(f"| {cell(names.get(k, k))} | {v['weight']} | {v['mean']} | {v['spread']} | "
+                     + " | ".join(str(v["by_model"].get(m, "—")) for m in models) + " |")
+        grade = t("report.grade." + cons["grade"])
+        if cons["provisional"]:
+            grade += f" ({t('report.provisional')})"
+        L.append("")
+        L.append(f"**{t('report.total')}: {cons['total']}  ·  {t('report.grade')}: {grade}**")
+        if cons.get("impact_s_curve"):
+            s = cons["impact_s_curve"]
+            L.append("")
+            L.append(f"- S-curve: {s['stage']} ({s['stage_status']}), fit {s['fit']}, "
+                     + (t("report.scurve_scored") if s["scored"] else t("report.scurve_not_scored")))
+        if cons["split_scores"]:
+            L.append(f"- {t('report.split_scores')}: {', '.join(cons['split_scores'])}")
+        L.append("")
     L.append(f"## {t('report.sources_title')}")
     L.append("")
     L += sources_rows(t, manifest)
@@ -383,8 +384,10 @@ def process_section(run: Run, cons: dict, t: T) -> list[str]:
                      if counts else "")))
     agreed = sum(1 for f in cons["findings"] if f["label"].startswith("CONSENSUS"))
     vetoes = [t("redline." + k) for k, v in cons["red_lines"].items() if v["status"] == "confirmed"]
+    share = read_json(run.path("00-intake.json"), default={}).get("purpose") == "share"
     L.append(item(t("report.process.conclusion_label"),
-                  t("report.process.conclusion", total=cons["total"],
+                  t("report.process.conclusion_share" if share else "report.process.conclusion",
+                    total=cons["total"],
                     grade=t("report.grade." + cons["grade"]), agreed=agreed,
                     n=len(cons["findings"]), vetoes=comma.join(vetoes) or "—")
                   + (" " + t("report.process.single") if len(active) < 2 else "")))

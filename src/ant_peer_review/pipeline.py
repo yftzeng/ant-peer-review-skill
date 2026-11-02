@@ -145,6 +145,9 @@ def ph_rubric(run: Run, ctx: Ctx) -> None:
     if intake.get("parent") and run.path("02-rubric.json").exists():
         return  # recheck: the parent's rubric is the yardstick, not edited
     rub = propose(intake["audience"])
+    if intake.get("purpose") == "share":   # S-share-009: nothing is scored, nothing to weigh
+        write_json(run.path("02-rubric.json"), rub)
+        return
     weights = ctx.options.get("weights")
     if weights:
         for d in rub["dimensions"]:
@@ -286,8 +289,11 @@ def ph_report(run: Run, ctx: Ctx) -> None:
     meta = write_report(run, cons, lang=ctx.lang)
     path = run.path(f"06-report.v{meta['version']}.md")
     confirmed = [k for k, v in cons["red_lines"].items() if v["status"] == "confirmed"]
-    ctx.say(ctx.t("report.done", path=str(path), total=cons["total"],
-                  grade=ctx.t("report.grade." + cons["grade"])))
+    if intake["purpose"] == "share":
+        ctx.say(ctx.t("report.done_share", path=str(path)))
+    else:
+        ctx.say(ctx.t("report.done", path=str(path), total=cons["total"],
+                      grade=ctx.t("report.grade." + cons["grade"])))
     if confirmed:
         ctx.say(ctx.t("report.veto", keys=", ".join(confirmed)))
     for p in meta["lint"]:

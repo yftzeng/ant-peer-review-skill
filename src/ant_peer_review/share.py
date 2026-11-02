@@ -97,7 +97,7 @@ def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T
 
 def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
                home: Path | None, lang: str, langs: list[str]):
-    from .deliver import _digest
+    from .deliver import share_digest
     intake = read_json(run.path("00-intake.json"))
     share = intake["share"]
     pairs = plan(intake)
@@ -133,7 +133,7 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
                                           if c["count"] == "x_weighted" else "")
             + f"; fold {c['fold'] or 'none'}; at most {c['hashtags_max']} hashtags; links "
             f"{c['link']}. Style: {STYLE_BRIEF[s]} Voice: {voice_text(p)}")
-    data = dict(_digest(cons), vetoed=vetoed, unsupported=unsupported)
+    data = dict(share_digest(cons, read_ledger(run)), vetoed=vetoed, unsupported=unsupported)
     prompt = (f"Article: {json.dumps(info, ensure_ascii=False)}\n"
               f"Stance: {STANCE_BRIEF[share.get('stance', 'recommend')]}\n"
               f"The person's own take (the only source for their experience): "

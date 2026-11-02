@@ -184,8 +184,7 @@ def test_voice_created_inside_the_intake(env):
     assert intake["share"]["voices"] == {"threads": "own"}
     assert [t for _, t in CountingFake.calls].count("voice") == 1
 
-    io = ScriptedIO(["",                                     # unfinished-run menu: start new
-                     "3", "Another article, 2026.", "/done", "", "", "", "",   # Threads is ticked now
+    io = ScriptedIO(["3", "Another article, 2026.", "/done", "", "", "", "",   # Threads is ticked now
                      "6", "",                                # tick "rebuild this voice"
                      "新的一篇。", "/done", "", "",
                      "", ""])                                # styles again, fact sources
@@ -202,7 +201,7 @@ def test_neutral_never_ask_is_remembered(env, tmp_path):
     cli.main([], io=io, store=env)
     run = list_runs(env.runs_dir)[-1]
     assert read_json(run.path("00-intake.json"))["share"]["voices"] == {"x": "neutral"}
-    io = ScriptedIO(["", "3", "Article text, 2026.", "/done", "", "2 4", "", "", "", "", ""])
+    io = ScriptedIO(["3", "Article text, 2026.", "/done", "", "2 4", "", "", "", "", ""])
     cli.main([], io=io, store=env)
     assert "X/Twitter has no voice of yours" not in io.text and "Post styles for X" in io.text
 
@@ -235,3 +234,36 @@ def test_share_from_arguments(env):
     assert cli.main(["new", "--yes", "--purpose", "share", "--target", TEXT, "--platform", "x",
                      "--stance", "love"], io=io, store=env) == cli.EXIT_USAGE
     assert "reserved" in io.text
+
+
+# @S-share-009
+def test_share_neither_weighs_nor_scores(tmp_path):
+    from ant_peer_review.pipeline import Ctx, ph_rubric
+    from ant_peer_review.rubric import propose
+    run, store = share_run(tmp_path, ["x"], {"x": ["summary"]})
+    ctx = Ctx(io=NoAskIO(), store=store, cfg=Config(), backend=None, models=M, lang="en",
+              interactive=True, options={"weights": {"macro": 70, "accuracy": 10, "micro": 10,
+                                                     "impact": 10}})
+    ph_rubric(run, ctx)                                   # NoAskIO fails on any question
+    intake = read_json(run.path("00-intake.json"))
+    assert read_json(run.path("02-rubric.json")) == propose(intake["audience"])
+
+    append_jsonl(run.path("factcheck/ledger.jsonl"), {
+        "id": "C01", "anchor": "D1.P03.S1", "text": "Revenue grew 40% in 2025", "type": "number",
+        "status": "unsupported", "reason": "", "sources": [], "refs": [], "checked_by": "sonnet"})
+    cons = compute_consensus(run, M, TH)
+    assert not any(v["status"] == "confirmed" for v in cons["red_lines"].values())
+    from ant_peer_review.report import write_report
+    write_report(run, cons, lang="en")                    # as the report phase would
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share"): posts(x_summary=X_POST)})
+    decide(run, store, b)
+    review = run.path("review.md").read_text()
+    assert "Fit to share, leaving out: Revenue grew 40% in 2025" in review
+    for gone in ("Total", "Grade", "| Structure |"):        # no score row per dimension
+        assert gone not in review, gone
+    from ant_peer_review.report import latest_version
+    report = run.path(f"06-report.v{latest_version(run)}.md").read_text()
+    assert "Total" not in report and "Grade" not in report
+    prompt = [c for c in b.calls if c["task"] == "share"][0]["prompt"]
+    assert '"total"' not in prompt and '"grade"' not in prompt and '"scores"' not in prompt
