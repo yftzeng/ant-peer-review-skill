@@ -414,5 +414,11 @@
   "gate.final": "adopted text",
   "review.share.caution": "Fit to share, leaving out: {claims} (no source supports it).",
   "report.done_share": "Report: {path}",
-  "report.process.conclusion_share": "all reviewers agreed on {agreed} of {n} finding(s); veto: {vetoes}; not scored (share)."
+  "report.process.conclusion_share": "all reviewers agreed on {agreed} of {n} finding(s); veto: {vetoes}; not scored (share).",
+  "share.angle": "Angle:",
+  "share.angle.comment": "Comment — reuse, extend or critique this article",
+  "share.angle.distill": "Distill — leave out people and company names, distill the underlying logic, develop it on your own",
+  "share.credit": "End each post with a source line?",
+  "share.credit.yes": "Yes (recommended: distilled ideas still have a source)",
+  "share.credit.no": "No"
 }

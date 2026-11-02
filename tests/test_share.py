@@ -144,7 +144,7 @@ def test_voice_learned_per_platform(env):
 def test_share_intake_order_and_preselection(env):
     save_voice(env.home, voice("linkedin", insight=3, summary=1))
     io = ScriptedIO(["3", "Some pasted article text with 2025 numbers.", "/done",
-                     "",               # output languages
+                     "", "",           # output languages, angle: comment
                      "4", "",          # platforms: tick X as well, confirm
                      "2",              # X has no voice: borrow LinkedIn's
                      "",               # stance: recommend
@@ -161,7 +161,8 @@ def test_share_intake_order_and_preselection(env):
     assert "LinkedIn: your voice is applied (3 posts" in text
     intake = read_json(list_runs(env.runs_dir)[0].path("00-intake.json"))
     assert intake["purpose"] == "share"
-    assert intake["share"] == {"platforms": ["x", "linkedin"], "stance": "recommend", "take": "",
+    assert intake["share"] == {"platforms": ["x", "linkedin"], "angle": "comment",
+                               "stance": "recommend", "take": "",
                                "styles": {"x": ["summary"], "linkedin": ["insight"]},
                                "voices": {"x": "borrow", "linkedin": "own"}}
     assert "Audience card" not in text and "Brand name" not in text
@@ -169,7 +170,7 @@ def test_share_intake_order_and_preselection(env):
 
 # @S-share-007
 def test_voice_created_inside_the_intake(env):
-    answers = ["3", "Some pasted article text with 2025 numbers.", "/done", "",
+    answers = ["3", "Some pasted article text with 2025 numbers.", "/done", "", "",
                "2", "",                                      # platforms: Threads only
                "1",                                          # create its voice now
                "一篇。", "---", "兩篇。", "---", "三篇。", "/done", "扎實", "賦能",
@@ -184,7 +185,7 @@ def test_voice_created_inside_the_intake(env):
     assert intake["share"]["voices"] == {"threads": "own"}
     assert [t for _, t in CountingFake.calls].count("voice") == 1
 
-    io = ScriptedIO(["3", "Another article, 2026.", "/done", "", "", "", "",   # Threads is ticked now
+    io = ScriptedIO(["3", "Another article, 2026.", "/done", "", "", "", "", "",   # Threads is ticked now
                      "6", "",                                # tick "rebuild this voice"
                      "新的一篇。", "/done", "", "",
                      "", ""])                                # styles again, fact sources
@@ -196,12 +197,12 @@ def test_voice_created_inside_the_intake(env):
 # @S-share-008
 def test_neutral_never_ask_is_remembered(env, tmp_path):
     save_voice(env.home, voice("threads", question=3))
-    io = ScriptedIO(["3", "Article text, 2025.", "/done", "", "2 4", "",  # X only (Threads was ticked)
+    io = ScriptedIO(["3", "Article text, 2025.", "/done", "", "", "2 4", "",  # X only (Threads was ticked)
                      "4", "", "", "", ""])                          # never ask; stance, take, style, facts
     cli.main([], io=io, store=env)
     run = list_runs(env.runs_dir)[-1]
     assert read_json(run.path("00-intake.json"))["share"]["voices"] == {"x": "neutral"}
-    io = ScriptedIO(["3", "Article text, 2026.", "/done", "", "2 4", "", "", "", "", ""])
+    io = ScriptedIO(["3", "Article text, 2026.", "/done", "", "", "2 4", "", "", "", "", ""])
     cli.main([], io=io, store=env)
     assert "X/Twitter has no voice of yours" not in io.text and "Post styles for X" in io.text
 
@@ -267,3 +268,106 @@ def test_share_neither_weighs_nor_scores(tmp_path):
     assert "Total" not in report and "Grade" not in report
     prompt = [c for c in b.calls if c["task"] == "share"][0]["prompt"]
     assert '"total"' not in prompt and '"grade"' not in prompt and '"scores"' not in prompt
+
+
+# @S-share-010
+def test_share_intake_asks_angle_and_distill_rules(env):
+    io = ScriptedIO(["3", "Some pasted article text with 2025 numbers.", "/done",
+                     "",               # output language
+                     "2",              # angle: distill
+                     "2", "",          # platforms: Threads
+                     "",               # Threads has no voice: neutral
+                     "",               # own take: none
+                     "",               # Threads styles: keep insight
+                     "",               # source line: yes
+                     ""])              # fact sources
+    cli.main([], io=io, store=env)
+    text = io.text
+    assert "Comment" in text and "Distill" in text
+    assert text.index("Distill") < text.index("Facebook")
+    assert "stance" not in text.lower()
+    styles = text[text.index("Post styles for Threads"):]
+    styles = styles[:styles.index("›")]
+    from ant_peer_review.i18n import T
+    t = T("en")
+    assert f"[x] {t('share.style.insight')}" in styles and t("share.style.question") in styles
+    assert t("share.style.summary") not in styles and t("share.style.pick") not in styles
+    intake = read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))
+    assert intake["share"]["angle"] == "distill" and intake["share"]["credit"] is True
+    assert "stance" not in intake["share"] and intake["share"]["styles"] == {"threads": ["insight"]}
+
+
+def distill_run(tmp_path, credit=True):
+    run, store = share_run(tmp_path, ["x", "instagram"], {"x": ["insight"], "instagram": ["insight"]})
+    intake = read_json(run.path("00-intake.json"))
+    intake["share"].update(angle="distill", credit=credit)
+    intake["share"].pop("stance", None)
+    intake["output_langs"] = ["zh-TW"]
+    intake["analysis"] = {"targets": [{"title": "Title", "author": "Jane Roe",
+                                       "organization": "Example News"}]}
+    write_json(run.path("00-intake.json"), intake)
+    return run, store
+
+
+X_LEAK = "Acme 的經驗說明，流程越短，錯誤越少。你的團隊會先砍哪一步？"
+X_OK = "流程越短，錯誤越少。每多一次交接，就多一個出錯的地方。你會先砍哪一步？"
+IG_LEAK = "Jane Roe 提醒我，流程越短越好。"
+IG_OK = "流程越短，出錯的地方越少。交接本身就是風險。"
+
+
+# @S-share-011
+# @S-share-012
+def test_distilled_post_names_no_one_and_ends_with_source(tmp_path):
+    run, store = distill_run(tmp_path)
+    first = dict(posts(x_insight=X_LEAK, instagram_insight=IG_LEAK), names=["Acme"])
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share"): first,
+                       ("*", "share_rewrite"): posts(x_insight=X_OK, instagram_insight=IG_OK)})
+    decide(run, store, b)
+    share_sys = [c for c in b.calls if c["task"] == "share"][0]["system"]
+    assert "underlying logic" in share_sys and "names" in share_sys
+    ask = [c for c in b.calls if c["task"] == "share_rewrite"][0]["prompt"]
+    assert "name_leak: Acme" in ask and "name_leak: Jane Roe" in ask
+    x = run.path("share-x-insight.md").read_text().strip()
+    assert x.startswith("流程越短") and x.endswith("延伸自：Title https://ex.example/a")
+    ig = run.path("share-instagram-insight.md").read_text().strip()
+    assert ig.endswith("延伸自：Title") and "https://" not in ig
+    checks = run.path("share-checks.md").read_text()
+    assert "no_concrete_detail" not in checks and "no_attribution" not in checks
+    judge_sys = [c for c in b.calls if c["task"] == "judge"][0]["system"]
+    assert "principle" in judge_sys and "own_thinking" in judge_sys
+
+
+def test_distill_without_credit_adds_no_source_line(tmp_path):
+    run, store = distill_run(tmp_path, credit=False)
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share"): dict(posts(x_insight=X_OK, instagram_insight=IG_OK), names=[])})
+    decide(run, store, b)
+    assert run.path("share-x-insight.md").read_text().strip() == X_OK
+
+
+# @S-share-012
+def test_judge_extra_checks_need_quoted_evidence():
+    from ant_peer_review.gate import DISTILL_CHECKS, STRONG, judge
+    b = ScriptBackend({("*", "judge"): {"verdicts": [{"key": "k", "checks": [
+        {"name": "principle", "pass": False, "evidence": "流程越短"},
+        {"name": "own_thinking", "pass": False, "evidence": "not in the text"}]}]}})
+    out = judge(b, "opus", {"k": "流程越短，錯誤越少。"}, extra=DISTILL_CHECKS)
+    assert out == {"k": [{"code": "judge:principle", "level": STRONG, "detail": "流程越短"}]}
+    assert "own_thinking" in b.calls[0]["system"]
+
+
+# @S-share-013
+def test_angle_from_arguments(env):
+    cli.main(["new", "--yes", "--backend", "fake", "--purpose", "share", "--target", TEXT,
+              "--platform", "x", "--angle", "distill", "--no-credit"], io=NoAskIO(), store=env)
+    share = read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))["share"]
+    assert share["angle"] == "distill" and share["credit"] is False
+    assert share["styles"] == {"x": ["insight"]} and "stance" not in share
+    cli.main(["new", "--yes", "--backend", "fake", "--purpose", "share", "--target", TEXT,
+              "--platform", "x"], io=NoAskIO(), store=env)
+    assert read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))["share"]["angle"] == "comment"
+    io = NoAskIO()
+    assert cli.main(["new", "--yes", "--purpose", "share", "--target", TEXT, "--platform", "x",
+                     "--angle", "rant"], io=io, store=env) == cli.EXIT_USAGE
+    assert "distill" in io.text

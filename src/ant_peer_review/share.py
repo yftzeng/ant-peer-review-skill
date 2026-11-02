@@ -9,8 +9,8 @@ from pathlib import Path
 from . import outlang, prompts
 from .backends.base import Backend, BackendError
 from .factcheck import read_ledger
-from .gate import (EDIT_RULES, autofix, checks_md, judge, judge_model, rule_check, run_gate,
-                   with_header)
+from .gate import (DISTILL_CHECKS, EDIT_RULES, autofix, checks_md, judge, judge_model, rule_check,
+                   run_gate, with_header)
 from .i18n import T
 from .jsonio import read_json, write_text_atomic
 from .platforms import URL_RE, load_platforms
@@ -19,6 +19,22 @@ from .voice import PLATFORMS, SHARE_STYLES, voice_for
 from .workspace import Run
 
 STANCES = ["recommend", "extend", "reserved", "rebut"]
+ANGLES = ["comment", "distill"]
+DISTILL_STYLES = ["insight", "question"]
+DISTILL_BRIEF = {
+    "insight": "The principle in the person's own words, then what follows from it: an "
+               "implication, a limit, or how to apply it elsewhere.",
+    "question": "The principle in one or two lines, then one sharp question it raises for the "
+                "reader's own work.",
+}
+DISTILL_RULES = (
+    "Angle: distill. Do not name any person, company, product or publication, nor the "
+    "article's author or site. Distill the underlying logic of the article into a principle "
+    "that transfers to other situations, and develop it with independent thinking; this is not "
+    "a summary or a recommendation of the article. Do not mention the article, its title or "
+    "link: a source line is added after the post. Also return names: every person, company, "
+    "product and publication name the article mentions.")
+CREDIT = {"zh-TW": "延伸自：", "zh-CN": "延伸自：", "en": "Inspired by: "}
 STYLE_BRIEF = {
     "summary": "Two or three concrete points from the article, so a reader gains something "
                "without clicking.",
@@ -38,6 +54,7 @@ STANCE_BRIEF = {
              "findings.",
 }
 POST_SCHEMA = obj({"posts": arr(obj({"key": STR, "text": STR}))})
+DISTILL_SCHEMA = obj({"posts": arr(obj({"key": STR, "text": STR})), "names": arr(STR)})
 SYSTEM = (
     "You write social posts in which a person shares someone else's article with their own "
     "followers. Write as that person, in their voice for each platform, in {language}, "
@@ -61,7 +78,8 @@ def article_info(run: Run) -> dict:
     from .articles import clean_url
     url = clean_url(tgt["value"]) if tgt.get("kind") in ("url", "feed_item") else ""
     return {"url": url, "title": tgt.get("title") or ana[0].get("title")
-            or (docs[0].get("title", "") if docs else ""), "author": ana[0].get("author", "")}
+            or (docs[0].get("title", "") if docs else ""), "author": ana[0].get("author", ""),
+            "organization": ana[0].get("organization", "")}
 
 
 def article_text(run: Run) -> str:
@@ -105,6 +123,7 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
     info = article_info(run)
     source = article_text(run)
     take = share.get("take", "")
+    distill = share.get("angle") == "distill"
     voices, borrowed = {}, {}
     chosen = share.get("voices") or {}
     for p in {p for p, _ in pairs}:
@@ -132,10 +151,12 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
             f"counted as {c['count']}" + (" (CJK and emoji count 2, every URL 23)"
                                           if c["count"] == "x_weighted" else "")
             + f"; fold {c['fold'] or 'none'}; at most {c['hashtags_max']} hashtags; links "
-            f"{c['link']}. Style: {STYLE_BRIEF[s]} Voice: {voice_text(p)}")
+            f"{c['link']}. Style: {(DISTILL_BRIEF if distill else STYLE_BRIEF)[s]} "
+            f"Voice: {voice_text(p)}")
     data = dict(share_digest(cons, read_ledger(run)), vetoed=vetoed, unsupported=unsupported)
     prompt = (f"Article: {json.dumps(info, ensure_ascii=False)}\n"
-              f"Stance: {STANCE_BRIEF[share.get('stance', 'recommend')]}\n"
+              + ("" if distill else
+                 f"Stance: {STANCE_BRIEF[share.get('stance') or 'recommend']}\n") +
               f"The person's own take (the only source for their experience): "
               f"{take or '(none: do not mention any experience of theirs)'}\n\n"
               f"Posts to write:\n" + "\n".join(items) + "\n\nReview data:\n"
@@ -143,9 +164,20 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
               f"{prompts.untrusted(source[:6000])}")
     folds = [plats[p]["fold"] for p, _ in pairs if plats[p]["fold"]]
     system = SYSTEM.format(fold=min(folds) if folds else 140, language=outlang.guide(lang))
+    schema = POST_SCHEMA
+    if distill:
+        system, schema = f"{system}\n\n{DISTILL_RULES}", DISTILL_SCHEMA
     writer = models[0]
-    res = backend.run(writer, task="share", system=system, prompt=prompt, schema=POST_SCHEMA,
+    res = backend.run(writer, task="share", system=system, prompt=prompt, schema=schema,
                       effort="medium", timeout=600)
+    # Names a distilled post must not carry: the writer's list, the author and the site.
+    names = [n for n in dict.fromkeys([*(str(x).strip() for x in (res.data or {}).get("names", [])),
+                                       info["author"], info["organization"]]) if len(n) >= 2]
+    credit = {}
+    if distill and share.get("credit", True) and info["title"]:
+        for p, _ in pairs:
+            link = f" {info['url']}" if plats[p]["link"] == "clickable" and info["url"] else ""
+            credit[p] = f"\n\n{CREDIT.get(lang, CREDIT['en'])}{info['title']}{link}"
     keys = {f"{p}-{s}" for p, s in pairs}
     texts = {x["key"]: str(x["text"]).strip() for x in (res.data or {}).get("posts", [])
              if x.get("key") in keys and str(x.get("text", "")).strip()}
@@ -156,15 +188,23 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
         v = voices.get(p) or {}
         attribution = {"url": info["url"]} if c["link"] == "clickable" and info["url"] else \
             {"title": info["title"], "author": info["author"]}
-        out = rule_check(text, platform=c, take=take, allow=v.get("allow", ()),
-                         deny=v.get("deny", ()), source=source, attribution=attribution,
-                         protect=protect, lang=lang)
+        if distill:   # S-share-011: no detail or title in the body; the limit counts the source line
+            out = rule_check(text + credit.get(p, ""), platform=c, take=take,
+                             allow=v.get("allow", ()), deny=v.get("deny", ()), protect=protect,
+                             lang=lang)
+            low = text.lower()
+            out += [{"code": "name_leak", "level": "hard", "detail": n} for n in names
+                    if n.lower() in low]
+        else:
+            out = rule_check(text, platform=c, take=take, allow=v.get("allow", ()),
+                             deny=v.get("deny", ()), source=source, attribution=attribution,
+                             protect=protect, lang=lang)
         if c["link"] != "clickable" and URL_RE.search(text):
             out.append({"code": "link_not_clickable", "level": "hard",
                         "detail": URL_RE.search(text).group(0)})
         return out
 
-    protect = [x for x in (info["title"], info["author"]) if x]
+    protect = [] if distill else [x for x in (info["title"], info["author"]) if x]
 
     def fix(key: str, text: str):
         p = key.split("-", 1)[0]
@@ -188,7 +228,8 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
                        sources=f"{source}\n{take}\n{json.dumps(info, ensure_ascii=False)}\n"
                                f"{json.dumps(data, ensure_ascii=False)}",
                        judge_fn=lambda batch: judge(backend, judge_model(models, writer), batch,
-                                                    voice=voice_all))
+                                                    voice=voice_all,
+                                                    extra=DISTILL_CHECKS if distill else None))
     veto_head = (f"> ⛔ {t('share.not_recommended', lines=', '.join(t('redline.' + k) for k in vetoed))}"
                  "\n\n") if vetoed else ""
     written, shown = [], {}
@@ -196,9 +237,10 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
         k = f"{p}-{s}"
         if k in results:
             name = outlang.file_name(f"share-{k}.md", lang, langs)
-            write_text_atomic(run.path(name), veto_head + with_header(results[k], t) + "\n")
+            res_k = dict(results[k], text=results[k]["text"] + credit.get(p, ""))
+            write_text_atomic(run.path(name), veto_head + with_header(res_k, t) + "\n")
             written.append(name)
-            shown[name] = results[k]
+            shown[name] = res_k
     notes = [t("share.borrowed", platform=plats[p]["name"], source=plats[b]["name"])
              for p, b in borrowed.items() if b]
     notes += [t("share.no_voice", platform=plats[p]["name"]) for p in voices if not voices[p]]

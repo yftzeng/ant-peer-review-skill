@@ -20,7 +20,7 @@ Feature: share
           or write neutrally and never ask again; LinkedIn is not asked and its voice is shown as applied;
           then the stance (recommend, extend, reserved, rebut), an optional own take,
           and one style checkbox per platform with LinkedIn preselecting "insight" and X preselecting "summary"
-    And   no audience card and no brand are asked, and 00-intake.json holds share {platforms, stance, take, styles, voices}
+    And   no audience card and no brand are asked, and 00-intake.json holds share {platforms, angle "comment", stance, take, styles, voices}
           with voices {x: "borrow", linkedin: "own"}
 
   @S-share-002
@@ -83,6 +83,35 @@ Feature: share
           the report and review.md show no total, grade or per-dimension scores, and the writer is not given them
     And   review.md says the article can be shared while leaving out the unsupported claim, which it names;
           with no unsupported claim it says fit to share, and with a confirmed red line not fit to share, whatever the scores
+
+  @S-share-010
+  Scenario: the share intake asks for an angle first; distilling asks no stance and offers two styles
+    When  the user chooses purpose "share", enters a text, keeps the output language and picks the angle "distill"
+    Then  the angle question lists "comment" (論評此文) and "distill" (概念提純), before the platforms
+    And   no stance is asked, each platform's style checkbox offers only "insight" and "question" (insight preselected),
+          a question asks whether to end with a source line (yes by default),
+          and 00-intake.json holds share {angle: "distill", credit: true} with no stance
+
+  @S-share-011
+  Scenario: a distilled post names no one from the article and ends with the source line
+    Given a distill share run for X and Instagram whose article is by "Jane Roe" at "Example News" and mentions "Acme"
+    When  the writer returns, with its list of names ["Acme"], an X post that says "Acme" and an Instagram post that names no one
+    Then  the X post fails with must-fix "name_leak Acme" and is rewritten; author and site count as names too
+    And   neither post needs a concrete detail of the article or its title in the body,
+          the X file ends with "延伸自：Title https://ex.example/a" and the Instagram file with "延伸自：Title" and no link,
+          the platform limit counts the source line; with credit off no source line is added
+
+  @S-share-012
+  Scenario: the judge checks that a distilled post states a principle of its own
+    When  a distill post is judged
+    Then  the judge also answers "principle" (a transferable principle is stated, not a summary) and "own_thinking"
+          (it goes beyond the article), both strong, failing only with quoted words of the post
+
+  @S-share-013
+  Scenario: the angle and the source line from arguments
+    When  "ant-peer-review new --yes --purpose share --target <text> --platform x --angle distill --no-credit" runs
+    Then  00-intake.json holds share {angle: "distill", credit: false, styles {x: ["insight"]}} and no stance
+    And   without --angle the angle is "comment"; "--angle rant" is refused with the allowed values
 ```
 
 ## Must NOT
@@ -95,3 +124,4 @@ Feature: share
 - 2026-11-02 · ~S-share-001 +S-share-007..008 · decision: none -- user: the voice should come up during the interaction, not only through a separate command; it is asked only for platforms without one, then applied automatically
 - 2026-11-02 · ~S-share-001 · decision: none -- user: platform order Facebook, Threads, Instagram, X/Twitter, LinkedIn, LINE
 - 2026-11-02 · +S-share-009 · decision: none -- user: share mode should skip the structure weights and not score the article; whether to share it rests on red lines and the fact-check, not on writing quality
+- 2026-11-02 · ~S-share-001 +S-share-010..013 · decision: none -- user: a share angle, one of comment (reuse, extend or critique the article: the existing stances) or distill (filter out people and company names, distill the underlying logic, and develop it with independent thinking); the source line keeps distilling from becoming plagiarism

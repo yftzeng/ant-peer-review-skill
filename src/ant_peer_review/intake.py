@@ -179,9 +179,13 @@ def build_intake_from_args(purpose: str, targets: list[str], audience: str | Non
 
 
 def parse_share(platforms: str | None, stance: str | None, take: str | None,
-                styles: str | None, home) -> dict:
-    """--platform x,linkedin --stance recommend --take ... --share-style x=summary+pick"""
-    from .share import STANCES
+                styles: str | None, home, angle: str | None = None, credit: bool = True) -> dict:
+    """--platform x,linkedin --stance recommend --take ... --share-style x=summary+pick
+    --angle comment|distill --no-credit"""
+    from .share import ANGLES, DISTILL_STYLES, STANCES
+    angle = angle or "comment"
+    if angle not in ANGLES:
+        raise ValueError(f"--angle must be one of {', '.join(ANGLES)}")
     from .voice import PLATFORMS, SHARE_STYLES, preselected_style
     picked = [p.strip().lower() for p in (platforms or "").split(",") if p.strip()]
     bad = [p for p in picked if p not in PLATFORMS]
@@ -202,9 +206,15 @@ def parse_share(platforms: str | None, stance: str | None, take: str | None,
             chosen[p] = vals
     from .voice import load_voice
     order = [p for p in PLATFORMS if p in picked]
-    return {"platforms": order, "stance": stance, "take": (take or "").strip(),
-            "styles": {p: chosen.get(p) or [preselected_style(home, p)] for p in order},
-            "voices": {p: "own" if load_voice(home, p) else "borrow" for p in order}}
+    out = {"platforms": order, "angle": angle, "stance": stance, "take": (take or "").strip(),
+           "styles": {p: chosen.get(p) or [preselected_style(home, p)] for p in order},
+           "voices": {p: "own" if load_voice(home, p) else "borrow" for p in order}}
+    if angle == "distill":   # no stance; only the styles that carry a principle
+        del out["stance"]
+        out["credit"] = credit
+        out["styles"] = {p: [s for s in chosen.get(p, []) if s in DISTILL_STYLES]
+                         or [DISTILL_STYLES[0]] for p in order}
+    return out
 
 
 def ask_share(io: IO, t: T, home, make_voice=None) -> dict:
@@ -212,11 +222,14 @@ def ask_share(io: IO, t: T, home, make_voice=None) -> dict:
     stance, own take, styles per platform (preselected from the voice).
     make_voice(platform, posts, allow, deny) builds and saves a voice; None: cannot."""
     from .platforms import load_platforms
-    from .share import STANCES
+    from .share import ANGLES, DISTILL_STYLES, STANCES
     from .ui import ask_text
     from .voice import (PLATFORMS, SHARE_STYLES, collect_posts, load_voice, never_ask,
                         preselected_style, set_never_ask, voice_for)
     plats = load_platforms(home)
+    angle = radio(io, t, t("share.angle"), [(a, t("share.angle." + a)) for a in ANGLES],
+                  default="comment")
+    distill = angle == "distill"
     have = [p for p in PLATFORMS if load_voice(home, p)]
     platforms = checkbox(io, t, t("share.platforms"),
                          [(p, plats[p]["name"] + ("" if p in have else f"  {t('share.no_voice_mark')}"))
@@ -258,25 +271,34 @@ def ask_share(io: IO, t: T, home, make_voice=None) -> dict:
             voices[p] = "own"
         else:   # a voice that could not be created falls back to neutral
             voices[p] = "borrow" if ans == "borrow" else "neutral"
-    stance = radio(io, t, t("share.stance"), [(s, t("share.stance." + s)) for s in STANCES],
-                   default="recommend")
+    stance = None if distill else radio(io, t, t("share.stance"),
+                                        [(s, t("share.stance." + s)) for s in STANCES],
+                                        default="recommend")
     take = ask_text(io, t("share.take")).strip()
+    offered = DISTILL_STYLES if distill else SHARE_STYLES
     styles = {}
     for p in platforms:
         while True:
-            opts = [(s, t("share.style." + s)) for s in SHARE_STYLES]
+            opts = [(s, t("share.style." + s)) for s in offered]
             if voices[p] == "own":
                 opts.append(("__rebuild__", t("share.voice.rebuild")))
+            pre = preselected_style(home, p) if voices[p] == "own" else \
+                offered[0] if distill else preselected_style(None, p)
             picked = checkbox(io, t, t("share.styles", platform=plats[p]["name"]), opts,
-                              [preselected_style(home, p) if voices[p] == "own"
-                               else preselected_style(None, p)], min_selected=1)
+                              [pre if pre in offered else offered[0]], min_selected=1)
             if "__rebuild__" in picked:
                 create(p)
                 continue
             styles[p] = picked
             break
-    return {"platforms": platforms, "stance": stance, "take": take, "styles": styles,
-            "voices": voices}
+    out = {"platforms": platforms, "angle": angle, "stance": stance, "take": take,
+           "styles": styles, "voices": voices}
+    if distill:
+        del out["stance"]
+        out["credit"] = radio(io, t, t("share.credit"), [("yes", t("share.credit.yes")),
+                                                         ("no", t("share.credit.no"))],
+                              default="yes") == "yes"
+    return out
 
 
 def run_intake_interactive(io: IO, t: T, lang: str) -> dict:

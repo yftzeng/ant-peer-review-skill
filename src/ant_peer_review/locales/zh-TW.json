@@ -414,5 +414,11 @@
   "gate.final": "定稿",
   "review.share.caution": "可以分享，但請避開：{claims}（查無依據）。",
   "report.done_share": "報告：{path}",
-  "report.process.conclusion_share": "{n} 項問題中有 {agreed} 項全體同意；否決：{vetoes}；分享模式不評分。"
+  "report.process.conclusion_share": "{n} 項問題中有 {agreed} 項全體同意；否決：{vetoes}；分享模式不評分。",
+  "share.angle": "分享角度：",
+  "share.angle.comment": "論評此文（Comment）— 沿用、補充或評論這篇文章",
+  "share.angle.distill": "概念提純（Distill）— 去掉人名、公司名，提煉底層邏輯，做獨立的二次演繹",
+  "share.credit": "文末要附出處嗎？",
+  "share.credit.yes": "要（建議：提煉來的想法仍有出處）",
+  "share.credit.no": "不要"
 }
