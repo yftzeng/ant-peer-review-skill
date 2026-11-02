@@ -139,10 +139,9 @@ class _Parser(HTMLParser):
         self._flush()
 
 
-def _find_element(html: str, lower: str, tag: str) -> tuple[int, int, int] | None:
-    """(start, inner_start, end) of the first <tag ...>...</tag>, found with str.find
-    so hostile input cannot trigger regex backtracking."""
-    pos = 0
+def _find_element(html: str, lower: str, tag: str, pos: int = 0) -> tuple[int, int, int] | None:
+    """(start, inner_start, end) of the first <tag ...>...</tag> from pos, found with
+    str.find so hostile input cannot trigger regex backtracking."""
     while True:
         i = lower.find(f"<{tag}", pos)
         if i < 0:
@@ -160,22 +159,44 @@ def _find_element(html: str, lower: str, tag: str) -> tuple[int, int, int] | Non
         return i, gt + 1, j + len(tag) + 3
 
 
+MAX_REGIONS = 50
+
+
+def _visible_chars(fragment: str) -> int:
+    p = _Parser()
+    p.feed(fragment)
+    p.close()
+    return p.textlen
+
+
 def _main_region(html: str) -> str:
+    """S-source-acquisition-049: the <article> with the most visible text, else the <main>;
+    one with under MIN_CANDIDATE_CHARS of text (a teaser card, a comment) does not count.
+    The whole page when none does (the content-like container is chosen later)."""
     lower = html.lower()
     for tag in ("article", "main"):
-        hit = _find_element(html, lower, tag)
-        if hit:
-            return html[hit[0]:hit[2]]
+        best, best_n, pos = None, 0, 0
+        for _ in range(MAX_REGIONS):
+            hit = _find_element(html, lower, tag, pos)
+            if not hit:
+                break
+            n = _visible_chars(html[hit[1]:hit[2]])
+            if n > best_n:
+                best, best_n = hit, n
+            pos = hit[2]
+        if best and best_n >= MIN_CANDIDATE_CHARS:
+            return html[best[0]:best[2]]
     return html
 
 
 def html_to_markdown(html: str) -> Converted:
     t_hit = _find_element(html, html.lower(), "title")
+    region = _main_region(html)
     p = _Parser()
-    p.feed(_main_region(html))
+    p.feed(region)
     p.close()
     # Comments and hidden parts outside the main region are still worth scanning.
-    if len(_main_region(html)) != len(html):
+    if len(region) != len(html):
         outer = _Parser()
         outer.feed(html)
         outer.close()
@@ -184,7 +205,7 @@ def html_to_markdown(html: str) -> Converted:
                      and h["kind"] != "chrome"]
     title = " ".join(html[t_hit[1]:t_hit[2] - len("</title>")].split()) if t_hit else ""
     blocks = p.blocks
-    if len(_main_region(html)) == len(html):
+    if len(region) == len(html):
         # No <article>/<main>: the innermost content-like container that still holds
         # most (>= 80%) of the text of the largest one, so wrappers with share
         # buttons and view counters lose to the article body inside them.

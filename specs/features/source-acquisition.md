@@ -303,6 +303,14 @@ Feature: source acquisition
     When  the sources are fetched with a headless browser available
     Then  the thin page's text comes from the articleBody before the browser is tried, via "JSON-LD articleBody" with "← thin_page",
           and the full page keeps its own visible text
+
+  @S-source-acquisition-049
+  Scenario: the article body is the <article> with the most text, and a near-empty <article> or <main> does not count
+    Given a page whose first <article> is a 40-character teaser card and whose second <article> holds the story,
+          and a page whose only <article> is a short comment while the story is in <div class="post-content">
+    When  each is converted
+    Then  the first yields the story and not the teaser, and the second yields the post-content text;
+          an <article> or <main> with under 200 characters of text is skipped, and at most 50 are compared
 ```
 
 ## Must NOT
@@ -322,3 +330,4 @@ Feature: source acquisition
 - 2026-10-22 · ~S-source-acquisition-007 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md); categories re-derived from OWASP LLM01:2025, Greshake et al. 2023 and the 2025 hidden-prompt reports
 - 2026-11-02 · ~S-source-acquisition-024 +S-source-acquisition-044 · decision: none -- user: give up on a link that cannot be reached within N seconds; a dead URL could hold the run for minutes (20 s socket timeout, 120 s per request, 2 retries, then browser, AMP and archive each with their own limits)
 - 2026-11-02 · +S-source-acquisition-045..048 · decision: none -- (045: a live README began with <p align="center"> blocks that reached the review as raw tags) user: read agent-ready forms first (structured data, Markdown), then the extracted page; the JSON-LD body can differ from what readers see, so it only stands in for a page that yields too little text
+- 2026-11-02 · +S-source-acquisition-049 · decision: none -- user: Readability-style extraction; the first <article> or <main> won even when it was a teaser card or a comment. Link-dense blocks are kept: an article's reference list looks like a menu and the fact-check needs it

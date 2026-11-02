@@ -285,3 +285,22 @@ def test_host_specific_interval(server):
     t0 = time.monotonic()
     c.fetch(f"http://pub.example:{port}/p")   # robots + page
     assert time.monotonic() - t0 >= 0.3
+
+
+# @S-source-acquisition-049
+def test_main_region_is_the_article_with_most_text():
+    from ant_peer_review.sources.htmlmd import html_to_markdown
+    story = "".join(f"<p>Story paragraph {i} with enough words to count as body.</p>" for i in range(8))
+    html = (f"<html><body><article><p>Teaser card: read this other piece</p></article>"
+            f"<article>{story}</article></body></html>")
+    md = html_to_markdown(html).markdown
+    assert "Story paragraph 7" in md and "Teaser card" not in md
+    html = (f"<html><body><article><p>Nice post, thanks!</p></article>"
+            f"<div class='post-content'>{story}</div><div class='share'>Share on X</div></body></html>")
+    md = html_to_markdown(html).markdown
+    assert "Story paragraph 0" in md and "Nice post" not in md and "Share on X" not in md
+    import time
+    many = "<article><p>x</p></article>" * 5000 + f"<article>{story}</article>"
+    t0 = time.monotonic()
+    html_to_markdown(many)                                # at most 50 compared: bounded
+    assert time.monotonic() - t0 < 3
