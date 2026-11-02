@@ -418,6 +418,28 @@ def test_distill_starts_with_an_analysis(tmp_path):
     assert "dropped_claim: 3" in ask
 
 
+# @S-share-014
+def test_analysis_rows_cite_claim_ids_and_merge_near_duplicates(tmp_path):
+    run, store = distill_run(tmp_path, flags=["hallucination"])
+    ledger(run, ("原本需要幾天的人工逆向分析，現在幾分鐘內搞定", "unsupported"), ("純 Rust 打造", "supported"),
+           ("記憶體佔用極低", "unsupported"), ("原本需要幾天的人工逆向分析，現在幾分鐘內完成", "unsupported"),
+           ("記憶體占用極低", "unsupported"), ("內建符號執行引擎", "unsupported"))
+    analysis = dict(ANALYSIS, claims=[
+        {"ids": ["C01", "C04"], "claim": "幾天變幾分鐘", "status": "無依據（行銷）", "action": "drop", "correction": ""},
+        {"ids": [], "claim": "純 Rust 打造，記憶體很低", "status": "部分成立", "action": "qualify", "correction": ""},
+        {"ids": ["C02"], "claim": "純 Rust", "status": "成立", "action": "keep", "correction": ""}])
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share_analysis"): analysis,
+                       ("*", "share"): posts(x_insight=X_OK, instagram_insight=IG_OK)})
+    decide(run, store, b)
+    ap = next(c for c in b.calls if c["task"] == "share_analysis")["prompt"]
+    assert '"id": "C03"' in ap
+    rows = read_json(run.path("share-analysis.json"))["claims"]
+    assert [r["status"] for r in rows] == ["unsupported", "unchecked", "supported", "unsupported", "unsupported"]
+    assert rows[0]["ids"] == ["C01", "C04"] and rows[3]["ids"] == ["C03", "C05"] and rows[4]["ids"] == ["C06"]
+    assert all(r["action"] == "drop" for r in rows[3:])
+
+
 # @S-share-015
 def test_first_target_is_the_article_rest_are_references(tmp_path):
     from ant_peer_review.jsonio import write_text_atomic

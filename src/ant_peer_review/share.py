@@ -3,8 +3,10 @@ post per chosen platform and style, in the user's voice for that platform. The a
 was reviewed and fact-checked first; every post passes the writing gate."""
 from __future__ import annotations
 
+import difflib
 import json
 import re
+import unicodedata
 from pathlib import Path
 
 from . import outlang, prompts
@@ -41,7 +43,7 @@ DIRECTIONS = ["reinforce", "oppose", "middle"]
 GONE = ("drop", "correct", "avoid")    # claims a post must not lean on
 ANALYSIS_SCHEMA = obj({
     "purpose": STR,
-    "claims": arr(obj({"claim": STR, "status": STR,
+    "claims": arr(obj({"ids": arr(STR), "claim": STR, "status": STR,
                        "action": {"type": "string", "enum": ACTIONS}, "correction": STR})),
     "direction": {"type": "string", "enum": DIRECTIONS}, "why": STR, "thesis": STR,
     "anchors": arr(STR), "names": arr(STR)})
@@ -50,7 +52,7 @@ ANALYSIS_SYSTEM = (
     "checked it: 1) the article's purpose: what it wants readers to believe or do, and why it "
     "was written; 2) each of its main claims with its fact-check status and an action: keep or "
     "strengthen what is supported, qualify what is partly supported, drop or correct what is "
-    "unsupported (the correction says what is actually the case, from the review or the "
+    "unsupported (one row per distinct claim, citing the ids of every checked claim it covers, near-duplicates in one row; the correction says what is actually the case, from the review or the "
     "references), avoid what cannot be verified; 3) a direction: reinforce the article, oppose "
     "it, or a middle view, with the reason, following the evidence and the suggested "
     "direction unless the evidence says otherwise; 4) a thesis: one claim of your own, beyond "
@@ -152,8 +154,8 @@ def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: s
     from .deliver import share_digest
     led = read_ledger(run)
     article, refs = documents(run)
-    checked = [{"claim": c["text"], "status": c["status"], "reason": c.get("reason", "")[:300]}
-               for c in led]
+    checked = [{"id": c["id"], "claim": c["text"], "status": c["status"],
+                "reason": c.get("reason", "")[:300]} for c in led]
     prompt = (f"Suggested direction: {suggest_direction(cons, led)}\n"
               f"The person's own take: {take or '(none)'}\n\n"
               f"Review data:\n{json.dumps(share_digest(cons, led), ensure_ascii=False)}\n\n"
@@ -165,22 +167,7 @@ def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: s
                       timeout=900, prompt=prompt,
                       system=ANALYSIS_SYSTEM.format(language=outlang.guide(lang)))
     d = res.data or {}
-    status = {c["text"]: c["status"] for c in led}
-    claims = []
-    for c in d.get("claims") or []:
-        text = str(c.get("claim", "")).strip()
-        if not text:
-            continue
-        st = status.get(text, str(c.get("status", "")).strip() or "unchecked")
-        act = c.get("action") if c.get("action") in ACTIONS else "avoid"
-        if st == "unsupported" and act not in GONE:
-            act = "drop"                       # never kept, whatever the model said
-        claims.append({"claim": text, "status": st, "action": act,
-                       "correction": str(c.get("correction", "")).strip()})
-    for c in led:                              # every unsupported claim is accounted for
-        if c["status"] == "unsupported" and c["text"] not in {x["claim"] for x in claims}:
-            claims.append({"claim": c["text"], "status": "unsupported", "action": "drop",
-                           "correction": ""})
+    claims = _claim_rows(d.get("claims") or [], led)
     a = {"purpose": str(d.get("purpose", "")).strip(), "claims": claims,
          "direction": d.get("direction") if d.get("direction") in DIRECTIONS else "middle",
          "why": str(d.get("why", "")).strip(), "thesis": str(d.get("thesis", "")).strip(),
@@ -189,6 +176,52 @@ def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: s
     write_json(run.path("share-analysis.json"), a)
     write_text_atomic(run.path("share-analysis.md"), analysis_md(a, t))
     return a
+
+
+RANK = ["unsupported", "partly", "cannot_verify", "supported"]   # the worst status a row covers wins
+_VARIANT = str.maketrans("佔衆裏着麪", "占眾裡著麵")
+
+
+def _norm(text: str) -> str:
+    text = unicodedata.normalize("NFKC", text).lower().translate(_VARIANT)
+    return "".join(ch for ch in text if ch.isalnum())
+
+
+def _near(a: str, b: str) -> bool:
+    a, b = _norm(a), _norm(b)
+    return bool(a) and (a == b or difflib.SequenceMatcher(None, a, b).ratio() >= 0.85)
+
+
+def _claim_rows(raw: list, led: list[dict]) -> list[dict]:
+    """S-share-014: rows cite ledger ids; the status is the ledger's, never the model's words;
+    an unsupported claim no row covers is added once, near-duplicates as one row."""
+    by_id = {c["id"]: c for c in led}
+    rows: list[dict] = []
+    for c in raw:
+        text = str(c.get("claim", "")).strip()
+        ids = [i for i in dict.fromkeys(str(x).strip() for x in c.get("ids") or []) if i in by_id]
+        if not ids:
+            ids = [x["id"] for x in led if text and _near(text, x["text"])][:1]
+        if not text and not ids:
+            continue
+        sts = [by_id[i]["status"] for i in ids]
+        st = min(sts, key=lambda s: RANK.index(s) if s in RANK else len(RANK)) if sts else "unchecked"
+        act = c.get("action") if c.get("action") in ACTIONS else "avoid"
+        if st == "unsupported" and act not in GONE:
+            act = "drop"                       # never kept, whatever the model said
+        rows.append({"ids": ids, "claim": text or by_id[ids[0]]["text"], "status": st,
+                     "action": act, "correction": str(c.get("correction", "")).strip()})
+    for c in led:                              # every unsupported claim is accounted for
+        if c["status"] != "unsupported" or any(c["id"] in r["ids"] for r in rows):
+            continue
+        twin = next((r for r in rows if r["status"] == "unsupported"
+                     and any(_near(c["text"], by_id[i]["text"]) for i in r["ids"])), None)
+        if twin:
+            twin["ids"].append(c["id"])
+        else:
+            rows.append({"ids": [c["id"]], "claim": c["text"], "status": "unsupported",
+                         "action": "drop", "correction": ""})
+    return rows
 
 
 def analysis_md(a: dict, t: T) -> str:

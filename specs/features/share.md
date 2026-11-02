@@ -124,6 +124,8 @@ Feature: share
     And   it returns the article's purpose, each claim with an action (keep, strengthen, qualify, drop, correct, avoid),
           a direction (reinforce, oppose or middle) with its reason, a thesis someone could dispute, at least one anchor and the names;
           an unsupported claim marked keep becomes drop, and the analysis is written to share-analysis.md
+    And   each analysis row names the checked claims it covers by id, and its status is the fact-check's status, never the model's
+          own words; an unsupported claim no row covers is added once, near-duplicates ("佔用"/"占用", "搞定"/"完成") as one row
     And   the posts call gets the analysis instead of the article text, and a post carrying a number from a dropped claim
           fails with must-fix "dropped_claim"
 
@@ -153,3 +155,4 @@ Feature: share
 - 2026-11-02 · +S-share-009 · decision: none -- user: share mode should skip the structure weights and not score the article; whether to share it rests on red lines and the fact-check, not on writing quality
 - 2026-11-02 · ~S-share-001 +S-share-010..013 · decision: none -- user: a share angle, one of comment (reuse, extend or critique the article: the existing stances) or distill (filter out people and company names, distill the underlying logic, and develop it with independent thinking); the source line keeps distilling from becoming plagiarism
 - 2026-11-02 · ~S-share-011..012 +S-share-014..016 · decision: none -- live distill run (craft-anything): the posts ignored the confirmed hallucination and PR landmine, distilled the project's README (passed as a second target and merged into the article) into a truism, and the judge, seeing only the post, passed it; user: dig out the article's purpose, keep or strengthen what is true, drop or correct what is false, and land on reinforce, oppose or a middle view, never empty or self-evident
+- 2026-11-03 · ~S-share-014 · decision: none -- live distill run: the claims table listed near-duplicate ledger claims twice (佔/占, 搞定/完成) and showed the model's own status words when it reworded a claim
