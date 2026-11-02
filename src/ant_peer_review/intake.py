@@ -7,7 +7,7 @@ from pathlib import Path
 from .i18n import T
 from .ui import IO, END_TOKENS, checkbox, dim, prompt, question, radio, section
 
-PURPOSES = ["audit", "drafting"]
+PURPOSES = ["audit", "drafting", "share"]
 
 AUDIENCE_LAYERS: list[tuple[str, list[str]]] = [
     ("expertise", ["public", "beginner", "intermediate", "expert", "scholar"]),
@@ -44,6 +44,8 @@ def collect_targets(io: IO, t: T) -> list[dict]:
             try:
                 line = io.ask(prompt("").rstrip() + " ")
             except EOFError:
+                if not targets:
+                    raise  # input ended with nothing entered: asking again would never end
                 break
             s = line.strip()
             if s in END_TOKENS:
@@ -152,14 +154,66 @@ def ask_fact_sources(io: IO, t: T, selected=()) -> list[str]:
 
 
 def build_intake_from_args(purpose: str, targets: list[str], audience: str | None,
-                           *, lang: str, academic: bool = False) -> dict:
+                           *, lang: str, academic: bool = False, share: dict | None = None) -> dict:
     if purpose not in PURPOSES:
         raise ValueError(f"purpose must be one of {PURPOSES}")
     if not targets:
         raise ValueError("at least one --target is needed")
-    return {"purpose": purpose, "targets": [classify_target(x) for x in targets],
-            "audience": parse_audience(audience), "lang": lang,
-            "fact_sources": ["academic"] if academic else []}
+    out = {"purpose": purpose, "targets": [classify_target(x) for x in targets],
+           "audience": parse_audience(audience), "lang": lang,
+           "fact_sources": ["academic"] if academic else []}
+    if purpose == "share":
+        out["share"] = share or {}
+    return out
+
+
+def parse_share(platforms: str | None, stance: str | None, take: str | None,
+                styles: str | None, home) -> dict:
+    """--platform x,linkedin --stance recommend --take ... --share-style x=summary+pick"""
+    from .share import STANCES
+    from .voice import PLATFORMS, SHARE_STYLES, preselected_style
+    picked = [p.strip().lower() for p in (platforms or "").split(",") if p.strip()]
+    bad = [p for p in picked if p not in PLATFORMS]
+    if not picked or bad:
+        raise ValueError(f"--platform needs one or more of {', '.join(PLATFORMS)}"
+                         + (f"; unknown: {', '.join(bad)}" if bad else ""))
+    stance = stance or "recommend"
+    if stance not in STANCES:
+        raise ValueError(f"--stance must be one of {', '.join(STANCES)}")
+    chosen: dict[str, list[str]] = {}
+    for part in (styles or "").split(","):
+        if "=" in part:
+            p, v = (x.strip() for x in part.split("=", 1))
+            vals = [x for x in v.split("+") if x]
+            if p not in PLATFORMS or any(x not in SHARE_STYLES for x in vals):
+                raise ValueError(f"--share-style: platform=style+style with styles from "
+                                 f"{', '.join(SHARE_STYLES)}")
+            chosen[p] = vals
+    order = [p for p in PLATFORMS if p in picked]
+    return {"platforms": order, "stance": stance, "take": (take or "").strip(),
+            "styles": {p: chosen.get(p) or [preselected_style(home, p)] for p in order}}
+
+
+def ask_share(io: IO, t: T, home) -> dict:
+    """Platforms (preselected where a voice exists), stance, own take, styles per platform."""
+    from .platforms import load_platforms
+    from .share import STANCES
+    from .ui import ask_text
+    from .voice import PLATFORMS, SHARE_STYLES, load_voice, preselected_style
+    plats = load_platforms(home)
+    have = [p for p in PLATFORMS if load_voice(home, p)]
+    platforms = checkbox(io, t, t("share.platforms"),
+                         [(p, plats[p]["name"] + ("" if p in have else f"  {t('share.no_voice_mark')}"))
+                          for p in PLATFORMS], have, min_selected=1)
+    stance = radio(io, t, t("share.stance"), [(s, t("share.stance." + s)) for s in STANCES],
+                   default="recommend")
+    take = ask_text(io, t("share.take")).strip()
+    styles = {}
+    for p in platforms:
+        styles[p] = checkbox(io, t, t("share.styles", platform=plats[p]["name"]),
+                             [(s, t("share.style." + s)) for s in SHARE_STYLES],
+                             [preselected_style(home, p)], min_selected=1)
+    return {"platforms": platforms, "stance": stance, "take": take, "styles": styles}
 
 
 def run_intake_interactive(io: IO, t: T, lang: str) -> dict:

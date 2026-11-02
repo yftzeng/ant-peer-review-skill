@@ -94,3 +94,11 @@ def test_judge_other_model_and_quotes():
     assert b.calls[0]["model"] == "sonnet"
     assert [(i["code"], i["level"]) for i in got["a"]] == [("judge:filler", "hard")]
     assert "它提供了很多有價值的內容" in got["a"][0]["detail"]
+
+
+# @S-writing-gate-008
+def test_halfwidth_punctuation_in_chinese():
+    bad = "K8s 入門系列,先會 Docker,再走四個階段:從部署到安全。"
+    assert "halfwidth_punctuation" in codes(rule_check(bad), "hard")
+    ok = "K8s 入門系列，成本 1,000 元，詳見 https://ex.example/a?x=1,2:3 。"
+    assert "halfwidth_punctuation" not in codes(rule_check(ok))

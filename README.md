@@ -49,11 +49,13 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 
 `--backend fake` runs the whole pipeline offline with canned outputs, for demos and smoke tests.
 
+**Share mode** (`--purpose share`): you read someone else's article and want posts for your own followers. The article is still reviewed and fact-checked (no revision). You pick platforms (X/Twitter, Facebook, Threads, Instagram, LinkedIn, LINE), your stance (recommend, extend, reserved, rebut), an optional take of your own (the only experience the posts may mention), and styles per platform (key points, insight, question, adds to it, quick pick). Output: `share-<platform>-<style>.md` (plain text, within each platform's limits; `data/platforms.json`, overridable), `share-checks.md` and `review.md` (fit to share or not). Every post and every reply passes a writing gate: stock phrases, invented experience, half-width punctuation in Chinese, platform limits, then a second model as judge; failures are rewritten up to twice, then marked.
+
 ## Workflow
 
 | Phase | What happens |
 |---|---|
-| intake | Purpose (audit / drafting). Targets, one per line, end with `/done` or two Enters. The audience card has five layers (expertise, decision role, industry/political lens, trust distance, reading purpose); each is a checkbox: tick any number of options or add custom values; ticking none skips the layer. Interactively, after the targets (and the feed articles) a content check lists title, author, site, e-mail, date, length and structure; a long text is sampled for it (whole up to 8,000 units, else its key sections, or its beginning, end and 5 random paragraphs when it has no structure). One call to the cheapest selected model adds genre, topic and suggestions, and the audience card, fact sources and brand come preselected; you can change them. |
+| intake | Purpose (audit / drafting / share). Targets, one per line, end with `/done` or two Enters. The audience card has five layers (expertise, decision role, industry/political lens, trust distance, reading purpose); each is a checkbox: tick any number of options or add custom values; ticking none skips the layer. Interactively, after the targets (and the feed articles) a content check lists title, author, site, e-mail, date, length and structure; a long text is sampled for it (whole up to 8,000 units, else its key sections, or its beginning, end and 5 random paragraphs when it has no structure). One call to the cheapest selected model adds genre, topic and suggestions, and the audience card, fact sources and brand come preselected; you can change them. |
 | sources | Safe crawler and converters produce Markdown with stable ids (`D1.P03.S2`). The prompt-injection scan flags suspect text and withholds it from reviewers. |
 | rubric | Four dimensions: Macro (structure), Accuracy (facts), Micro (language), Impact (reach, including the S-curve stage). Weights are proposed from the audience; you edit and confirm them. |
 | review | Each reviewer has a seat by roster order: structure, facts, or skeptic for a third. Blind to the others, each gives scores, a macro → meso → micro audit, fact claims, a sensitivity scan, 6 red lines and the S-curve stage. |
@@ -81,6 +83,7 @@ Every run lives in its own folder, with `state.json` recording each phase's inpu
 | Command | What it does |
 |---|---|
 | `ant-peer-review resume <run>` | Continue from the first unfinished phase. |
+| `ant-peer-review voice <platform>` / `voice list` | Learn your voice on a platform (x, facebook, threads, instagram, linkedin, line) from 3-5 of your past posts there, with words you allow and words to ban. Share posts on that platform use it, and its most used style is preselected; a platform without a voice borrows the nearest one. |
 | `ant-peer-review more [<run>]` | Pick more articles from the feed of an earlier run (default: the latest feed run), reusing its purpose, audience, brand and fact sources. The list shows 10 a page, oldest first, and marks articles already reviewed; ticking one again re-reviews it. |
 | `ant-peer-review rerun <run> --from review` | Redo the run from a chosen phase. |
 | `ant-peer-review factcheck <run> --continue` | Retry unverified claims. When it stops, choose **continue another time** or **stop and finalize**. Finalize writes the next report version, with a changelog, only if facts changed. No reviewer is called again. |

@@ -220,6 +220,15 @@ def run_decision(io: IO | None, run: Run, store: Store, *, models: list[str], la
         cons = compute_consensus(run, models, thresholds)
         write_report(run, cons, lang=lang,
                      changelog=[f"ruling {k}: {v}" for k, v in rulings.items()])
+    if intake.get("purpose") == "share":   # nothing to adopt: the posts are the output
+        dec = record_decision(run, choice="share", rulings=rulings, final_path=None, brand=brand)
+        if backend is not None:
+            from .deliver import deliver
+            dec["delivered"] = deliver(run, backend, models, lang, thresholds, [],
+                                       say=io.say if io is not None else lambda *_: None,
+                                       home=store.home)
+            write_json(run.path("08-decision.json"), dec)
+        return dec
     plans = available_plans(run)
     if choice is None:
         if io is None:

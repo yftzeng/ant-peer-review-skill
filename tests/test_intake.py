@@ -90,3 +90,11 @@ def test_old_audience_normalized():
     from ant_peer_review.intake import normalize_audience
     assert normalize_audience({"expertise": "expert", "role": None}) == {
         "expertise": ["expert"], "role": [], "lens": [], "trust": [], "purpose": []}
+
+
+# @S-intake-002
+def test_ctrl_d_with_nothing_entered_ends_the_intake():
+    import pytest
+    with pytest.raises(EOFError):          # it used to ask for a target again, forever
+        collect_targets(ScriptedIO([]), t)
+

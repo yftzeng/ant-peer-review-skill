@@ -293,6 +293,9 @@ def ph_report(run: Run, ctx: Ctx) -> None:
 
 
 def ph_revision(run: Run, ctx: Ctx) -> None:
+    if read_json(run.path("00-intake.json")).get("purpose") == "share":
+        ctx.say(ctx.t("share.no_revision"))  # the article is someone else's: nothing to revise
+        return
     out = run_revision(run, ctx.backend, ctx.models, ctx.lang, say=ctx.say)
     c = out["coverage"]
     ctx.say(ctx.t("revision.coverage", a=c["A"], b=c["B"], both=c["both"], none=c["none"]))

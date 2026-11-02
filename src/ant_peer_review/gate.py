@@ -44,6 +44,8 @@ EXPERIENCE = re.compile(r"我曾|我之前在|以前我|我們團隊|我们团�
                         r"\bI've (?:worked|built|used|led)\b", re.I)
 NOT_BUT = re.compile(r"不是[^。！？\n]{0,30}?[，,]?\s*而是|\bnot (?:just|only) [^.!?\n]{0,60}? but\b",
                      re.I)
+CJK = r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]"
+HALFWIDTH = re.compile(rf"(?<={CJK})[,:;!?]|[,:;!?](?=\s?{CJK})")
 MARKDOWN = re.compile(r"\*\*|\[[^\]]+\]\(https?://|^#{1,6} ", re.M)
 
 
@@ -74,6 +76,10 @@ def rule_check(text: str, *, platform: dict | None = None, take: str = "", allow
             out.append(_issue("tone", "hard", name))
     if EXPERIENCE.search(text) and not take.strip():
         out.append(_issue("invented_experience", "hard", EXPERIENCE.search(text).group(0)))
+    plain = re.sub(r"https?://\S+", " ", text)
+    half = HALFWIDTH.findall(plain)
+    if half:
+        out.append(_issue("halfwidth_punctuation", "hard", "".join(half)[:10]))
     n_units = max(units(text), 1)
     dashes = len(re.findall(r"—+", text))
     if dashes >= 2 and dashes * 100 / n_units > 2:

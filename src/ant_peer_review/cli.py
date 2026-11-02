@@ -12,15 +12,16 @@ from .backends.base import get_backend
 from .articles import article_key, feed_of, latest_feed_run, oldest_first, reviewed_articles
 from .decision import Postponed, run_decision
 from .i18n import T
-from .intake import (ask_audience, ask_fact_sources, ask_purpose, build_intake_from_args,
-                     collect_targets)
+from .intake import (ask_audience, ask_fact_sources, ask_purpose, ask_share,
+                     build_intake_from_args, collect_targets, parse_share)
 from .jsonio import read_json, write_json
 from .lessons import add_lesson, all_lessons, archive_lesson, lessons_for, promote_if_repeated
 from .onboarding import banner, choose_backend, choose_lang, choose_models, effective_models, first_use
 from .pipeline import Ctx, run_pipeline
 from .refresh import factcheck_continue
 from .store import BACKENDS, LANGS, Config, Store
-from .ui import IO, ConsoleIO, ask_text, checkbox, confirm, dim, info, radio, section
+from .ui import (END_TOKENS, IO, ConsoleIO, ask_text, checkbox, confirm, dim, info, prompt,
+                 question, radio, section)
 from .workspace import PHASES, Run, create_run, list_runs, unfinished_runs
 
 EXIT_OK, EXIT_PAUSED, EXIT_USAGE, EXIT_INTERRUPTED = 0, 3, 2, 130
@@ -39,7 +40,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd")
 
     n = sub.add_parser("new", parents=[common], help="start a new run (default command)")
-    n.add_argument("--purpose", choices=["audit", "drafting"])
+    n.add_argument("--purpose", choices=["audit", "drafting", "share"])
+    n.add_argument("--platform", help="share: x,facebook,threads,instagram,linkedin,line")
+    n.add_argument("--stance", help="share: recommend (default), extend, reserved, rebut")
+    n.add_argument("--take", help="share: your own experience or view, the only one the posts may use")
+    n.add_argument("--share-style", help="share: e.g. x=summary+pick,linkedin=insight "
+                                         "(default: your voice's most used style)")
     n.add_argument("--target", action="append", default=[], help="URL, path or text (repeat)")
     n.add_argument("--audience", help="e.g. expertise=expert+scholar,purpose=trend,lens=custom:regulators "
                         "(several values per layer joined with +)")
@@ -54,6 +60,10 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--feed-limit", type=int, default=None,
                    help="for an RSS/Atom target: review the newest N articles, one run each "
                         "(default 1 with --yes)")
+
+    vo = sub.add_parser("voice", parents=[common],
+                        help="learn your voice on a platform from your past posts, or list voices")
+    vo.add_argument("platform", help="x, facebook, threads, instagram, linkedin, line, or list")
 
     mo = sub.add_parser("more", parents=[common],
                         help="pick more articles from an earlier run's feed, with its intake answers")
@@ -294,8 +304,10 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
     io.say(banner(ctx.t, ctx.models))
     if args.target or args.yes:
         try:
+            share = parse_share(args.platform, args.stance, args.take, args.share_style,
+                                store.home) if args.purpose == "share" else None
             intake = build_intake_from_args(args.purpose or "audit", args.target, args.audience,
-                                            lang=ctx.lang, academic=args.academic)
+                                            lang=ctx.lang, academic=args.academic, share=share)
         except ValueError as e:
             io.say(f"error: {e}")
             return EXIT_USAGE
@@ -322,14 +334,24 @@ def interactive_intakes(io: IO, store: Store, ctx: Ctx) -> list[dict]:
     flat = [tgt for g in groups for tgt in g["targets"]]
     res = content_analysis(io, ctx, flat, peeks)
     sug = res.get("audience") or {}
-    audience = ask_audience(io, t, initial=sug if any(sug.values()) else None)
+    share, brand = None, ""
+    if base["purpose"] == "share":
+        # The posts are for the user's followers: no audience card or brand to ask; the
+        # article's suggested audience still guides the review.
+        audience = sug
+        share = ask_share(io, t, store.home)
+    else:
+        audience = ask_audience(io, t, initial=sug if any(sug.values()) else None)
     fact_sources = ask_fact_sources(io, t, res.get("fact_sources", []))
-    default = res.get("brand", "")
-    brand = ask_text(io, t("intake.brand_default", brand=default) if default
-                     else t("intake.brand")).strip() or default
+    if share is None:
+        default = res.get("brand", "")
+        brand = ask_text(io, t("intake.brand_default", brand=default) if default
+                         else t("intake.brand")).strip() or default
     out, i = [], 0
     for g in groups:
         it = dict(g, audience=audience, fact_sources=fact_sources)
+        if share is not None:
+            it["share"] = share
         if brand:
             it["brand"] = brand
         if res.get("targets"):
@@ -500,7 +522,51 @@ def cmd_deliver(args, io, store, cfg) -> int:
         io.say(f"error: {e}")
         return EXIT_USAGE
     deliver(run, ctx.backend, ctx.models, ctx.lang, cfg.grade_thresholds,
-            list(STYLES) if styles is None else styles, say=io.say)
+            list(STYLES) if styles is None else styles, say=io.say, home=store.home)
+    return EXIT_OK
+
+
+def cmd_voice(args, io, store, cfg) -> int:
+    """Paste past posts (--- between them, /done to end); one call describes the voice."""
+    from .platforms import load_platforms
+    from .voice import PLATFORMS, build_voice, load_voice, save_voice
+    t = T(cfg.lang)
+    plats = load_platforms(store.home)
+    if args.platform == "list":
+        for p in PLATFORMS:
+            v = load_voice(store.home, p)
+            io.say(f"  {plats[p]['name']:<10} " + (t("voice.row", n=v["posts"],
+                   date=v.get("updated_at", "")[:10]) if v else "—"))
+        return EXIT_OK
+    if args.platform not in PLATFORMS:
+        io.say(f"error: platform must be one of {', '.join(PLATFORMS)} or list")
+        return EXIT_USAGE
+    io.say(question(t("voice.paste", platform=plats[args.platform]["name"])))
+    posts, cur = [], []
+    while True:
+        try:
+            line = io.ask(prompt(""))
+        except EOFError:
+            break
+        if line.strip() in END_TOKENS:
+            break
+        if line.strip() == "---":
+            posts.append("\n".join(cur).strip())
+            cur = []
+        else:
+            cur.append(line)
+    posts = [p for p in posts + ["\n".join(cur).strip()] if p]
+    if not posts:
+        io.say(t("voice.none"))
+        return EXIT_USAGE
+    allow = [w.strip() for w in ask_text(io, t("voice.allow")).split(",") if w.strip()]
+    deny = [w.strip() for w in ask_text(io, t("voice.deny")).split(",") if w.strip()]
+    ctx = make_ctx(args, io, store, cfg)
+    v = build_voice(ctx.backend, ctx.models[0], args.platform, posts, ctx.lang,
+                    allow=allow, deny=deny)
+    path = save_voice(store.home, v)
+    io.say(t("voice.saved", platform=plats[args.platform]["name"], n=len(posts), path=str(path)))
+    io.say("  " + v["description"])
     return EXIT_OK
 
 
@@ -626,7 +692,7 @@ def cmd_runs(args, io, store, cfg) -> int:
 
 
 COMMANDS = {"new": cmd_new, "more": cmd_more, "resume": cmd_resume, "rerun": cmd_rerun,
-            "factcheck": cmd_factcheck, "decide": cmd_decide, "deliver": cmd_deliver, "config": cmd_config,
+            "factcheck": cmd_factcheck, "decide": cmd_decide, "deliver": cmd_deliver, "voice": cmd_voice, "config": cmd_config,
             "lessons": cmd_lessons, "runs": cmd_runs, "recheck": cmd_recheck}
 
 

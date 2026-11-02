@@ -55,6 +55,12 @@ Feature: writing gate
     Given an audit run whose critical reply contains "總而言之"
     When  the replies are written
     Then  the reply is rewritten once without it and reply-checks.md lists each reply's checks
+
+  @S-writing-gate-008
+  Scenario: Chinese text with half-width punctuation is rewritten
+    Given a text "K8s 入門系列,先會 Docker,再走四個階段:從部署到安全。"
+    When  the rule check runs
+    Then  it is a hard failure "halfwidth_punctuation"; a URL, "K8s" and "1,000" do not count
 ```
 
 ## Must NOT
@@ -63,3 +69,4 @@ Feature: writing gate
 ## Revisions
 - 2026-11-02 · created · decision: none -- no feature checks generated prose for machine-like writing: decision covers which outputs are written, review-panel checks the article, not our own text
 - 2026-11-02 · +S-writing-gate-001..007 +N-writing-gate-001 · decision: none -- user: replies and share posts must lose the "AI taste" behind a checklist gate; platform limits checked on 2026-11-02 (sources in data/platforms.json)
+- 2026-11-02 · +S-writing-gate-008 · decision: none -- live share run: zh-TW posts came back with ASCII commas and colons between Chinese characters

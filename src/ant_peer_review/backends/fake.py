@@ -53,6 +53,20 @@ class FakeBackend(Backend):
         styles = re.findall(r"^- (\w+): about \d+ units", prompt, re.M)
         return {"replies": [{"style": s, "text": f"[fake:{model}] {s} reply."} for s in styles]}
 
+    def _voice(self, model, ids, paras, bias, prompt):
+        n = len(re.findall(r"^Post \d+:", prompt, re.M))
+        return {"description": f"[fake:{model}] short, direct posts.", "openers": [],
+                "closers": [], "emoji": "rare", "hashtags": "none",
+                "style_counts": {"summary": 0, "insight": n, "question": 0, "addon": 0, "pick": 0}}
+
+    def _share(self, model, ids, paras, bias, prompt):
+        keys = re.findall(r"^- key (\S+):", prompt, re.M)
+        url = (re.findall(r'"url": "([^"]*)"', prompt) or [""])[0]
+        return {"posts": [{"key": k, "text": f"[fake:{model}] {k} {url}".strip()} for k in keys]}
+
+    def _share_rewrite(self, model, ids, paras, bias, prompt):
+        return {"posts": []}         # keep the texts; the gate marks what still fails
+
     def _judge(self, *a):
         return {"verdicts": []}       # every fake text passes
 

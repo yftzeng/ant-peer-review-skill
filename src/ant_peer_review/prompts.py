@@ -107,7 +107,11 @@ def review_system(lang: str, seat: str | None = None) -> str:
 def review_prompt(intake: dict, rubric: dict, article: str, style_guide: str = "") -> str:
     red = "\n".join(f"- {k}: {v}" for k, v in RED_LINE_TEXT.items())
     sg = f"\nBrand style guide to enforce:\n{neutralize(style_guide)}\n" if style_guide else ""
-    return f"""Purpose of the piece: {intake.get('purpose', 'audit')}
+    purpose = intake.get("purpose", "audit")
+    if purpose == "share":
+        purpose = ("share (the user will share this published article with their followers: "
+                   "judge whether it is accurate and fit to pass on; it will not be revised)")
+    return f"""Purpose of the piece: {purpose}
 Audience card: {audience_block(intake)}
 
 Scoring rubric (score each dimension 0-100 using its bands):

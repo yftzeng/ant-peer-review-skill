@@ -167,7 +167,10 @@ def render_review(run: Run, cons: dict, t: T, thresholds: dict, summary: dict | 
          f"## {t('review.verdict')}", "",
          f"**{t('review.verdict.' + verdict(cons))}** — {t('report.total')} {cons['total']} · "
          f"{t('report.grade')} {t('report.grade.' + cons['grade'])}"
-         + (f" ({t('report.provisional')})" if cons.get("provisional") else ""), "",
+         + (f" ({t('report.provisional')})" if cons.get("provisional") else ""), ""]
+    if intake["purpose"] == "share":
+        L += [f"**{t('review.share.' + verdict(cons))}**", ""]
+    L += [
          f"## {t('review.summary')}", ""]
     if summary is None:
         L.append(f"> ⚠ {t('review.no_summary')}")
@@ -255,7 +258,7 @@ def write_replies(run: Run, backend: Backend, models: list[str], cons: dict,
 
 
 def deliver(run: Run, backend: Backend, models: list[str], lang: str, thresholds: dict,
-            styles: list[str], say=print) -> dict:
+            styles: list[str], say=print, home=None) -> dict:
     t = T(lang)
     cons = read_json(run.path("05-consensus.json"))
     intake = read_json(run.path("00-intake.json"))
@@ -264,6 +267,17 @@ def deliver(run: Run, backend: Backend, models: list[str], lang: str, thresholds
     write_text_atomic(run.path("review.md"), render_review(run, cons, t, thresholds, summary))
     say(t("deliver.review", path=str(run.path("review.md"))))
     out = {"review": "review.md", "replies": [], "gate_failed": {}}
+    if intake.get("purpose") == "share":
+        from .share import write_shares
+        try:
+            out["shares"], out["gate_failed"] = write_shares(run, backend, models, cons, t, home)
+        except BackendError as e:
+            say("  ✗ " + t("deliver.reply_failed", reason=str(e)[:200], run=run.id))
+            return out
+        say(t("share.written", files=", ".join(out["shares"]) or "—"))
+        for k, why in out["gate_failed"].items():
+            say("  ⚠ " + t("share.gate_failed", file=f"share-{k}.md", reasons="; ".join(why)))
+        return out
     if intake.get("purpose") == "drafting" or not styles:
         return out
     try:

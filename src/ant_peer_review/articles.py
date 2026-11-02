@@ -25,6 +25,18 @@ def article_key(url: str) -> str:
         (f"?{urlencode(sorted(query))}" if query else "")
 
 
+def clean_url(url: str) -> str:
+    """The URL without tracking parameters, for sharing."""
+    try:
+        p = urlsplit(url.strip())
+    except ValueError:
+        return url.strip()
+    query = [(k, v) for k, v in parse_qsl(p.query, keep_blank_values=True)
+             if not any(k.lower() == t or (t.endswith("_") and k.lower().startswith(t))
+                        for t in TRACKING)]
+    return p._replace(query=urlencode(query), fragment="").geturl()
+
+
 def parse_date(s: str) -> datetime | None:
     if not s:
         return None
