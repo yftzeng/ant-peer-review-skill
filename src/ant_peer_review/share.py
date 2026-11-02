@@ -9,7 +9,8 @@ from pathlib import Path
 from . import prompts
 from .backends.base import Backend, BackendError
 from .factcheck import read_ledger
-from .gate import checks_md, judge, judge_model, rule_check, run_gate, with_header
+from .gate import (EDIT_RULES, autofix, checks_md, judge, judge_model, rule_check, run_gate,
+                   with_header)
 from .i18n import T
 from .jsonio import read_json, write_text_atomic
 from .platforms import URL_RE, load_platforms
@@ -139,27 +140,38 @@ def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T
         attribution = {"url": info["url"]} if c["link"] == "clickable" and info["url"] else \
             {"title": info["title"], "author": info["author"]}
         out = rule_check(text, platform=c, take=take, allow=v.get("allow", ()),
-                         deny=v.get("deny", ()), source=source, attribution=attribution)
+                         deny=v.get("deny", ()), source=source, attribution=attribution,
+                         protect=protect)
         if c["link"] != "clickable" and URL_RE.search(text):
             out.append({"code": "link_not_clickable", "level": "hard",
                         "detail": URL_RE.search(text).group(0)})
         return out
 
+    protect = [x for x in (info["title"], info["author"]) if x]
+
+    def fix(key: str, text: str):
+        p = key.split("-", 1)[0]
+        return autofix(text, platform=plats[p], allow=(voices.get(p) or {}).get("allow", ()),
+                       protect=protect)
+
     def rewrite(failed: dict[str, dict]) -> dict[str, str]:
         ask = "\n".join(f"- key {k}: fix {'; '.join(f['reasons'])}\n  current text:\n"
                         f"{prompts.untrusted(f['text'])}" for k, f in failed.items())
         try:
-            r = backend.run(writer, task="share_rewrite", system=system, schema=POST_SCHEMA,
-                            prompt=f"{prompt}\n\nRewrite only these posts, keeping their "
-                                   f"content:\n{ask}", effort="medium", timeout=600)
+            r = backend.run(writer, task="share_rewrite", system=f"{system}\n\n{EDIT_RULES}",
+                            schema=POST_SCHEMA, prompt=f"{prompt}\n\nEdit only these posts:\n{ask}",
+                            effort="medium", timeout=600)
         except BackendError:
             return {}
         return {x["key"]: x["text"] for x in (r.data or {}).get("posts", [])
                 if x.get("key") in failed}
 
     voice_all = "\n".join(f"{p}: {voice_text(p)}" for p in voices)
-    results = run_gate(texts, rewrite, check=check, judge_fn=lambda batch: judge(
-        backend, judge_model(models, writer), batch, voice=voice_all))
+    results = run_gate(texts, rewrite, check=check, fix=fix,
+                       sources=f"{source}\n{take}\n{json.dumps(info, ensure_ascii=False)}\n"
+                               f"{json.dumps(data, ensure_ascii=False)}",
+                       judge_fn=lambda batch: judge(backend, judge_model(models, writer), batch,
+                                                    voice=voice_all))
     veto_head = (f"> ⛔ {t('share.not_recommended', lines=', '.join(t('redline.' + k) for k in vetoed))}"
                  "\n\n") if vetoed else ""
     written = []

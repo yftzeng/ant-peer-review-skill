@@ -363,7 +363,7 @@
   "gate.item": "文字",
   "gate.result": "結果",
   "gate.rounds": "改寫次數",
-  "gate.issues": "問題（✗ 必改，△ 提醒）",
+  "gate.issues": "仍存在（✗ 必修，▲ 強訊號，△ 弱訊號）",
   "gate.replies": "回覆",
   "deliver.gate_failed": "reply-{style}.md 未通過文字檢查（{reasons}），已在檔頭標示，送出前請修改。",
   "intake.purpose.share": "分享（Share）— 為他人文章擬分享文",
@@ -404,5 +404,6 @@
   "share.voice.borrow": "借用 {source} 的語氣（依 {platform} 慣例調整）",
   "share.voice.neutral": "用中性語氣",
   "share.voice.never": "用中性語氣，之後不再問這個平台",
-  "share.voice.rebuild": "重新建立此平台語氣（貼新的舊貼文）"
+  "share.voice.rebuild": "重新建立此平台語氣（貼新的舊貼文）",
+  "gate.changed": "已修改"
 }

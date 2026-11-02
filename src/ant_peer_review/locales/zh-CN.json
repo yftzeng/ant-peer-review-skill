@@ -363,7 +363,7 @@
   "gate.item": "文字",
   "gate.result": "结果",
   "gate.rounds": "改写次数",
-  "gate.issues": "问题（✗ 必改，△ 提醒）",
+  "gate.issues": "仍存在（✗ 必修，▲ 强信号，△ 弱信号）",
   "gate.replies": "回复",
   "deliver.gate_failed": "reply-{style}.md 未通过文字检查（{reasons}），已在文件头标示，发送前请修改。",
   "intake.purpose.share": "分享（Share）— 为他人文章拟分享文",
@@ -404,5 +404,6 @@
   "share.voice.borrow": "借用 {source} 的语气（按 {platform} 惯例调整）",
   "share.voice.neutral": "用中性语气",
   "share.voice.never": "用中性语气，之后不再问这个平台",
-  "share.voice.rebuild": "重新创建此平台语气（粘贴新的旧帖子）"
+  "share.voice.rebuild": "重新创建此平台语气（粘贴新的旧帖子）",
+  "gate.changed": "已修改"
 }

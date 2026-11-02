@@ -363,7 +363,7 @@
   "gate.item": "Text",
   "gate.result": "Result",
   "gate.rounds": "Rewrites",
-  "gate.issues": "Issues (✗ must fix, △ warning)",
+  "gate.issues": "Remaining (✗ must fix, ▲ strong tell, △ weak tell)",
   "gate.replies": "replies",
   "deliver.gate_failed": "reply-{style}.md failed the writing check ({reasons}); it is marked, edit it before sending.",
   "intake.purpose.share": "Share — write posts sharing someone else's article",
@@ -404,5 +404,6 @@
   "share.voice.borrow": "Borrow your {source} voice (adapted to {platform})",
   "share.voice.neutral": "Write neutrally",
   "share.voice.never": "Write neutrally, and never ask again for this platform",
-  "share.voice.rebuild": "Rebuild this platform's voice from new posts"
+  "share.voice.rebuild": "Rebuild this platform's voice from new posts",
+  "gate.changed": "Changed"
 }

@@ -1,6 +1,7 @@
 import json
 
-from ant_peer_review.gate import checks_md, judge, judge_model, rule_check, run_gate
+from ant_peer_review.gate import (EDIT_RULES, autofix, checks_md, judge, judge_model, needs_edit,
+                                  rule_check, run_gate, verify_facts)
 from ant_peer_review.i18n import T
 from ant_peer_review.platforms import count, load_platforms
 from helpers import ScriptBackend
@@ -15,24 +16,24 @@ def codes(issues, level=None):
 # @S-writing-gate-001
 def test_stock_phrases_with_allow_and_deny():
     text = "在這個快速變遷的時代，值得一提的是這篇文章。"
-    hard = [i for i in rule_check(text) if i["level"] == "hard"]
-    assert codes(hard) == ["stock_phrase", "stock_phrase"]
-    assert any("在這個快速變遷的時代" in i["detail"] for i in hard)
-    hard = [i for i in rule_check(text, allow=["值得一提的是"]) if i["level"] == "hard"]
-    assert len(hard) == 1 and "快速變遷" in hard[0]["detail"]
-    assert codes(rule_check("這篇寫得很扎實。", deny=["扎實"]), "hard") == ["stock_phrase"]
+    strong = [i for i in rule_check(text) if i["level"] == "strong"]
+    assert sorted(codes(strong)) == ["stock_phrase", "stock_phrase"]
+    assert any("在這個快速變遷的時代" in i["detail"] for i in strong)
+    strong = [i for i in rule_check(text, allow=["值得一提的是"]) if i["level"] == "strong"]
+    assert len(strong) == 1 and "快速變遷" in strong[0]["detail"]
+    assert codes(rule_check("這篇寫得很扎實。", deny=["扎實"]), "strong") == ["stock_phrase"]
     assert codes(rule_check("We delve into the data.")) == ["stock_phrase"]
 
 
 # @S-writing-gate-002
 def test_structural_tells_are_soft():
-    text = "不是工具的問題，而是流程的問題——真的——就是這樣——。不是快，而是穩。\n🚀 一\n✅ 二\n🔥 三"
+    text = "流程要先理順——真的——就是這樣——。\n🚀 一\n✅ 二\n🔥 三"
     issues = rule_check(text)
-    assert codes(issues, "hard") == []
-    assert {"dashes", "not_but", "emoji_bullets"} <= set(codes(issues, "soft"))
+    assert codes(issues, "hard") == [] and codes(issues, "strong") == []
+    assert {"dashes", "emoji_bullets"} <= set(codes(issues, "weak"))
     para = "這段話有二十個字左右，長度都很接近彼此差不多。"
     issues = rule_check("\n\n".join([para] * 4))
-    assert codes(issues, "hard") == [] and "uniform_paragraphs" in codes(issues, "soft")
+    assert codes(issues, "hard") == [] and "uniform_paragraphs" in codes(issues, "weak")
     assert "uniform_paragraphs" not in codes(rule_check("\n\n".join([para] * 4 + [para * 3])))
 
 
@@ -66,16 +67,17 @@ def test_rewrite_twice_then_mark():
 
     def rewrite(failed):
         calls.append(failed)
-        return {k: "總而言之，還是這樣。" for k in failed}
+        return {k: "在這個快速變遷的時代，還是這樣。" for k in failed}
 
-    out = run_gate({"a": "總而言之，這樣。", "b": "這篇寫得很清楚。"}, rewrite,
+    out = run_gate({"a": "在這個快速變遷的時代，這樣。", "b": "這篇寫得很清楚。"}, rewrite,
                    check=lambda k, text: rule_check(text))
     assert len(calls) == 2 and all(list(c) == ["a"] for c in calls)
-    assert "stock_phrase" in calls[0]["a"]["reasons"][0] and calls[0]["a"]["text"] == "總而言之，這樣。"
+    assert "stock_phrase" in calls[0]["a"]["reasons"][0]
+    assert calls[0]["a"]["text"] == "在這個快速變遷的時代，這樣。"
     assert not out["a"]["passed"] and out["b"]["passed"]
     assert out["a"]["text"].startswith("> ⚠") is False       # the header is added by the writer of the file
     from ant_peer_review.gate import with_header
-    assert with_header(out["a"], t).startswith("> ⚠") and "總而言之" in with_header(out["a"], t)
+    assert with_header(out["a"], t).startswith("> ⚠") and "快速變遷" in with_header(out["a"], t)
     assert with_header(out["b"], t) == out["b"]["text"]
     md = checks_md(out, t, "回覆")
     assert "a" in md and "b" in md and "stock_phrase" in md and "✓" in md and "✗" in md
@@ -92,7 +94,7 @@ def test_judge_other_model_and_quotes():
         {"name": "human_like", "pass": False, "evidence": "not in the text"}]}]}})
     got = judge(b, "sonnet", {"a": text}, voice="")
     assert b.calls[0]["model"] == "sonnet"
-    assert [(i["code"], i["level"]) for i in got["a"]] == [("judge:filler", "hard")]
+    assert [(i["code"], i["level"]) for i in got["a"]] == [("judge:filler", "strong")]
     assert "它提供了很多有價值的內容" in got["a"][0]["detail"]
 
 
@@ -102,3 +104,83 @@ def test_halfwidth_punctuation_in_chinese():
     assert "halfwidth_punctuation" in codes(rule_check(bad), "hard")
     ok = "K8s 入門系列，成本 1,000 元，詳見 https://ex.example/a?x=1,2:3 。"
     assert "halfwidth_punctuation" not in codes(rule_check(ok))
+
+
+# @S-writing-gate-009
+def test_fixup_changes_what_needs_no_judgment():
+    from ant_peer_review.platforms import load_platforms
+    text, changes = autofix("值得一提的是，K8s 入門系列,先會 Docker。")
+    assert text == "K8s 入門系列，先會 Docker。"
+    assert any("halfwidth" in c for c in changes) and any("值得一提的是" in c for c in changes)
+    ig = load_platforms()["instagram"]
+    text, changes = autofix("**重點** 好文 #a #b #c #d #e #f #g", platform=ig)
+    assert text == "重點 好文 #a #b #c #d #e"
+    assert "removed Markdown" in changes and "hashtags 7 → 5" in changes
+    assert autofix("該上 K8s 了」? 好")[0] == "該上 K8s 了」？ 好"
+    assert autofix("自動化(服務發現、Helm)和 API (v2)")[0] == "自動化（服務發現、Helm）和 API (v2)"
+    url = "https://ex.example/a?x=1,2:3"
+    assert autofix(f"好文,看這裡 {url}")[0] == f"好文，看這裡 {url}"      # URLs untouched
+    out = run_gate({"a": "值得一提的是，這篇寫得清楚。"}, lambda f: {},
+                   check=lambda k, text: rule_check(text))
+    assert out["a"]["passed"] and out["a"]["rounds"] == 0
+    assert "值得一提的是" in checks_md(out, t, "x")
+
+
+# @S-writing-gate-010
+def test_strong_or_two_weak_start_an_edit():
+    many_dashes = "流程要先理順——真的——就是這樣——對吧。"
+    two_weak = many_dashes + "\n🚀 一\n✅ 二\n🔥 三"
+    strong = "說到底，問題在結構。"
+    assert not needs_edit(rule_check(many_dashes)) and needs_edit(rule_check(two_weak))
+    assert needs_edit(rule_check(strong))
+    seen = []
+    run_gate({"one": "流程要先理順。真的就是這樣，對吧，" + "很長的一句話" * 3,
+              "two": "🚀 一\n✅ 二\n🔥 三\n賦能大家。", "three": strong},
+             lambda f: seen.extend(f) or {}, check=lambda k, text: rule_check(text))
+    assert sorted(set(seen)) == ["three", "two"]
+
+
+# @S-writing-gate-011
+def test_hollow_contrast_only():
+    assert "hollow_contrast" in codes(rule_check("這不是技巧，而是心態。"), "strong")
+    assert "hollow_contrast" not in codes(rule_check("這不是加機器，而是把查詢從 3 秒降到 0.2 秒。"))
+    assert "hollow_contrast" in codes(rule_check("It's not about tactics, it's about mindset."))
+
+
+# @S-writing-gate-012
+def test_quotes_and_title_are_not_tells():
+    text = "作者提醒別寫「值得一提的是」這種開頭。推薦〈說到底，K8s 是什麼〉。"
+    assert codes(rule_check(text, protect=["說到底，K8s 是什麼"])) == []
+    assert "deep_saying" in codes(rule_check(text))
+
+
+# @S-writing-gate-013
+def test_edits_keep_facts():
+    url = "https://ex.example/a"
+    issues = verify_facts("營收成長 60%，好文。", before=f"營收成長 40%，好文 {url}",
+                          sources="Revenue grew 40% in 2025")
+    assert ("unsupported_detail", "60%") in [(i["code"], i["detail"]) for i in issues]
+    assert "lost_link" in codes(issues, "hard")
+    assert "adding none" in EDIT_RULES and "keeping every supported claim" in EDIT_RULES
+    calls = []
+
+    def rewrite(failed):
+        calls.append(failed)
+        return {"a": "營收成長 60%，好文。"}
+
+    run_gate({"a": f"說到底，營收成長 40% {url}"}, rewrite, check=lambda k, text: rule_check(text),
+             sources="Revenue grew 40% in 2025")
+    assert len(calls) == 2
+    assert any("unsupported_detail: 60%" in r for r in calls[1]["a"]["reasons"])
+    assert any("lost_link" in r for r in calls[1]["a"]["reasons"])
+
+
+# @S-writing-gate-014
+def test_staging_tells_in_both_languages():
+    cases = {"真正的問題是預算。": "deep_saying", "讓我們來看看細節。": "run_up",
+             "我不是說這不好。": "straw_man", "希望這對你有幫助！": "chatbot_residue",
+             "The real question is budget.": "deep_saying", "Here's the thing: it works.": "run_up",
+             "I'm not saying it's bad.": "straw_man", "I hope this helps.": "chatbot_residue"}
+    for text, code in cases.items():
+        assert code in codes(rule_check(text), "strong"), text
+

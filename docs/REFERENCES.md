@@ -17,6 +17,7 @@ This repo copies no code, prompts or text from any of these skills; it takes onl
 | 3 (jam-cc) | MIT | yes |
 | 6, 7, 8 (black-yt) | none stated (no LICENSE file; all rights reserved by default) | no: superseded by §6, nothing copied |
 | 9 (Imbad0202 @3224a27) | CC BY-NC 4.0 | no: superseded by §6, nothing copied |
+| 10, 11, 12 (humanizer, stop-slop, content-skills; checked 2026-11-02) | MIT | yes |
 
 Do not paste text or code from rows marked "no" into this repo.
 
@@ -33,6 +34,9 @@ Do not paste text or code from rows marked "no" into this repo.
 | 7 | [black-yt/skills — paper-review-writing @f462695](https://github.com/black-yt/skills/tree/f462695179aef1aaefec1d508b7506706756d1d0/paper-review-writing) | review writing | none | superseded by §6 |
 | 8 | [black-yt/skills — paper-review-injection-audit @f462695](https://github.com/black-yt/skills/tree/f462695179aef1aaefec1d508b7506706756d1d0/paper-review-injection-audit) | prompt-injection audit | none | superseded by §6 |
 | 9 | [Imbad0202/academic-research-skills — academic-paper-reviewer @3224a27](https://github.com/Imbad0202/academic-research-skills/tree/3224a27a2571cefef0fddfd437004cb006f2b0cb/academic-paper-reviewer) | multi-reviewer panel | CC BY-NC 4.0 | superseded by §6 |
+| 10 | [blader/humanizer @0ef9fe5](https://github.com/blader/humanizer/blob/0ef9fe5bc3572734fd3ae6c448fe00a30cd5dcf0/SKILL.md) | rewrite AI-sounding prose | MIT | an edit workflow (mark tells, rewrite keeping every supported claim, check added or dropped facts, then finalize); tells ranked so strong ones act alone and weak ones need company; when not to act (quotes, titles, names); a reply leads with the decision |
+| 11 | [hardikpandya/stop-slop @8da1f03](https://github.com/hardikpandya/stop-slop/tree/8da1f030185bdfe8471220585162991eaeb970e9/references) | AI-pattern lists | MIT | pattern families (binary contrasts, throat-clearing, meta-commentary); a five-dimension score (directness, rhythm, trust, authenticity, density). Not taken: "kill all adverbs", no Wh- openers, no passive voice (English-only absolutes) |
+| 12 | [artemnovitckii/content-skills — anti-ai-writing @1c6e909](https://github.com/artemnovitckii/content-skills/blob/1c6e909c975b15d80f6ffcb0e2b60904b7da6656/anti-ai-writing/SKILL.md) | de-AI pass and voice profile | MIT | hollow vs earned contrast (keep it when the second half is concrete); the specificity ladder; write first, then de-AI; rule priority accurate > clear > specific > voiced > stylish; voice-dna sections (signature phrases, anti-voice) |
 
 Commits: K-Dense-AI/scientific-agent-skills `593377bb048752abb0152deab9fbb1083a6087df`; tsingke/thesis-review-skill `15c9148bfc0d36ee0c6c52e936d4d5d2d94b8cee`; jam-cc/paper-review.skill `bb9900ff7a95e6a28092ab0a9e1d81098f41634e`; black-yt/skills `f462695179aef1aaefec1d508b7506706756d1d0`; Imbad0202/academic-research-skills `3224a27a2571cefef0fddfd437004cb006f2b0cb`. Rows 1–8 were first linked to the default branch; on 2026-10-24 each was pinned to the last commit on or before 2026-10-22, the day they were read. No commit between that one and the 2026-10-24 head touches the paths read, so the pinned files are the ones read.
 
@@ -138,6 +142,7 @@ Rows 6–9 of the repo list were read during design. On the licence review (2026
 | Flags are not verdicts; no flag does not mean no injection | OWASP LLM01:2025 (no fool-proof prevention); Altman & Bland 1995 | `injection.scan` note; report injection section |
 | Flagged text never becomes a heading or reaches output unfenced | [OWASP LLM05:2025 Improper Output Handling](https://genai.owasp.org/llmrisk/llm052025-improper-output-handling/) | `report.lint_report`; fenced untrusted-evidence block |
 | Hash an input before and after reading it | MITRE [CWE-367](https://cwe.mitre.org/data/definitions/367.html) (time-of-check / time-of-use) | `converter.changed_during_read` |
+| De-AI is an edit, not a verdict: fix what needs no judgment, edit on one strong tell or two weak ones, keep every fact, protect quotes and titles; a contrast is a tell only when its second half is empty | humanizer (§10), content-skills (§12), stop-slop (§11), all MIT, read 2026-11-02; ideas only, the Chinese and English lists are written here | `gate.autofix`, `gate.needs_edit`, `gate.verify_facts`, `gate.EDIT_RULES`, `gate.CONTRAST`, `gate._scan_view` |
 | Generated prose has recognisable habits (stock phrases, em dashes, closing summaries, promotional tone); no single sign proves anything, so one sign only asks for a rewrite | WikiProject AI Cleanup, [Wikipedia:Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) (advice page, CC BY-SA 4.0; read through its coverage 2026-11-02, e.g. [TechCrunch 2025-11-20](https://techcrunch.com/2025/11/20/the-best-guide-to-spotting-ai-writing-comes-from-wikipedia/)). Patterns only: the phrase lists in `gate.STOCK` are our own, not copied | `gate.rule_check`; `gate.run_gate` (rewrite, never delete) |
 | Platform limits and counting | Third-party guides cross-checked 2026-11-02; the stricter value where they disagree; sources per platform in `data/platforms.json` | `platforms.load_platforms`, `platforms.count` |
 

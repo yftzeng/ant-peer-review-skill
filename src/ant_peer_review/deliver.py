@@ -207,7 +207,8 @@ def write_replies(run: Run, backend: Backend, models: list[str], cons: dict,
                   summary: dict | None, styles: list[str], t: T) -> tuple[list[str], dict]:
     """(written files, style -> failed checks). Every reply passes the writing gate;
     reply-checks.md lists the result. Raises BackendError when the first call fails."""
-    from .gate import checks_md, judge, judge_model, rule_check, run_gate, with_header
+    from .gate import (EDIT_RULES, checks_md, judge, judge_model, rule_check, run_gate,
+                       with_header)
     writer = models[0]
     system = ("You write replies to an author on behalf of an editor, one per requested style, "
               "based only on the review data. Write in the same language as the article "
@@ -233,8 +234,8 @@ def write_replies(run: Run, backend: Backend, models: list[str], cons: dict,
         ask = "\n".join(f"- {s}: fix {'; '.join(f['reasons'])}\n  current text:\n"
                         f"{prompts.untrusted(f['text'])}" for s, f in failed.items())
         try:
-            r = backend.run(writer, task="rewrite", system=system, schema=REPLY_SCHEMA,
-                            prompt=f"Rewrite only these replies, keeping their content:\n{ask}",
+            r = backend.run(writer, task="rewrite", system=f"{system}\n\n{EDIT_RULES}",
+                            schema=REPLY_SCHEMA, prompt=f"{prompt}\n\nEdit only these replies:\n{ask}",
                             effort="medium", timeout=600)
         except BackendError:
             return {}
@@ -242,6 +243,7 @@ def write_replies(run: Run, backend: Backend, models: list[str], cons: dict,
                 if x.get("style") in failed}
 
     results = run_gate(texts, rewrite, check=lambda k, text: rule_check(text),
+                       sources=f"{json.dumps(data, ensure_ascii=False)}\n{_article_excerpt(run, 20000)}",
                        judge_fn=lambda batch: judge(backend, judge_model(models, writer), batch))
     written = []
     for s in styles:

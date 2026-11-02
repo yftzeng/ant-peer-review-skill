@@ -121,12 +121,12 @@ def test_reply_attacking_the_author_is_flagged(tmp_path):
 def test_replies_pass_the_writing_gate(tmp_path):
     run, store = with_issue(tmp_path)
     b = ScriptBackend({("*", "summary"): SUMMARY,
-                       ("*", "reply"): replies(["critical"], critical="總而言之，這篇的結尾要改。"),
+                       ("*", "reply"): replies(["critical"], critical="說到底，這篇的結尾要改。"),
                        ("*", "rewrite"): replies(["critical"], critical="這篇的結尾要回到開頭的主張。"),
                        ("*", "judge"): {"verdicts": []}})
     decide(run, store, None, choice="A", backend=b, reply_styles=["critical"])
     text = run.path("reply-critical.md").read_text()
-    assert "總而言之" not in text and not text.startswith("> ⚠")
+    assert "說到底" not in text and not text.startswith("> ⚠")
     assert [c["task"] for c in b.calls].count("rewrite") == 1
     judges = [c for c in b.calls if c["task"] == "judge"]
     assert judges and all(c["model"] == "sonnet" for c in judges)

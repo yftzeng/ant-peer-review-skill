@@ -1,28 +1,31 @@
 # Feature: writing gate
 
 Text we generate for people to send (replies to an author, share posts)
-must not read as machine-written. Every such text passes a gate: rule
-checks that cost nothing (stock phrases, structure tells, platform limits,
-an invented personal experience), then one judging call by a different
-model. A hard failure is rewritten with its reasons, at most twice; what
-still fails is written with a warning header, and every result is listed
-in a checks file. Platform limits live in a data file the user can
+must not read as machine-written, and the gate edits it until it does not.
+First a deterministic fix-up (punctuation, filler openers, Markdown,
+hashtags, dashes); then rule checks and one judging call by a different
+model sort what remains into must-fix, strong tells (one is enough) and
+weak tells (two are needed); then an editing pass rewrites the text with
+those reasons, keeping every supported claim and adding none, checked by
+comparing the facts before and after; at most twice, then the fix-up
+again. What still fails is written with a warning header, and the checks
+file lists what was changed and what remains. Platform limits live in a data file the user can
 override, with the date they were last checked and their sources.
 
 ```gherkin
 Feature: writing gate
   @S-writing-gate-001
-  Scenario: stock phrases fail the rule check unless the user allows them
+  Scenario: stock phrases are strong tells unless the user allows them
     Given a zh-TW text containing "在這個快速變遷的時代" and "值得一提的是"
     When  the rule check runs
-    Then  both are hard failures named "stock_phrase" with the phrase quoted
+    Then  both are strong tells named "stock_phrase" with the phrase quoted
     And   with "值得一提的是" in the user's allow list only the first fails; a word in the deny list fails like a stock phrase
 
   @S-writing-gate-002
-  Scenario: structural tells are soft warnings
-    Given a text with 3 em dashes in 100 units, "不是…而是…" twice and 3 lines that start with an emoji, and a text of 4 paragraphs of equal length
+  Scenario: structural tells are weak alone
+    Given a text with 3 em dashes in 100 units and 3 lines that start with an emoji, and a text of 4 paragraphs of equal length
     When  the rule check runs on each
-    Then  "dashes", "not_but", "uniform_paragraphs" and "emoji_bullets" are soft warnings and nothing is a hard failure
+    Then  "dashes", "uniform_paragraphs" and "emoji_bullets" are weak tells and nothing is a must-fix
 
   @S-writing-gate-003
   Scenario: an invented personal experience is a hard failure
@@ -38,8 +41,8 @@ Feature: writing gate
     And   a platforms.json in the user store overrides a value, e.g. X max 25,000 for a paid account
 
   @S-writing-gate-005
-  Scenario: hard failures are rewritten at most twice, then marked
-    Given a writer whose text keeps a stock phrase
+  Scenario: a text is edited at most twice, then marked
+    Given a writer whose text keeps a stock phrase the fix-up cannot remove
     When  the gate runs
     Then  the writer is called with the failure reasons twice, the file is written with a warning header naming them,
           and the checks file lists every check with pass or fail and its reason
@@ -48,19 +51,58 @@ Feature: writing gate
   Scenario: the judge is a different model and must quote its evidence
     Given reviewers opus and sonnet, and a judge verdict failing "filler" with the quoted sentence
     When  the gate judges a text written by opus
-    Then  sonnet judges it, the failure counts as hard with that quote as the reason, and a failure without a quote is ignored
+    Then  sonnet judges it, the failure counts as a strong tell with that quote as the reason, and a failure without a quote is ignored
 
   @S-writing-gate-007
   Scenario: replies to the author pass the gate
-    Given an audit run whose critical reply contains "總而言之"
+    Given an audit run whose critical reply contains "說到底，問題在結構。"
     When  the replies are written
-    Then  the reply is rewritten once without it and reply-checks.md lists each reply's checks
+    Then  the reply is edited once without it and reply-checks.md lists each reply's checks
 
   @S-writing-gate-008
   Scenario: Chinese text with half-width punctuation is rewritten
     Given a text "K8s 入門系列,先會 Docker,再走四個階段:從部署到安全。"
     When  the rule check runs
-    Then  it is a hard failure "halfwidth_punctuation"; a URL, "K8s" and "1,000" do not count
+    Then  it is a must-fix "halfwidth_punctuation"; a URL, "K8s" and "1,000" do not count
+
+  @S-writing-gate-009
+  Scenario: the fix-up changes what needs no judgment, and says so
+    Given "值得一提的是，K8s 入門系列,先會 Docker。" and, for Instagram, "**重點** 好文 #a #b #c #d #e #f #g"
+    When  the fix-up runs
+    Then  the first becomes "K8s 入門系列，先會 Docker。" and the second "重點 好文 #a #b #c #d #e"
+    And   "了」?" becomes "了」？" and "自動化(服務發現、Helm)" becomes "自動化（服務發現、Helm）", while "API (v2)" and URLs stay
+    And   each change is listed in the checks file under what was changed
+
+  @S-writing-gate-010
+  Scenario: one strong tell or two weak ones start an edit; one weak tell does not
+    Given texts with only many em dashes, with em dashes and emoji bullets, and with "說到底，"
+    When  the gate runs
+    Then  the first is left as written, the second and third are edited
+
+  @S-writing-gate-011
+  Scenario: a contrast is a tell only when its second half is empty
+    Given "這不是技巧，而是心態。" and "這不是加機器，而是把查詢從 3 秒降到 0.2 秒。"
+    When  the rule check runs
+    Then  the first is a strong tell "hollow_contrast" and the second is not flagged
+
+  @S-writing-gate-012
+  Scenario: quoted words and the article title are not tells
+    Given a post quoting 「值得一提的是」 and an article titled "說到底，K8s 是什麼"
+    When  the rule check runs with that title protected
+    Then  neither is flagged
+
+  @S-writing-gate-013
+  Scenario: an edit may not add or drop facts
+    Given a text with "40%" and the article URL, sources that mention 40% and 2025
+    When  the edit returns a text with "60%" and no URL
+    Then  "unsupported_detail 60%" and "lost_link" are must-fix, the edit prompt asked to keep every claim and add none,
+          and the next edit receives those reasons
+
+  @S-writing-gate-014
+  Scenario: Chinese and English staging tells are caught
+    Given texts with "真正的問題是", "讓我們來看看", "我不是說", "希望這對你有幫助" and their English counterparts
+    When  the rule check runs
+    Then  they are strong tells "deep_saying", "run_up", "straw_man" and "chatbot_residue"
 ```
 
 ## Must NOT
@@ -70,3 +112,4 @@ Feature: writing gate
 - 2026-11-02 · created · decision: none -- no feature checks generated prose for machine-like writing: decision covers which outputs are written, review-panel checks the article, not our own text
 - 2026-11-02 · +S-writing-gate-001..007 +N-writing-gate-001 · decision: none -- user: replies and share posts must lose the "AI taste" behind a checklist gate; platform limits checked on 2026-11-02 (sources in data/platforms.json)
 - 2026-11-02 · +S-writing-gate-008 · decision: none -- live share run: zh-TW posts came back with ASCII commas and colons between Chinese characters
+- 2026-11-02 · ~S-writing-gate-001..002 ~S-writing-gate-005..008 +S-writing-gate-009..014 · decision: none -- user: de-AI must edit the text, not only check it; borrowed from humanizer (edit workflow, strong vs weak-alone tells, when not to act, keep facts), content-skills (hollow vs earned contrast), stop-slop (pattern families); Chinese tells written here
