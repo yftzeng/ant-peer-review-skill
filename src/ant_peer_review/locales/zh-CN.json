@@ -420,5 +420,7 @@
   "share.angle.distill": "概念提纯（Distill）— 去掉人名、公司名，提炼底层逻辑，做独立的二次演绎",
   "share.credit": "文末要附出处吗？",
   "share.credit.yes": "要（建议：提炼来的想法仍有出处）",
-  "share.credit.no": "不要"
+  "share.credit.no": "不要",
+  "via.github_readme": "GitHub README（原始文件）",
+  "via.jsonld": "JSON-LD 正文（articleBody）"
 }

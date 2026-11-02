@@ -273,6 +273,36 @@ Feature: source acquisition
           and the second uses 2, 4, 8 and 20; the headless browser gets the page limit
     And   when a URL has used up its budget, no further fallback (browser, AMP, archive) is tried: the page fetched so far is kept with
           the warning "url_budget_exceeded", or the URL fails so the user can paste it
+
+  @S-source-acquisition-045
+  Scenario: a GitHub repository link is read from its raw README
+    Given "https://github.com/storytold/craft-anything", and "https://github.com/o/r/blob/main/docs/guide.md"
+    When  the sources are fetched
+    Then  the first is read from "https://raw.githubusercontent.com/storytold/craft-anything/HEAD/README.md" and the second from
+          "https://raw.githubusercontent.com/o/r/main/docs/guide.md", as Markdown with no HTML conversion,
+          the document keeps the GitHub URL as its origin, its title is the first heading, and the report says "GitHub README (raw)";
+          HTML blocks in the Markdown become text (an <h1> a heading, a badge or picture nothing), code blocks stay as written
+    And   when the raw file cannot be fetched the GitHub page is fetched as before
+
+  @S-source-acquisition-046
+  Scenario: a page is asked for Markdown first
+    When  a page is fetched
+    Then  the request says "Accept: text/markdown, text/html;q=0.9, …", and a text/markdown answer is used as it is
+    And   a fetch limited to JSON (the archive API) still asks for JSON only
+
+  @S-source-acquisition-047
+  Scenario: JSON-LD gives the title, author, date and site before the meta tags
+    Given a page whose JSON-LD NewsArticle (inside an @graph) has headline "LD title", author "Ada", datePublished "2026-03-04" and
+          publisher "LD News", and whose meta tags say otherwise
+    When  the content check runs
+    Then  title, author, date and organization come from the JSON-LD; broken JSON-LD is ignored and the meta tags are used
+
+  @S-source-acquisition-048
+  Scenario: a JSON-LD articleBody is used only when the page itself yields too little text
+    Given a thin page whose JSON-LD articleBody holds the full article, and a full page whose articleBody says something else
+    When  the sources are fetched with a headless browser available
+    Then  the thin page's text comes from the articleBody before the browser is tried, via "JSON-LD articleBody" with "← thin_page",
+          and the full page keeps its own visible text
 ```
 
 ## Must NOT
@@ -291,3 +321,4 @@ Feature: source acquisition
 - 2026-10-22 · +S-source-acquisition-042..043 ~S-source-acquisition-029 ~S-source-acquisition-033 · decision: D-0001 -- user: a 403 or a bot challenge is a refusal; the archive only with consent
 - 2026-10-22 · ~S-source-acquisition-007 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md); categories re-derived from OWASP LLM01:2025, Greshake et al. 2023 and the 2025 hidden-prompt reports
 - 2026-11-02 · ~S-source-acquisition-024 +S-source-acquisition-044 · decision: none -- user: give up on a link that cannot be reached within N seconds; a dead URL could hold the run for minutes (20 s socket timeout, 120 s per request, 2 retries, then browser, AMP and archive each with their own limits)
+- 2026-11-02 · +S-source-acquisition-045..048 · decision: none -- (045: a live README began with <p align="center"> blocks that reached the review as raw tags) user: read agent-ready forms first (structured data, Markdown), then the extracted page; the JSON-LD body can differ from what readers see, so it only stands in for a page that yields too little text

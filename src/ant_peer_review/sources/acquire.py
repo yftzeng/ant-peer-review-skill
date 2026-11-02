@@ -23,6 +23,7 @@ from .quality import page_problem
 from .urls import redact
 from .htmlmd import html_to_markdown
 from .injection import scan
+from .agentready import first_heading, github_raw, html_blocks_to_text, jsonld
 from .render import RenderError
 from .segments import segment
 
@@ -138,6 +139,33 @@ def _rendered(crawler, renderer, idx, url, title):
                       f"D{idx}.rendered.html", redact(final), via="render")
 
 
+def _github(run, crawler, idx, url) -> dict | None:
+    """S-source-acquisition-045: a GitHub link read from its raw Markdown; None to go on."""
+    raw = github_raw(url)
+    if not raw:
+        return None
+    try:
+        r = crawler.fetch(raw, types=("text/plain", "text/markdown"))
+    except FetchError as e:
+        if e.reason in NO_FALLBACK:
+            raise
+        return None
+    md = html_blocks_to_text(r.body.decode("utf-8", "replace"))
+    cand = _candidate(md, [], first_heading(md) or url, r.body, f"D{idx}.md", redact(url),
+                      via="github_readme")
+    alt = _accept(run, idx, cand, 0)
+    return dict(alt, final_url=redact(url), hops=[redact(raw)]) if alt else None
+
+
+def _jsonld_body(idx, res, title):
+    """S-source-acquisition-048: the page's own JSON-LD articleBody, for a thin page only."""
+    ld = jsonld(res.body.decode("utf-8", "replace"))
+    if not ld.get("body"):
+        return None
+    return _candidate(ld["body"], [], ld.get("title") or title, res.body, f"D{idx}.jsonld.html",
+                      redact(res.final_url), via="jsonld")
+
+
 def _amp(crawler, idx, res, title):
     amp = _amp_url(res.body, res.final_url)
     if not amp:
@@ -229,6 +257,9 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None,
     def spent() -> bool:   # S-source-acquisition-044: no further fallback past the budget
         return time.monotonic() - start >= budget
 
+    gh = _github(run, crawler, idx, url)
+    if gh:
+        return gh
     try:
         res = crawler.fetch(url)
     except FetchError as e:
@@ -261,6 +292,8 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None,
     over_budget = False
     if ext == "html" and (thin or profile.get("needs_js")):
         steps = []
+        if thin:   # cheap, and only standing in for a page that yields too little text
+            steps.append(lambda: _jsonld_body(idx, res, title))
         if renderer is not None:
             steps.append(lambda: _rendered(crawler, renderer, idx, res.final_url, title))
         if thin:

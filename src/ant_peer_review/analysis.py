@@ -155,13 +155,18 @@ def identity(target: dict, html: str, md: str) -> dict:
     first_heading = next((b.lstrip("# ").strip() for b in _blocks(md) if _is_heading(b)), "")
     url = target["value"] if target.get("kind") in ("url", "feed_item") else ""
     emails = list(dict.fromkeys(p.mailto + _EMAIL.findall(md) + _EMAIL.findall(html)))[:3]
+    from .sources.agentready import jsonld
+    ld = jsonld(html) if html else {}       # S-source-acquisition-047: before the meta tags
     return {
-        "title": target.get("title") or m.get("og:title") or p.title.strip() or first_heading,
-        "author": m.get("author") or m.get("article:author") or m.get("byl") or "",
-        "organization": m.get("og:site_name") or m.get("application-name") or "",
+        "title": target.get("title") or ld.get("title") or m.get("og:title") or p.title.strip()
+        or first_heading,
+        "author": ld.get("author") or m.get("author") or m.get("article:author") or m.get("byl")
+        or "",
+        "organization": ld.get("organization") or m.get("og:site_name")
+        or m.get("application-name") or "",
         "site": (urlsplit(url).hostname or "") if url else "",
         "email": ", ".join(emails),
-        "date": (m.get("article:published_time") or m.get("datepublished")
+        "date": (ld.get("date") or m.get("article:published_time") or m.get("datepublished")
                  or (p.times[0] if p.times else "") or target.get("date", ""))[:10],
         "link_share": round(body.link_chars / body.text_chars, 2) if body.text_chars else None,
         "links": body.links,

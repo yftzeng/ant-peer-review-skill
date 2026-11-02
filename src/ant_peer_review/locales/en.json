@@ -420,5 +420,7 @@
   "share.angle.distill": "Distill — leave out people and company names, distill the underlying logic, develop it on your own",
   "share.credit": "End each post with a source line?",
   "share.credit.yes": "Yes (recommended: distilled ideas still have a source)",
-  "share.credit.no": "No"
+  "share.credit.no": "No",
+  "via.github_readme": "GitHub README (raw)",
+  "via.jsonld": "JSON-LD articleBody"
 }

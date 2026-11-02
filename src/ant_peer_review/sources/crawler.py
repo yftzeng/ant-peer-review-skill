@@ -239,7 +239,9 @@ class Crawler:
         conn = cls(host, ip, port=port, timeout=self.timeout,
                    connect_timeout=self.connect_timeout)
         try:
-            conn.request("GET", path, headers={"User-Agent": ua, "Accept": ", ".join(accept or self.allowed_types),
+            from .agentready import accept_header
+            conn.request("GET", path, headers={"User-Agent": ua,
+                                               "Accept": accept_header(tuple(accept or self.allowed_types)),
                                                "Accept-Encoding": "identity"})
             resp = conn.getresponse()
             headers = {k.lower(): v for k, v in resp.getheaders()}
