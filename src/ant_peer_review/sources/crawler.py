@@ -6,8 +6,8 @@
 - The connection goes to the IP that was checked (pinned), so DNS rebinding
   between check and connect cannot reach an internal host.
 - Byte cap, timeout, content-type allowlist, robots.txt, per-site profiles.
-- 429/502/503/504 are retried a bounded number of times, honouring Retry-After
-  (capped) and the total deadline. The User-Agent is always our own (D-0001).
+- 429/503 are retried once, honouring Retry-After (capped at 10 s) and the total
+  deadline. The User-Agent is always our own (D-0001).
 """
 from __future__ import annotations
 
@@ -26,9 +26,13 @@ ALLOWED_TYPES = ("text/html", "application/xhtml+xml", "text/plain", "text/markd
                  "application/pdf", "application/rss+xml", "application/atom+xml",
                  "application/xml", "text/xml", "application/rdf+xml")
 MAX_REDIRECTS = 5
-RETRY_STATUSES = (429, 502, 503, 504)
-MAX_RETRIES = 2
-MAX_WAIT = 30.0
+RETRY_STATUSES = (429, 503)    # the server said "later"; a 502/504 rarely heals in seconds
+MAX_RETRIES = 1
+MAX_WAIT = 10.0
+CONNECT_TIMEOUT = 5.0          # a reachable site connects in well under a second
+READ_TIMEOUT = 10.0            # seconds without a byte
+PAGE_TIMEOUT = 30.0            # one request, start to last byte
+URL_BUDGET = 90.0              # one URL, every fallback included
 DEFAULT_MIN_INTERVAL = 1.0   # seconds between requests to one host (politeness)
 _V6_EMBEDDED_V4 = [ipaddress.ip_network(n) for n in ("64:ff9b::/96", "64:ff9b:1::/48", "::/96")]
 
@@ -74,29 +78,36 @@ def address_allowed(ip: str) -> bool:
     return addr.is_global and not addr.is_multicast
 
 
+def _connect(ip: str, port: int, connect_timeout: float | None, read_timeout) -> socket.socket:
+    sock = socket.create_connection((ip, port), connect_timeout or read_timeout)
+    sock.settimeout(read_timeout)          # from here on: the longest wait for a byte
+    return sock
+
+
 class _PinnedHTTP(http.client.HTTPConnection):
-    def __init__(self, host, ip, **kw):
+    def __init__(self, host, ip, connect_timeout=None, **kw):
         super().__init__(host, **kw)
-        self._ip = ip
+        self._ip, self._connect_timeout = ip, connect_timeout
 
     def connect(self):
-        self.sock = socket.create_connection((self._ip, self.port), self.timeout)
+        self.sock = _connect(self._ip, self.port, self._connect_timeout, self.timeout)
 
 
 class _PinnedHTTPS(http.client.HTTPSConnection):
-    def __init__(self, host, ip, **kw):
+    def __init__(self, host, ip, connect_timeout=None, **kw):
         super().__init__(host, context=ssl.create_default_context(), **kw)
-        self._ip = ip
+        self._ip, self._connect_timeout = ip, connect_timeout
 
     def connect(self):
-        sock = socket.create_connection((self._ip, self.port), self.timeout)
+        sock = _connect(self._ip, self.port, self._connect_timeout, self.timeout)
         self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
 
 
 class Crawler:
     def __init__(self, *, resolver: Resolver = system_resolver, max_bytes: int = 10_000_000,
-                 timeout: float = 20.0, site_profiles: dict | None = None,
-                 respect_robots: bool = True, deadline: float = 120.0,
+                 timeout: float = READ_TIMEOUT, site_profiles: dict | None = None,
+                 respect_robots: bool = True, deadline: float = PAGE_TIMEOUT,
+                 connect_timeout: float = CONNECT_TIMEOUT, url_budget: float = URL_BUDGET,
                  min_interval: float | None = None,
                  allowed_types: tuple[str, ...] = ALLOWED_TYPES,
                  host_intervals: dict[str, float] | None = None,
@@ -105,6 +116,8 @@ class Crawler:
         self.resolver = resolver
         self.max_bytes = max_bytes
         self.timeout = timeout
+        self.connect_timeout = connect_timeout
+        self.url_budget = url_budget
         self.profiles = site_profiles or {}
         self.respect_robots = respect_robots
         self.deadline = deadline
@@ -223,7 +236,8 @@ class Crawler:
             time.sleep(wait)
         self._last_hit[host] = time.monotonic()
         cls = _PinnedHTTPS if scheme == "https" else _PinnedHTTP
-        conn = cls(host, ip, port=port, timeout=self.timeout)
+        conn = cls(host, ip, port=port, timeout=self.timeout,
+                   connect_timeout=self.connect_timeout)
         try:
             conn.request("GET", path, headers={"User-Agent": ua, "Accept": ", ".join(accept or self.allowed_types),
                                                "Accept-Encoding": "identity"})

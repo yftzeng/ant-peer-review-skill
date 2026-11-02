@@ -98,7 +98,7 @@ Every run lives in its own folder, with `state.json` recording each phase's inpu
 Everything stays on your machine, in the per-user data directory: `~/.local/share/ant-peer-review/`, `%APPDATA%\ant-peer-review` on Windows, or `$ANT_PEER_REVIEW_HOME`.
 
 ```
-config.toml                language, backend, reviewers, grade thresholds
+config.toml                language, backend, reviewers, grade thresholds, [fetch] limits (connect 5, read 10, page 30, url_budget 90 seconds)
 runs/<date>-<slug>/        one workspace per run
 LESSONS.md, lessons/       your lessons (index + verbatim archive), never shipped
 site-profiles.json         per-domain crawl rules (blocked, user agent)

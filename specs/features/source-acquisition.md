@@ -154,7 +154,8 @@ Feature: source acquisition
   Scenario: a 429 or 503 is retried with backoff, honouring Retry-After, within the deadline
     Given a server that answers 429 with "Retry-After: 2", then 200
     When  the page is fetched
-    Then  it waited 2 seconds once and succeeded; a server that keeps answering 503 fails as "http_status" after 2 retries; a Retry-After of a day waits 30 seconds
+    Then  it waited 2 seconds once and succeeded; a server that keeps answering 503 fails as "http_status" after 1 retry; a Retry-After of a day waits 10 seconds;
+          a 502 or 504 is not retried
 
   @S-source-acquisition-025
   Scenario: robots, a site-profile block, internal addresses and a login or paywall never fall back
@@ -263,6 +264,15 @@ Feature: source acquisition
     Given a URL that serves a bot challenge and an archive snapshot from 2026-01-02
     When  the sources phase asks what to do and the user picks "use the archive copy"
     Then  the menu named the date 2026-01-02, and the item is read from the archive with via "archive"
+
+  @S-source-acquisition-044
+  Scenario: fetch limits: 5 s to connect, 10 s without data, 30 s per page, 90 s per URL, all configurable
+    Given the default config, and a config.toml with a [fetch] table setting connect = 2, read = 4, page = 8, url_budget = 20
+    When  a crawler is made from each
+    Then  the first connects within 5 seconds, gives up after 10 seconds without data and 30 seconds per page, with 90 seconds per URL,
+          and the second uses 2, 4, 8 and 20; the headless browser gets the page limit
+    And   when a URL has used up its budget, no further fallback (browser, AMP, archive) is tried: the page fetched so far is kept with
+          the warning "url_budget_exceeded", or the URL fails so the user can paste it
 ```
 
 ## Must NOT
@@ -280,3 +290,4 @@ Feature: source acquisition
 - 2026-10-22 · +S-source-acquisition-032..041 · decision: D-0001 -- tier-3 review (sonnet, fable): redirect/popup SSRF in the browser, paywall and secret leaks through the archive, stale raw hashes
 - 2026-10-22 · +S-source-acquisition-042..043 ~S-source-acquisition-029 ~S-source-acquisition-033 · decision: D-0001 -- user: a 403 or a bot challenge is a refusal; the archive only with consent
 - 2026-10-22 · ~S-source-acquisition-007 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md); categories re-derived from OWASP LLM01:2025, Greshake et al. 2023 and the 2025 hidden-prompt reports
+- 2026-11-02 · ~S-source-acquisition-024 +S-source-acquisition-044 · decision: none -- user: give up on a link that cannot be reached within N seconds; a dead URL could hold the run for minutes (20 s socket timeout, 120 s per request, 2 retries, then browser, AMP and archive each with their own limits)

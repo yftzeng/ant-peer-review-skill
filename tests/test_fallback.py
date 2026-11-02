@@ -118,11 +118,46 @@ def test_retry_after_then_success_and_bounded_failure(seq_server):
     Seq.replies = [(503, {}, b"down")]
     with pytest.raises(FetchError) as e:
         c.fetch(f"http://pub.example:{seq_server}/b")
-    assert e.value.reason == "http_status" and waits == [1.0, 2.0]
+    assert e.value.reason == "http_status" and waits == [1.0]          # one retry
     waits.clear()
     Seq.replies = [(429, {"Retry-After": "86400"}, b""), (200, {}, b"<p>ok</p>")]
     c.fetch(f"http://pub.example:{seq_server}/c")
-    assert waits == [30.0]  # capped
+    assert waits == [10.0]  # capped
+    waits.clear()
+    Seq.replies = [(502, {}, b"bad gateway")]
+    with pytest.raises(FetchError):
+        c.fetch(f"http://pub.example:{seq_server}/d")
+    assert waits == []                                               # 502 is not retried
+
+
+# @S-source-acquisition-044
+def test_fetch_limits_defaults_and_config(tmp_path):
+    from ant_peer_review.pipeline import make_crawler
+    from ant_peer_review.store import Store
+    store = Store(tmp_path / "home")
+    c = make_crawler(store)
+    assert (c.connect_timeout, c.timeout, c.deadline, c.url_budget) == (5.0, 10.0, 30.0, 90.0)
+    store.home.mkdir(parents=True, exist_ok=True)
+    store.config_path.write_text('lang = "en"\n\n[fetch]\nconnect = 2\nread = 4\npage = 8\n'
+                                 'url_budget = 20\n')
+    c = make_crawler(store)
+    assert (c.connect_timeout, c.timeout, c.deadline, c.url_budget) == (2.0, 4.0, 8.0, 20.0)
+    cfg = store.load_config()
+    store.save_config(cfg)                                            # the table survives a save
+    assert "[fetch]" in store.config_path.read_text() and make_crawler(store).url_budget == 20.0
+
+
+def test_url_budget_stops_the_fallbacks(tmp_path):
+    c = FakeCrawler(pages={URL: ("text/html", THIN), **archived()})
+    c.url_budget = 0
+    r = FakeRenderer()
+    run, item = run_for(tmp_path, c, r)
+    assert r.calls == [] and c.calls == [URL]
+    assert "url_budget_exceeded" in item["warning"]
+    c = FakeCrawler(pages=archived(), fail={URL: "timeout"})
+    c.url_budget = 0
+    run, item = run_for(tmp_path / "b", c)
+    assert item["status"] == "failed" and c.calls == [URL]
 
 
 # ---- what never falls back -------------------------------------------------

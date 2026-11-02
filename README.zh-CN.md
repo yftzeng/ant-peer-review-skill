@@ -103,7 +103,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 所有数据都保存在你自己的机器上，位于用户数据目录：`~/.local/share/ant-peer-review/`。Windows 下为 `%APPDATA%\ant-peer-review`，也可以用 `$ANT_PEER_REVIEW_HOME` 指定。
 
 ```
-config.toml                语言、调用方式、reviewer、等级阈值
+config.toml                语言、调用方式、reviewer、等级阈值、[fetch] 抓取时限（connect 5、read 10、page 30、url_budget 90 秒）
 runs/<日期>-<slug>/          每次运行的工作区
 LESSONS.md, lessons/       你的心得（索引＋原文归档），不随 skill 发布
 site-profiles.json         各域名的爬取规则（屏蔽、User-Agent）

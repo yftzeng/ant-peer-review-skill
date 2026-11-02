@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -122,7 +123,7 @@ def _rendered(crawler, renderer, idx, url, title):
     try:
         html, final = renderer.render(url, allow=crawler.request_allowed, allow_navigation=nav_ok,
                                       user_agent=_ua(crawler, url), max_bytes=crawler.max_bytes,
-                                      timeout=crawler.timeout * 3)
+                                      timeout=getattr(crawler, "deadline", crawler.timeout * 3))
     except (RenderError, FetchError):
         return None
     if final != url and not nav_ok(final):
@@ -223,6 +224,11 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None,
     """D-0001 order: crawler (with bounded retries) -> browser for thin, empty or needs_js
     pages -> AMP -> archive. The paste step is offered by the sources phase."""
     profile = _profile(crawler, url)
+    start, budget = time.monotonic(), getattr(crawler, "url_budget", 90.0)
+
+    def spent() -> bool:   # S-source-acquisition-044: no further fallback past the budget
+        return time.monotonic() - start >= budget
+
     try:
         res = crawler.fetch(url)
     except FetchError as e:
@@ -230,6 +236,8 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None,
             raise
         if e.reason == "http_status" and e.detail in BLOCK_STATUS and not archive_on_block:
             raise _blocked(crawler, url, e.reason, e.detail)
+        if spent():
+            raise
         alt = _accept(run, idx, _archive(crawler, idx, url), 0)
         if alt:
             return dict(alt, fell_back_from=e.reason)
@@ -242,7 +250,7 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None,
     if problem in BLOCK_PROBLEMS and not archive_on_block:
         raise _blocked(crawler, url, problem, redact(res.final_url))
     if problem and problem not in THIN_PROBLEMS:
-        alt = _accept(run, idx, _archive(crawler, idx, url), 0)
+        alt = _accept(run, idx, _archive(crawler, idx, url), 0) if not spent() else None
         if alt:
             return dict(alt, fell_back_from=problem)
         raise FetchError(problem, redact(res.final_url))
@@ -250,6 +258,7 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None,
     _store_raw(run, f"D{idx}.{ext}", res.body)  # the original stays, whatever replaces it
     live = len(md.strip())
     thin = ext == "html" and (problem is not None or live < THIN_PAGE_CHARS)
+    over_budget = False
     if ext == "html" and (thin or profile.get("needs_js")):
         steps = []
         if renderer is not None:
@@ -258,6 +267,9 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None,
             steps += [lambda: _amp(crawler, idx, res, title),
                       lambda: _archive(crawler, idx, url)]
         for step in steps:
+            if spent():
+                over_budget = True
+                break
             alt = _accept(run, idx, step(), live)
             if alt:
                 why = problem or ("thin_page" if thin else "needs_js")
@@ -271,6 +283,8 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None,
     if thin:
         item["warning"] = "thin_page_maybe_js_rendered" + ("" if renderer else
                                                             "; no_browser_installed")
+    if over_budget:
+        item["warning"] = "; ".join(x for x in (item.get("warning"), "url_budget_exceeded") if x)
     return item
 
 

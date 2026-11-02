@@ -54,7 +54,12 @@ class Ctx:
 
 
 def make_crawler(store: Store) -> Crawler:
-    return Crawler(site_profiles=read_json(store.site_profiles, default={}))
+    from .sources.crawler import CONNECT_TIMEOUT, PAGE_TIMEOUT, READ_TIMEOUT, URL_BUDGET
+    f = store.load_config().fetch
+    return Crawler(site_profiles=read_json(store.site_profiles, default={}),
+                   connect_timeout=f.get("connect", CONNECT_TIMEOUT),
+                   timeout=f.get("read", READ_TIMEOUT), deadline=f.get("page", PAGE_TIMEOUT),
+                   url_budget=f.get("url_budget", URL_BUDGET))
 
 
 # ---- phases -----------------------------------------------------------------
