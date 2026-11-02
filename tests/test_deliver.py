@@ -28,6 +28,15 @@ def with_issue(tmp_path):
     return run, store
 
 
+def reply_files(run):
+    return sorted(p.name for p in run.root.glob("reply-*.md") if p.name != "reply-checks.md")
+
+
+def clear_replies(run):
+    for p in run.root.glob("reply-*.md"):
+        p.unlink()
+
+
 def decide(run, store, io=None, **kw):
     return run_decision(io, run, store, models=M, lang="en", thresholds=TH, min_repeats=3, **kw)
 
@@ -73,33 +82,28 @@ def test_audit_writes_one_reply_per_ticked_style(tmp_path):
         length_target("critical", {"findings": [{"severity": "minor"}]}) > \
         length_target("appreciative", {"findings": [{"severity": "minor"}]})
 
-    for p in run.root.glob("reply-*.md"):
-        p.unlink()
+    clear_replies(run)
     decide(run, store, ScriptedIO(["1", "1 2 3", ""]),           # untick the first three
            backend=backend(reply=replies(["socratic", "critical"])))
-    assert sorted(p.name for p in run.root.glob("reply-*.md")) == \
-        ["reply-critical.md", "reply-socratic.md"]
+    assert reply_files(run) == ["reply-critical.md", "reply-socratic.md"]
 
-    for p in run.root.glob("reply-*.md"):
-        p.unlink()
+    clear_replies(run)
     intake = read_json(run.path("00-intake.json"))
     write_json(run.path("00-intake.json"), dict(intake, purpose="drafting"))
     b = backend()
     decide(run, store, ScriptedIO(["1"]), backend=b)
-    assert list(run.root.glob("reply-*.md")) == [] and all(c["task"] != "reply" for c in b.calls)
+    assert reply_files(run) == [] and all(c["task"] != "reply" for c in b.calls)
 
 
 # @S-decision-012
 def test_replies_by_argument(tmp_path):
     run, store = with_issue(tmp_path)
     decide(run, store, None, choice="A", backend=backend())
-    assert len(list(run.root.glob("reply-*.md"))) == 5
-    for p in run.root.glob("reply-*.md"):
-        p.unlink()
+    assert len(reply_files(run)) == 5
+    clear_replies(run)
     decide(run, store, None, choice="A", backend=backend(reply=replies(["pragmatic", "socratic"])),
            reply_styles=["pragmatic", "socratic"])
-    assert sorted(p.name for p in run.root.glob("reply-*.md")) == \
-        ["reply-pragmatic.md", "reply-socratic.md"]
+    assert reply_files(run) == ["reply-pragmatic.md", "reply-socratic.md"]
 
 
 # @S-decision-013
@@ -111,3 +115,20 @@ def test_reply_attacking_the_author_is_flagged(tmp_path):
     text = run.path("reply-critical.md").read_text()
     assert text.startswith("> ⚠") and "clueless" in text
     assert "critical" in io.text and "tone" in io.text
+
+
+# @S-writing-gate-007
+def test_replies_pass_the_writing_gate(tmp_path):
+    run, store = with_issue(tmp_path)
+    b = ScriptBackend({("*", "summary"): SUMMARY,
+                       ("*", "reply"): replies(["critical"], critical="總而言之，這篇的結尾要改。"),
+                       ("*", "rewrite"): replies(["critical"], critical="這篇的結尾要回到開頭的主張。"),
+                       ("*", "judge"): {"verdicts": []}})
+    decide(run, store, None, choice="A", backend=b, reply_styles=["critical"])
+    text = run.path("reply-critical.md").read_text()
+    assert "總而言之" not in text and not text.startswith("> ⚠")
+    assert [c["task"] for c in b.calls].count("rewrite") == 1
+    judges = [c for c in b.calls if c["task"] == "judge"]
+    assert judges and all(c["model"] == "sonnet" for c in judges)
+    checks = run.path("reply-checks.md").read_text()
+    assert "reply-critical.md" in checks and "✓" in checks

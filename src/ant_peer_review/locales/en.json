@@ -357,6 +357,13 @@
   "deliver.review": "Review: {path}",
   "deliver.replies": "Replies: {files}",
   "deliver.reply_failed": "The replies could not be written ({reason}). Try again: ant-peer-review deliver {run}",
-  "deliver.tone": "reply-{style}.md failed the tone check; it is marked, edit it before sending.",
-  "deliver.undecided": "Run {run} has no decision yet; run: ant-peer-review decide {run}"
+  "deliver.undecided": "Run {run} has no decision yet; run: ant-peer-review decide {run}",
+  "gate.failed": "Failed the writing check: {reasons}. Edit before sending.",
+  "gate.title": "Writing checks: {what}",
+  "gate.item": "Text",
+  "gate.result": "Result",
+  "gate.rounds": "Rewrites",
+  "gate.issues": "Issues (✗ must fix, △ warning)",
+  "gate.replies": "replies",
+  "deliver.gate_failed": "reply-{style}.md failed the writing check ({reasons}); it is marked, edit it before sending."
 }

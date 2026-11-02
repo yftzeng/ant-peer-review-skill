@@ -23,7 +23,7 @@ ant-peer-review = "ant_peer_review.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-ant_peer_review = ["locales/*.json", "prompts/*.md"]
+ant_peer_review = ["locales/*.json", "prompts/*.md", "data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -65,7 +65,7 @@ def test_decide_then_resume(env):
     assert cli.main(["resume", run.id, "--yes"], io=NoAskIO(), store=env) == 0
     assert run.path("audit.md").read_text() == run.path("07-revision/A.md").read_text()
     assert all(run.status(p) == "done" for p in PHASES)
-    assert sorted(task for _, task in CountingFake.calls) == ["reply", "summary"]
+    assert sorted(task for _, task in CountingFake.calls) == ["judge", "reply", "summary"]
 
 
 # @S-cli-003

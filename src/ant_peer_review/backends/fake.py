@@ -53,6 +53,12 @@ class FakeBackend(Backend):
         styles = re.findall(r"^- (\w+): about \d+ units", prompt, re.M)
         return {"replies": [{"style": s, "text": f"[fake:{model}] {s} reply."} for s in styles]}
 
+    def _judge(self, *a):
+        return {"verdicts": []}       # every fake text passes
+
+    def _rewrite(self, model, ids, paras, bias, prompt):
+        return self._reply(model, ids, paras, bias, prompt)
+
     def _profile(self, model, ids, paras, bias, prompt):
         # Suggests nothing for the audience, so the layers are asked as without analysis.
         return {"genre": "other", "topic": "", "brand": "", "notes": "",

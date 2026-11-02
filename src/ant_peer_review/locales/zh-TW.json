@@ -357,6 +357,13 @@
   "deliver.review": "審查總結：{path}",
   "deliver.replies": "回覆：{files}",
   "deliver.reply_failed": "回覆沒寫成（{reason}）。可重試：ant-peer-review deliver {run}",
-  "deliver.tone": "reply-{style}.md 沒通過語氣檢查，已在檔頭標示，送出前請修改。",
-  "deliver.undecided": "工作 {run} 還沒裁決；請先執行：ant-peer-review decide {run}"
+  "deliver.undecided": "工作 {run} 還沒裁決；請先執行：ant-peer-review decide {run}",
+  "gate.failed": "未通過去 AI 味檢查：{reasons}。送出前請修改。",
+  "gate.title": "文字檢查：{what}",
+  "gate.item": "文字",
+  "gate.result": "結果",
+  "gate.rounds": "改寫次數",
+  "gate.issues": "問題（✗ 必改，△ 提醒）",
+  "gate.replies": "回覆",
+  "deliver.gate_failed": "reply-{style}.md 未通過文字檢查（{reasons}），已在檔頭標示，送出前請修改。"
 }

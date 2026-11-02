@@ -357,6 +357,13 @@
   "deliver.review": "审查总结：{path}",
   "deliver.replies": "回复：{files}",
   "deliver.reply_failed": "回复没写成（{reason}）。可重试：ant-peer-review deliver {run}",
-  "deliver.tone": "reply-{style}.md 没通过语气检查，已在文件头标示，发送前请修改。",
-  "deliver.undecided": "任务 {run} 还没裁决；请先执行：ant-peer-review decide {run}"
+  "deliver.undecided": "任务 {run} 还没裁决；请先执行：ant-peer-review decide {run}",
+  "gate.failed": "未通过去 AI 味检查：{reasons}。发送前请修改。",
+  "gate.title": "文字检查：{what}",
+  "gate.item": "文字",
+  "gate.result": "结果",
+  "gate.rounds": "改写次数",
+  "gate.issues": "问题（✗ 必改，△ 提醒）",
+  "gate.replies": "回复",
+  "deliver.gate_failed": "reply-{style}.md 未通过文字检查（{reasons}），已在文件头标示，发送前请修改。"
 }

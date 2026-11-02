@@ -1,0 +1,40 @@
+{
+  "_checked": "2026-11-02",
+  "_note": "Limits from third-party guides that mostly agree; where they disagree the stricter value is used. Override any value in <user store>/platforms.json.",
+  "x": {
+    "name": "X/Twitter", "max_units": 280, "count": "x_weighted", "fold": null,
+    "hashtags_max": 2, "link": "clickable", "register": "public broadcast: one strong line; longer content becomes a thread",
+    "notes": "Free accounts 280 weighted characters (CJK and emoji count 2, every URL 23). Paid accounts: 25,000 by most sources, 4,000 by one; set max_units yourself.",
+    "sources": ["https://eden.so/blog/x-character-limit-explained/", "https://posteverywhere.ai/help/platforms/x-character-limits"]
+  },
+  "facebook": {
+    "name": "Facebook", "max_units": 63206, "count": "chars", "fold": 125,
+    "hashtags_max": 2, "link": "clickable", "register": "friends and followers: casual, a personal reaction plus one paragraph",
+    "notes": "Hard cap 63,206; 'See more' after about 477 characters on desktop and 125-240 on mobile (the stricter is used).",
+    "sources": ["https://typecount.com/blog/facebook-post-character-limit-2026", "https://lettercounter.org/blog/facebook-character-limit-guide/"]
+  },
+  "threads": {
+    "name": "Threads", "max_units": 500, "count": "chars", "fold": null,
+    "hashtags_max": 1, "link": "clickable", "register": "conversational, short and direct; one point and an invitation to reply",
+    "notes": "500 characters a post; one topic tag a post (the first one is used).",
+    "sources": ["https://hashtagtools.io/blog/threads-tags-vs-hashtags-one-topic-tag-2026", "https://typecount.com/blog/threads-character-limit"]
+  },
+  "instagram": {
+    "name": "Instagram", "max_units": 2200, "count": "chars", "fold": 125,
+    "hashtags_max": 5, "link": "not_clickable", "register": "caption under an image: the first line carries it; name the article and author, the link goes in the bio or a comment",
+    "notes": "Caption 2,200 characters, about 125 before 'more'. Hashtags: Instagram's help page says 30, one source reports a cap of 5 rolling out since 2025-12; 5 is used.",
+    "sources": ["https://www.sendible.com/insights/instagram-character-limit", "https://circleboom.com/blog/how-many-hashtags-should-you-use-on-instagram-in-2026/", "https://socialk.it/en/tools/hashtag-counter"]
+  },
+  "linkedin": {
+    "name": "LinkedIn", "max_units": 3000, "count": "chars", "fold": 140,
+    "hashtags_max": 5, "link": "clickable", "register": "professional first person: what you learned and why it matters at work",
+    "notes": "3,000 characters; 'see more' after about 140 characters on mobile and 210 on desktop (the stricter is used).",
+    "sources": ["https://eden.so/blog/linkedin-character-limits/", "https://contentin.io/blog/linkedin-post-character-limit/"]
+  },
+  "line": {
+    "name": "LINE", "max_units": 5000, "count": "utf16", "fold": null,
+    "hashtags_max": 0, "link": "clickable", "register": "a private group chat: short, like a message to friends or colleagues",
+    "notes": "5,000 characters counted in UTF-16 units (some CJK and emoji count more than 1).",
+    "sources": ["https://developers.line.biz/en/docs/messaging-api/text-character-count/", "https://developers.cm.com/messaging/docs/line-1"]
+  }
+}
