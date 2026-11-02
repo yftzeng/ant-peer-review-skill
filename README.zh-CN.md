@@ -56,6 +56,8 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 
 **分享模式**（`--purpose share`）：读到别人的文章，想拟分享文给自己的关注者。原文仍会审查与事实核查（不做修订）。你选平台（X/Twitter、Facebook、Threads、Instagram、LinkedIn、LINE）、立场（赞同推荐、补充延伸、有保留的推荐、反驳讨论）、可选的「自己的看法」（分享文只会用这段经验），以及各平台的风格（重点摘要、个人洞见、提问引导、延伸补充、推荐清单）。产出：`share-<平台>-<风格>.md`（纯文本，符合各平台限制；设置在 `data/platforms.json`，可覆写）、`share-checks.md`，以及 `review.md`（适不适合分享）。每篇分享文和回复都要通过去 AI 味关卡：惯用套话、编造经验、中文半角标点、平台限制，再由另一个模型评审；不通过就改写，最多两次，仍不通过则标示。
 
+**输出语言**：内容检查之后，勾选最终输出要用的语言：English（US）、繁體中文（台灣用語）、简体中文（中国大陆用语），可多选，默认为 `--lang` 的语言（非交互时用 `--output-lang zh-TW,en`）。用语会实际检查，不只写在提示词里：只有一种对应说法的词与拼写会直接替换（软体 → 软件、伺服器 → 服务器、colour → color），在当地另有含义的词只标示（专案 → 项目?），另一种字体的字则必须修正；引号、链接与标题一律不动。选多种语言时文件名加语言后缀（`audit.en.md`、`reply-pragmatic.zh-CN.md`、`share-x-summary.en.md`）：回复与分享文每种语言各写一次，定稿则每多一种语言就本地化一次，再通过去 AI 味关卡（`final-checks.md`）。报告仍用界面语言。
+
 ## 工作流程
 
 | 阶段 | 内容 |
@@ -69,7 +71,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | consensus | 用确定性程序统计各方立场：没提到不算同意；有异议的发现标为 SPLIT。随后执行红线否决，计算加权总分和等级。 |
 | report | 生成 `06-report.v<N>.md`：量化看板、红线、问题锚定表、分歧、事实核查账本、injection 扫描结果。 |
 | revision | A 方案为轻度润色，附逐字 diff，中文也能正确显示；B 方案为深度重构，由另一个模型复审。 |
-| decision | 由你裁决有争议的红线，再采用 A、B 或手动修改的版本，保存为 `audit.md`（撰写模式为 `draft.md`）。接着生成 `review.md`，把所有结果汇总成一份报告：结论、摘要、重点（每点附上依据的问题编号）、每个检查项的结果与原因、问题列表和审查过程。审核模式会让你勾选回复风格（默认五种全勾），每种生成一份可直接回复作者的文件：`reply-appreciative.md`（赏识激励型）、`reply-empathetic.md`（建设共情型）、`reply-pragmatic.md`（专业务实型）、`reply-socratic.md`（苏格拉底提问型）、`reply-critical.md`（批判挑刺型），语言与文章相同。`ant-peer-review deliver <run>` 可重新生成。反复出现的修正会建议写入该品牌的 Style Guide。 |
+| decision | 由你裁决有争议的红线，再采用 A、B 或手动修改的版本，保存为 `audit.md`（撰写模式为 `draft.md`）。接着生成 `review.md`，把所有结果汇总成一份报告：结论、摘要、重点（每点附上依据的问题编号）、每个检查项的结果与原因、问题列表和审查过程。审核模式会让你勾选回复风格（默认五种全勾），每种生成一份可直接回复作者的文件：`reply-appreciative.md`（赏识激励型）、`reply-empathetic.md`（建设共情型）、`reply-pragmatic.md`（专业务实型）、`reply-socratic.md`（苏格拉底提问型）、`reply-critical.md`（批判挑刺型），以选定的输出语言撰写。`ant-peer-review deliver <run>` 可重新生成。反复出现的修正会建议写入该品牌的 Style Guide。 |
 
 ### 否决红线
 

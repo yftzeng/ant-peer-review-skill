@@ -151,6 +151,9 @@ def test_real_pty_arrow_keys(tmp_path):
         os.write(fd, b"\r")
         wait_for("Enter targets")
         os.write(fd, b"hello world text\n/done\n")
+        wait_for("Final output languages")
+        time.sleep(0.15)
+        os.write(fd, b"\r")
         for layer in ("(a) Expertise", "(b) Decision", "(c) Industry", "(d) Trust", "(e) Reading"):
             wait_for(layer)
             time.sleep(0.15)

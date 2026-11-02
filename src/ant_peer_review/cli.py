@@ -12,7 +12,7 @@ from .backends.base import get_backend
 from .articles import article_key, feed_of, latest_feed_run, oldest_first, reviewed_articles
 from .decision import Postponed, run_decision
 from .i18n import T
-from .intake import (ask_audience, ask_fact_sources, ask_purpose, ask_share,
+from .intake import (ask_audience, ask_fact_sources, ask_output_langs, ask_purpose, ask_share,
                      build_intake_from_args, collect_targets, parse_share)
 from .jsonio import read_json, write_json
 from .lessons import add_lesson, all_lessons, archive_lesson, lessons_for, promote_if_repeated
@@ -41,6 +41,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     n = sub.add_parser("new", parents=[common], help="start a new run (default command)")
     n.add_argument("--purpose", choices=["audit", "drafting", "share"])
+    n.add_argument("--output-lang", help="languages to write the delivered text in: en, zh-TW, "
+                   "zh-CN, comma-separated (default: --lang); US English, Taiwan, mainland usage")
     n.add_argument("--platform", help="share: x,facebook,threads,instagram,linkedin,line")
     n.add_argument("--stance", help="share: recommend (default), extend, reserved, rebut")
     n.add_argument("--take", help="share: your own experience or view, the only one the posts may use")
@@ -306,8 +308,10 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
         try:
             share = parse_share(args.platform, args.stance, args.take, args.share_style,
                                 store.home) if args.purpose == "share" else None
+            from .outlang import parse as parse_langs
             intake = build_intake_from_args(args.purpose or "audit", args.target, args.audience,
-                                            lang=ctx.lang, academic=args.academic, share=share)
+                                            lang=ctx.lang, academic=args.academic, share=share,
+                                            output_langs=parse_langs(args.output_lang, ctx.lang))
         except ValueError as e:
             io.say(f"error: {e}")
             return EXIT_USAGE
@@ -333,6 +337,8 @@ def interactive_intakes(io: IO, store: Store, ctx: Ctx) -> list[dict]:
         return []
     flat = [tgt for g in groups for tgt in g["targets"]]
     res = content_analysis(io, ctx, flat, peeks)
+    found = [x.get("language") for x in res.get("targets", []) if x.get("language")]
+    output_langs = ask_output_langs(io, t, ctx.lang, found[0] if found else None)
     sug = res.get("audience") or {}
     share, brand = None, ""
     if base["purpose"] == "share":
@@ -357,7 +363,7 @@ def interactive_intakes(io: IO, store: Store, ctx: Ctx) -> list[dict]:
                          else t("intake.brand")).strip() or default
     out, i = [], 0
     for g in groups:
-        it = dict(g, audience=audience, fact_sources=fact_sources)
+        it = dict(g, audience=audience, fact_sources=fact_sources, output_langs=output_langs)
         if share is not None:
             it["share"] = share
         if brand:

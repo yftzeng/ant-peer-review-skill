@@ -156,6 +156,7 @@ def test_interactive_feed_one_run_per_ticked_article(feed_env):
     store, url = feed_env
     io = ScriptedIO(["1", url, "/done",                      # purpose, target
                      "1 3", "",                              # tick articles 1 and 3
+                     "",                                     # output languages
                      "", "", "", "", "", "1", "", ""])       # 5 layers, card, fact sources, brand
     cli.main([], io=io, store=store)
     ins = _intakes(store)
@@ -181,14 +182,14 @@ def test_more_than_three_articles_asks_first(feed_env):
     cli.main([], io=io, store=store)
     assert "5 runs" in io.text and "2 reviewers" in io.text
     assert list_runs(store.runs_dir) == []
-    io = ScriptedIO(answers + ["y", "", "", "", "", "", "1", "", ""])
+    io = ScriptedIO(answers + ["y", "", "", "", "", "", "", "1", "", ""])
     cli.main([], io=io, store=store)
     assert len(list_runs(store.runs_dir)) == 5
 
 
 def _answers(url, *picks):
     """purpose, target, the article list, then 5 layers, card, fact sources, brand"""
-    return ["1", url, "/done", *picks, "", "", "", "", "", "1", "", ""]
+    return ["1", url, "/done", *picks, "", "", "", "", "", "", "1", "", ""]
 
 
 def _past_run(store, link, *, title="Day 1 - Alpha", total=61.8, grade="revise", feed=None,

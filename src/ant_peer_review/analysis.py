@@ -238,7 +238,9 @@ def analyse(targets: list[dict], peeks: dict, backend: Backend, models: list[str
     facts, sampled = [], []
     for i, tgt in enumerate(targets):
         html, md = target_text(tgt, peeks)
-        facts.append({**identity(tgt, html, md), **structure(md)})
+        from .outlang import detect
+        facts.append({**identity(tgt, html, md), **structure(md),
+                      "language": detect(md) if md.strip() else ""})
         sampled.append(sample(md, f"{seed}:{i}"))
     budget = max(1, UNIT_LIMIT // max(1, len(targets)))
     sampled = [(mode, _cut(text, budget)) for mode, text in sampled]

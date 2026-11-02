@@ -80,7 +80,7 @@ Feature: decision
     Given an audit run whose plan was just chosen
     When  the editor keeps all five styles ticked in the reply checkbox
     Then  reply-appreciative.md, reply-empathetic.md, reply-pragmatic.md, reply-socratic.md and reply-critical.md are written
-          from one model call that is told to write in the article's language,
+          from one model call that is told to write in the run's output language and its regional usage,
           with a length target per style that grows with the number and severity of findings
     And   unticking styles writes only the ticked ones; a drafting run asks nothing and writes no reply
 
@@ -105,3 +105,4 @@ Feature: decision
 - 2026-10-25 · +S-decision-007..008 · decision: none -- user: the ruling prompt showed only "(b) ... —" with no reason, text or article, so the editor could not tell what to rule on
 - 2026-10-25 · ~S-decision-002 +S-decision-009..013 · decision: none -- user: end with audit (the best revision, like final), review (one detailed report with summary, key points and every check's score, result and reason) and reply files, one per style (appreciative, empathetic, pragmatic, socratic, critical), English names; drafting gets no reply
 - 2026-11-02 · ~S-decision-009 · decision: none -- review.md gains a checks row for the article's AI writing tells (S-review-panel-026)
+- 2026-11-02 · ~S-decision-011 · decision: none -- replies are written in the chosen output language (S-output-language-005), not the article's

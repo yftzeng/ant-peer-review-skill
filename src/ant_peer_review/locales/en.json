@@ -365,7 +365,7 @@
   "gate.rounds": "Rewrites",
   "gate.issues": "Remaining (✗ must fix, ▲ strong tell, △ weak tell)",
   "gate.replies": "replies",
-  "deliver.gate_failed": "reply-{style}.md failed the writing check ({reasons}); it is marked, edit it before sending.",
+  "deliver.gate_failed": "{file} failed the writing check ({reasons}); it is marked, edit it before sending.",
   "intake.purpose.share": "Share — write posts sharing someone else's article",
   "share.platforms": "Share on which platforms? (each uses your voice there)",
   "share.no_voice_mark": "(no voice yet)",
@@ -409,5 +409,9 @@
   "report.tells": "AI writing tells",
   "report.tells_note": "Signals of a generated style, for editing. They are not proof of who or what wrote the text: people use these too, and only several together mean much. They change no score and no red line.",
   "report.tells_found": "Tells",
-  "gate.plan": "plan {plan}"
+  "gate.plan": "plan {plan}",
+  "outlang.ask": "Final output languages (tick one or more):",
+  "outlang.source": "The article is written in {lang}.",
+  "deliver.finals": "Adopted text: {files}",
+  "gate.final": "adopted text"
 }

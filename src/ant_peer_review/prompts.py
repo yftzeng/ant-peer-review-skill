@@ -233,10 +233,12 @@ Revised piece:
 
 
 def draft_system(lang: str) -> str:
+    """lang: the first output language; the title and paragraphs are written in it."""
+    from .outlang import guide
     return ("You are a writer drafting an article from the materials given. Use only facts from "
             "the materials; mark anything else as [source needed]. Write for the audience card. "
             "Return a title and paragraphs.\n\n"
-            + SHARED_RULES.format(lang_name=LANG_NAMES.get(lang, lang)))
+            + SHARED_RULES.format(lang_name=guide(lang)))
 
 
 def draft_prompt(intake: dict, rubric: dict, materials: str, feedback: str = "") -> str:

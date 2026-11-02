@@ -75,7 +75,7 @@ def test_audit_writes_one_reply_per_ticked_style(tmp_path):
     for s in ("appreciative", "empathetic", "pragmatic", "socratic", "critical"):
         assert run.path(f"reply-{s}.md").read_text().strip(), s
     call = next(c for c in b.calls if c["task"] == "reply")
-    assert "same language as the article" in call["system"]
+    assert "as written in the United States" in call["system"]     # the run's output language
     for s in STYLES:
         assert f"{s}: about {length_target(s, read_json(run.path('05-consensus.json')))}" in call["prompt"]
     assert length_target("critical", {"findings": [{"severity": "critical"}] * 4}) > \

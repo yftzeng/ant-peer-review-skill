@@ -20,6 +20,7 @@ import re
 import statistics
 from typing import Callable
 
+from . import outlang
 from .analysis import units
 from .backends.base import Backend, BackendError
 from .platforms import URL_RE, count, hashtags
@@ -114,7 +115,7 @@ def _scan_view(text: str, protect=()) -> str:
 
 def rule_check(text: str, *, platform: dict | None = None, take: str = "", allow=(),
                deny=(), source: str = "", attribution: dict | None = None,
-               protect=()) -> list[dict]:
+               protect=(), lang: str | None = None) -> list[dict]:
     """Must-fix problems and strong / weak tells found without a model."""
     out: list[dict] = []
     view = _scan_view(text, protect)
@@ -173,6 +174,7 @@ def rule_check(text: str, *, platform: dict | None = None, take: str = "", allow
                               f"{len(tags)} > {platform.get('hashtags_max')}"))
         if MARKDOWN.search(text):
             out.append(_issue("markdown", HARD, MARKDOWN.search(text).group(0)))
+    out += outlang.check(view, lang)
     if source:
         details = concrete_details(source)
         if details and not any(d in text for d in details):
@@ -199,7 +201,8 @@ def needs_edit(issues: list[dict]) -> bool:
 
 
 # ---- the fix-up: changes that need no judgment ------------------------------------------
-def autofix(text: str, *, platform: dict | None = None, allow=(), protect=()) -> tuple[str, list[str]]:
+def autofix(text: str, *, platform: dict | None = None, allow=(), protect=(),
+            lang: str | None = None) -> tuple[str, list[str]]:
     """(fixed text, what changed). Never touches quotes, URLs or protected strings."""
     changes: list[str] = []
     allowed = {a.lower() for a in allow if a}
@@ -242,7 +245,8 @@ def autofix(text: str, *, platform: dict | None = None, allow=(), protect=()) ->
             out = re.sub(r"[ \t]{2,}", " ", out)
             changes.append(f"hashtags {len(tags)} → {cap}")
     out = re.sub("\x00(\\d+)\x00", lambda m: urls[int(m.group(1))], out)
-    return out.strip(), changes
+    out, regional = outlang.fix(out, lang, protect)
+    return out.strip(), changes + regional
 
 
 # ---- facts kept across an edit ---------------------------------------------------------

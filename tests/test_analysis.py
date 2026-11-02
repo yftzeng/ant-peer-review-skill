@@ -98,7 +98,7 @@ def page_env(tmp_path, monkeypatch):
 # @S-intake-010
 def test_checklist_then_preselected_questions(page_env):
     store, base = page_env
-    io = ScriptedIO(["1", base + "/page", "/done", "", "", ""])  # card: confirm, facts: keep, brand: accept
+    io = ScriptedIO(["1", base + "/page", "/done", "", "", "", ""])  # langs, card, facts, brand
     cli.main([], io=io, store=store)
     text = io.text
     for want in ("Rates rise again", "Jane Roe", "Example News", "jane@example.org", "2026-09-01",
@@ -114,7 +114,7 @@ def test_checklist_then_preselected_questions(page_env):
 def test_failed_analysis_asks_as_before(page_env):
     store, _ = page_env
     ProfileFake.suggest = BackendError("down", reason="offline")
-    io = ScriptedIO(["1", "Some pasted text.", "/done", "", "", "", "", "", "", "", ""])
+    io = ScriptedIO(["1", "Some pasted text.", "/done", "", "", "", "", "", "", "", "", ""])
     cli.main([], io=io, store=store)
     assert "analysis was skipped" in io.text
     assert t("aud.expertise") in io.text and t("aud.purpose") in io.text
@@ -126,7 +126,7 @@ def test_failed_analysis_asks_as_before(page_env):
 def test_feed_articles_picked_before_analysis(page_env):
     store, base = page_env
     ProfileFake.suggest = dict(SUGGEST, brand="")
-    io = ScriptedIO(["1", base + "/feed", "/done", "1", "", "", "", ""])  # tick 1; card, facts, brand
+    io = ScriptedIO(["1", base + "/feed", "/done", "1", "", "", "", "", ""])  # tick 1; langs, card, facts, brand
     cli.main([], io=io, store=store)
     text = io.text
     marks = [text.index("Which should be reviewed?"), text.index(t("analysis.title")),

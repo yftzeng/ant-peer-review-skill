@@ -176,7 +176,9 @@ def ensure_draft(run: Run, ctx: Ctx, feedback: str = "") -> None:
     view = "\n\n".join(prompt_view(d, mscan["withheld"]) for d in materials.values())
     writer = ctx.models[0]
     ctx.say(f"  … draft ({writer})")
-    res = ctx.backend.run(writer, task="draft", system=prompts.draft_system(ctx.lang),
+    from .outlang import of as output_langs
+    res = ctx.backend.run(writer, task="draft",
+                          system=prompts.draft_system(output_langs(intake, ctx.lang)[0]),
                           prompt=prompts.draft_prompt(intake, read_json(run.path("02-rubric.json")),
                                                       view, feedback), schema=DRAFT)
     if res.refused or not res.data:

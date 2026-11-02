@@ -123,6 +123,8 @@ def write_final(run: Run, choice: str, manual_path: str | None = None) -> str:
             shutil.copyfile(run.path("07-revision/A.md"), final)
     elif src:
         shutil.copyfile(run.path(src), final)
+    # The adopted text as decided; deliver writes it in each output language from here.
+    shutil.copyfile(final, run.path("07-revision/adopted.md"))
     return str(final)
 
 

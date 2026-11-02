@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from . import prompts
+from . import outlang, prompts
 from .backends.base import Backend, BackendError
 from .factcheck import read_ledger
 from .gate import (EDIT_RULES, autofix, checks_md, judge, judge_model, rule_check, run_gate,
@@ -40,8 +40,8 @@ STANCE_BRIEF = {
 POST_SCHEMA = obj({"posts": arr(obj({"key": STR, "text": STR}))})
 SYSTEM = (
     "You write social posts in which a person shares someone else's article with their own "
-    "followers. Write as that person, in their voice for each platform, in the language of "
-    "the article excerpt unless their voice samples use another. Plain text only: no "
+    "followers. Write as that person, in their voice for each platform, in {language}, "
+    "whatever language the article or the voice samples use. Plain text only: no "
     "Markdown. Use only the article, the review data and the person's own take: never invent "
     "experiences, numbers or quotes, and never repeat a statement the review marks "
     "unsupported. Include at least one concrete detail from the article. Respect each "
@@ -78,8 +78,25 @@ def plan(intake: dict) -> list[tuple[str, str]]:
 
 
 def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
-                 home: Path | None) -> tuple[list[str], dict]:
-    """(written files, key -> failed checks). Raises BackendError when the first call fails."""
+                 home: Path | None, lang: str = "en") -> tuple[list[str], dict]:
+    """(written files, file -> failed checks): one writing call per output language.
+    Raises BackendError when the first call fails."""
+    intake = read_json(run.path("00-intake.json"))
+    langs = outlang.of(intake, lang)
+    written, failed, shown, notes = [], {}, {}, []
+    for L in langs:
+        w, f, r, notes = _shares_in(run, backend, models, cons, t, home, L, langs)
+        written += w
+        failed.update(f)
+        shown.update(r)
+    md = checks_md(shown, t, t("share.title"))
+    write_text_atomic(run.path("share-checks.md"),
+                      md + ("\n" + "\n".join(f"- {n}" for n in notes) + "\n" if notes else ""))
+    return written, failed
+
+
+def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
+               home: Path | None, lang: str, langs: list[str]):
     from .deliver import _digest
     intake = read_json(run.path("00-intake.json"))
     share = intake["share"]
@@ -125,7 +142,7 @@ def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T
               f"{json.dumps(data, ensure_ascii=False)}\n\nArticle excerpt:\n"
               f"{prompts.untrusted(source[:6000])}")
     folds = [plats[p]["fold"] for p, _ in pairs if plats[p]["fold"]]
-    system = SYSTEM.format(fold=min(folds) if folds else 140)
+    system = SYSTEM.format(fold=min(folds) if folds else 140, language=outlang.guide(lang))
     writer = models[0]
     res = backend.run(writer, task="share", system=system, prompt=prompt, schema=POST_SCHEMA,
                       effort="medium", timeout=600)
@@ -141,7 +158,7 @@ def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T
             {"title": info["title"], "author": info["author"]}
         out = rule_check(text, platform=c, take=take, allow=v.get("allow", ()),
                          deny=v.get("deny", ()), source=source, attribution=attribution,
-                         protect=protect)
+                         protect=protect, lang=lang)
         if c["link"] != "clickable" and URL_RE.search(text):
             out.append({"code": "link_not_clickable", "level": "hard",
                         "detail": URL_RE.search(text).group(0)})
@@ -152,7 +169,7 @@ def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T
     def fix(key: str, text: str):
         p = key.split("-", 1)[0]
         return autofix(text, platform=plats[p], allow=(voices.get(p) or {}).get("allow", ()),
-                       protect=protect)
+                       protect=protect, lang=lang)
 
     def rewrite(failed: dict[str, dict]) -> dict[str, str]:
         ask = "\n".join(f"- key {k}: fix {'; '.join(f['reasons'])}\n  current text:\n"
@@ -174,19 +191,17 @@ def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T
                                                     voice=voice_all))
     veto_head = (f"> ⛔ {t('share.not_recommended', lines=', '.join(t('redline.' + k) for k in vetoed))}"
                  "\n\n") if vetoed else ""
-    written = []
+    written, shown = [], {}
     for p, s in pairs:
         k = f"{p}-{s}"
         if k in results:
-            name = f"share-{k}.md"
+            name = outlang.file_name(f"share-{k}.md", lang, langs)
             write_text_atomic(run.path(name), veto_head + with_header(results[k], t) + "\n")
             written.append(name)
+            shown[name] = results[k]
     notes = [t("share.borrowed", platform=plats[p]["name"], source=plats[b]["name"])
              for p, b in borrowed.items() if b]
     notes += [t("share.no_voice", platform=plats[p]["name"]) for p in voices if not voices[p]]
-    md = checks_md({f"share-{k}.md": v for k, v in results.items()}, t, t("share.title"))
-    write_text_atomic(run.path("share-checks.md"),
-                      md + ("\n" + "\n".join(f"- {n}" for n in notes) + "\n" if notes else ""))
-    failed = {k: [f"{i['code']} {i['detail']}".strip() for i in r["issues"]
-                  if i["level"] == "hard"] for k, r in results.items() if not r["passed"]}
-    return written, failed
+    failed = {n: [f"{i['code']} {i['detail']}".strip() for i in r["issues"]
+                  if i["level"] == "hard"] for n, r in shown.items() if not r["passed"]}
+    return written, failed, shown, notes

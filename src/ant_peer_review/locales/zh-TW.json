@@ -365,7 +365,7 @@
   "gate.rounds": "改寫次數",
   "gate.issues": "仍存在（✗ 必修，▲ 強訊號，△ 弱訊號）",
   "gate.replies": "回覆",
-  "deliver.gate_failed": "reply-{style}.md 未通過文字檢查（{reasons}），已在檔頭標示，送出前請修改。",
+  "deliver.gate_failed": "{file} 未通過文字檢查（{reasons}），已在檔頭標示，送出前請修改。",
   "intake.purpose.share": "分享（Share）— 為他人文章擬分享文",
   "share.platforms": "要分享到哪些平台？（各用你在該平台的語氣）",
   "share.no_voice_mark": "（尚無語氣檔）",
@@ -409,5 +409,9 @@
   "report.tells": "AI 寫作痕跡",
   "report.tells_note": "這些是生成式文風的訊號，供修稿參考，不能證明是誰或什麼寫的：人也會這樣寫，要多個一起出現才有參考價值。不影響分數，也不構成紅線。",
   "report.tells_found": "痕跡",
-  "gate.plan": "方案 {plan}"
+  "gate.plan": "方案 {plan}",
+  "outlang.ask": "最終產出語言（可多選）：",
+  "outlang.source": "原文語言：{lang}。",
+  "deliver.finals": "定稿：{files}",
+  "gate.final": "定稿"
 }

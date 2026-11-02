@@ -56,6 +56,8 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 
 **分享模式**（`--purpose share`）：讀到別人的文章，想擬分享文給自己的追蹤者。原文仍會審查與事實查核（不做修訂）。你選平台（X/Twitter、Facebook、Threads、Instagram、LinkedIn、LINE）、立場（贊同推薦、補充延伸、有保留的推薦、反駁討論）、可選的「自己的看法」（分享文只會用這段經驗），以及各平台的風格（重點摘要、個人洞見、提問引導、延伸補充、推薦清單）。產出：`share-<平台>-<風格>.md`（純文字，符合各平台限制；設定在 `data/platforms.json`，可覆寫）、`share-checks.md`，以及 `review.md`（適不適合分享）。每篇分享文和回覆都要通過去 AI 味關卡：慣用套話、編造經驗、中文半形標點、平台限制，再由另一個模型評審；不通過就改寫，最多兩次，仍不通過則標示。
 
+**產出語言**：內容檢查之後，勾選最終產出要用的語言：English（US）、繁體中文（台灣用語）、简体中文（中国大陆用语），可多選，預設為 `--lang` 的語言（非互動時用 `--output-lang zh-TW,en`）。用語會實際檢查，不只寫在提示詞裡：只有一種對應說法的詞與拼字會直接替換（軟件 → 軟體、視頻 → 影片、colour → color），在當地另有意思的詞只標示（項目 → 專案?），另一種字體的字則必須修正；引號、連結與標題一律不動。選多種語言時檔名加語言後綴（`audit.en.md`、`reply-pragmatic.zh-TW.md`、`share-x-summary.en.md`）：回覆與分享文每種語言各寫一次，定稿則每多一種語言就在地化一次，再通過去 AI 味關卡（`final-checks.md`）。報告仍用介面語言。
+
 ## 工作流程
 
 | 階段 | 內容 |
@@ -69,7 +71,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | consensus | 用確定性的程式統計立場：沒提到不算同意，有異議就標成 SPLIT。接著套用紅線否決，算出加權總分和等級。 |
 | report | 產出 `06-report.v<N>.md`，內容包括量化看板、紅線、問題錨點表、分歧、事實查證帳本、injection 掃描結果。 |
 | revision | A 方案是輕度潤色，附逐字 diff，中文也能正確顯示。B 方案是深度重構，改完會由另一個模型複審。 |
-| decision | 由你裁決有爭議的紅線，再選擇採用 A、B 或手動修改的版本，存成 `audit.md`（撰寫模式為 `draft.md`）。接著產出 `review.md`，把所有結果彙整成一份報告：結論、摘要、重點（每點附上依據的問題編號）、每個檢查項的結果與原因、問題清單和審查過程。審核模式會讓你勾選回覆風格（預設五種全勾），每種產出一份可直接回覆作者的檔案：`reply-appreciative.md`（賞識激勵型）、`reply-empathetic.md`（建設共情型）、`reply-pragmatic.md`（專業務實型）、`reply-socratic.md`（蘇格拉底提問型）、`reply-critical.md`（批判挑刺型），語言與文章相同。`ant-peer-review deliver <run>` 可重新產出。反覆出現的修正會建議寫進該品牌的 Style Guide。 |
+| decision | 由你裁決有爭議的紅線，再選擇採用 A、B 或手動修改的版本，存成 `audit.md`（撰寫模式為 `draft.md`）。接著產出 `review.md`，把所有結果彙整成一份報告：結論、摘要、重點（每點附上依據的問題編號）、每個檢查項的結果與原因、問題清單和審查過程。審核模式會讓你勾選回覆風格（預設五種全勾），每種產出一份可直接回覆作者的檔案：`reply-appreciative.md`（賞識激勵型）、`reply-empathetic.md`（建設共情型）、`reply-pragmatic.md`（專業務實型）、`reply-socratic.md`（蘇格拉底提問型）、`reply-critical.md`（批判挑刺型），以選定的產出語言撰寫。`ant-peer-review deliver <run>` 可重新產出。反覆出現的修正會建議寫進該品牌的 Style Guide。 |
 
 ### 否決紅線
 

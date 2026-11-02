@@ -153,14 +153,25 @@ def ask_fact_sources(io: IO, t: T, selected=()) -> list[str]:
                     [(s, t(f"intake.fact_sources.{s}")) for s in FACT_SOURCES], list(selected))
 
 
+def ask_output_langs(io: IO, t: T, default: str, source: str | None = None) -> list[str]:
+    """The languages the delivered text is written in, default ticked; at least one."""
+    from .outlang import LABELS, OUTPUT_LANGS
+    if source and source != default:
+        io.say(dim("  " + t("outlang.source", lang=LABELS.get(source, source))))
+    return checkbox(io, t, t("outlang.ask"), [(x, LABELS[x]) for x in OUTPUT_LANGS],
+                    [default if default in OUTPUT_LANGS else "en"], min_selected=1)
+
+
 def build_intake_from_args(purpose: str, targets: list[str], audience: str | None,
-                           *, lang: str, academic: bool = False, share: dict | None = None) -> dict:
+                           *, lang: str, academic: bool = False, share: dict | None = None,
+                           output_langs: list[str] | None = None) -> dict:
     if purpose not in PURPOSES:
         raise ValueError(f"purpose must be one of {PURPOSES}")
     if not targets:
         raise ValueError("at least one --target is needed")
     out = {"purpose": purpose, "targets": [classify_target(x) for x in targets],
            "audience": parse_audience(audience), "lang": lang,
+           "output_langs": output_langs or [lang],
            "fact_sources": ["academic"] if academic else []}
     if purpose == "share":
         out["share"] = share or {}
@@ -271,7 +282,8 @@ def ask_share(io: IO, t: T, home, make_voice=None) -> dict:
 def run_intake_interactive(io: IO, t: T, lang: str) -> dict:
     purpose = ask_purpose(io, t)
     targets = collect_targets(io, t)
+    output_langs = ask_output_langs(io, t, lang)
     audience = ask_audience(io, t)
     fact_sources = ask_fact_sources(io, t)
     return {"purpose": purpose, "targets": targets, "audience": audience, "lang": lang,
-            "fact_sources": fact_sources}
+            "output_langs": output_langs, "fact_sources": fact_sources}
