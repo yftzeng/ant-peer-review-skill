@@ -145,7 +145,7 @@ def test_share_intake_order_and_preselection(env):
     save_voice(env.home, voice("linkedin", insight=3, summary=1))
     io = ScriptedIO(["3", "Some pasted article text with 2025 numbers.", "/done",
                      "",               # output languages
-                     "1", "",          # platforms: tick X as well, confirm
+                     "4", "",          # platforms: tick X as well, confirm
                      "2",              # X has no voice: borrow LinkedIn's
                      "",               # stance: recommend
                      "",               # own take: none
@@ -153,8 +153,8 @@ def test_share_intake_order_and_preselection(env):
                      ""])              # fact sources
     cli.main([], io=io, store=env)
     text = io.text
-    labels = ["X/Twitter", "Facebook", "Threads", "Instagram", "LinkedIn", "LINE"]
-    first = text.index("X/Twitter")
+    labels = ["Facebook", "Threads", "Instagram", "X/Twitter", "LinkedIn", "LINE"]
+    first = text.index("Facebook")
     assert [text.index(lb, first) for lb in labels] == sorted(text.index(lb, first) for lb in labels)
     assert "[x] LinkedIn" in text
     assert "X/Twitter has no voice of yours" in text and "LinkedIn has no voice" not in text
@@ -170,7 +170,7 @@ def test_share_intake_order_and_preselection(env):
 # @S-share-007
 def test_voice_created_inside_the_intake(env):
     answers = ["3", "Some pasted article text with 2025 numbers.", "/done", "",
-               "3", "",                                      # platforms: Threads only
+               "2", "",                                      # platforms: Threads only
                "1",                                          # create its voice now
                "一篇。", "---", "兩篇。", "---", "三篇。", "/done", "扎實", "賦能",
                "", "",                                       # stance, own take
@@ -197,12 +197,12 @@ def test_voice_created_inside_the_intake(env):
 # @S-share-008
 def test_neutral_never_ask_is_remembered(env, tmp_path):
     save_voice(env.home, voice("threads", question=3))
-    io = ScriptedIO(["3", "Article text, 2025.", "/done", "", "1 3", "",  # X only (Threads was ticked)
+    io = ScriptedIO(["3", "Article text, 2025.", "/done", "", "2 4", "",  # X only (Threads was ticked)
                      "4", "", "", "", ""])                          # never ask; stance, take, style, facts
     cli.main([], io=io, store=env)
     run = list_runs(env.runs_dir)[-1]
     assert read_json(run.path("00-intake.json"))["share"]["voices"] == {"x": "neutral"}
-    io = ScriptedIO(["", "3", "Article text, 2026.", "/done", "", "1 3", "", "", "", "", ""])
+    io = ScriptedIO(["", "3", "Article text, 2026.", "/done", "", "2 4", "", "", "", "", ""])
     cli.main([], io=io, store=env)
     assert "X/Twitter has no voice of yours" not in io.text and "Post styles for X" in io.text
 

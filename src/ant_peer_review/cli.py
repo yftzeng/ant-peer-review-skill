@@ -43,7 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--purpose", choices=["audit", "drafting", "share"])
     n.add_argument("--output-lang", help="languages to write the delivered text in: en, zh-TW, "
                    "zh-CN, comma-separated (default: --lang); US English, Taiwan, mainland usage")
-    n.add_argument("--platform", help="share: x,facebook,threads,instagram,linkedin,line")
+    n.add_argument("--platform", help="share: facebook,threads,instagram,x,linkedin,line")
     n.add_argument("--stance", help="share: recommend (default), extend, reserved, rebut")
     n.add_argument("--take", help="share: your own experience or view, the only one the posts may use")
     n.add_argument("--share-style", help="share: e.g. x=summary+pick,linkedin=insight "

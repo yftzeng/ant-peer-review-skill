@@ -2,7 +2,7 @@
 
 A third purpose next to audit and drafting: the user read someone else's
 article and wants posts that share it with their own followers, in their own
-voice, on the platforms they pick (X/Twitter, Facebook, Threads, Instagram,
+voice, on the platforms they pick (Facebook, Threads, Instagram, X/Twitter,
 LinkedIn, LINE, in that order). The article is still reviewed and
 fact-checked, so the user does not pass on errors; there is no revision.
 Each platform has its own voice file, learned from the user's past posts
@@ -15,7 +15,7 @@ Feature: share
   Scenario: the share intake asks for platforms, voices, stance, the user's own take and styles, not the audience card
     Given a voice file for LinkedIn whose posts were mostly "insight", and no other voice file
     When  the user chooses purpose "share", enters a URL, ticks X as well and borrows the LinkedIn voice for X
-    Then  after the content check a checkbox lists X/Twitter, Facebook, Threads, Instagram, LinkedIn, LINE in that order
+    Then  after the content check a checkbox lists Facebook, Threads, Instagram, X/Twitter, LinkedIn, LINE in that order
           with LinkedIn ticked; X, having no voice, is asked whether to create one, borrow LinkedIn's, write neutrally,
           or write neutrally and never ask again; LinkedIn is not asked and its voice is shown as applied;
           then the stance (recommend, extend, reserved, rebut), an optional own take,
@@ -84,3 +84,4 @@ Feature: share
 - 2026-11-02 · +S-share-001..006 +N-share-001 · decision: none -- user: share mode; platforms multi-select in the order X/Twitter, Facebook, Threads, Instagram, LinkedIn, LINE; the voice follows the platform and preselects the style instead of being picked separately
 - 2026-11-02 · ~S-share-004 · decision: none -- live share run: the shared link kept ithelp's ?sc=rss.iron tracking parameter
 - 2026-11-02 · ~S-share-001 +S-share-007..008 · decision: none -- user: the voice should come up during the interaction, not only through a separate command; it is asked only for platforms without one, then applied automatically
+- 2026-11-02 · ~S-share-001 · decision: none -- user: platform order Facebook, Threads, Instagram, X/Twitter, LinkedIn, LINE

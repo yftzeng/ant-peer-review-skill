@@ -15,7 +15,7 @@ from .jsonio import read_json, write_json
 from .platforms import hashtags
 from .schemas import NUM, STR, arr, obj
 
-PLATFORMS = ["x", "facebook", "threads", "instagram", "linkedin", "line"]
+PLATFORMS = ["facebook", "threads", "instagram", "x", "linkedin", "line"]
 SHARE_STYLES = ["summary", "insight", "question", "addon", "pick"]
 DEFAULT_STYLE = {"x": "summary", "facebook": "insight", "threads": "question",
                  "instagram": "summary", "linkedin": "insight", "line": "pick"}
