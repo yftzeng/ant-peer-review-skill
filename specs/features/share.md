@@ -95,23 +95,50 @@ Feature: share
   @S-share-011
   Scenario: a distilled post names no one from the article and ends with the source line
     Given a distill share run for X and Instagram whose article is by "Jane Roe" at "Example News" and mentions "Acme"
-    When  the writer returns, with its list of names ["Acme"], an X post that says "Acme" and an Instagram post that names no one
+    When  the analysis lists the names ["Acme"] and the writer returns an X post that says "Acme" and an Instagram post that names no one
     Then  the X post fails with must-fix "name_leak Acme" and is rewritten; author and site count as names too
     And   neither post needs a concrete detail of the article or its title in the body,
           the X file ends with "延伸自：Title https://ex.example/a" and the Instagram file with "延伸自：Title" and no link,
           the platform limit counts the source line; with credit off no source line is added
 
   @S-share-012
-  Scenario: the judge checks that a distilled post states a principle of its own
+  Scenario: the judge checks a distilled post against the analysis, not in isolation
     When  a distill post is judged
-    Then  the judge also answers "principle" (a transferable principle is stated, not a summary) and "own_thinking"
-          (it goes beyond the article), both strong, failing only with quoted words of the post
+    Then  the judge is given the analysis (purpose, claims and their actions, direction, thesis, anchors) and also answers, each strong
+          and failing only with quoted words of the post: "platitude" (the point is one nobody would dispute),
+          "paraphrase" (it restates the article's or the subject's own pitch), "ignores_review" (it leans on a claim the analysis drops
+          or leaves out its main correction) and "direction" (it does not take the analysis's direction)
 
   @S-share-013
   Scenario: the angle and the source line from arguments
     When  "ant-peer-review new --yes --purpose share --target <text> --platform x --angle distill --no-credit" runs
     Then  00-intake.json holds share {angle: "distill", credit: false, styles {x: ["insight"]}} and no stance
     And   without --angle the angle is "comment"; "--angle rant" is refused with the allowed values
+
+  @S-share-014
+  Scenario: distilling starts with an analysis of the article's purpose and of each claim's truth
+    Given a distill run whose fact-check marks "幾分鐘內搞定" unsupported and "純 Rust" supported, with a confirmed hallucination
+    When  the posts are written
+    Then  one "share_analysis" call before the posts gets the article, the review findings, the red lines and every checked claim
+          with its status and reason, and a suggested direction ("oppose or middle" here: a red line is confirmed)
+    And   it returns the article's purpose, each claim with an action (keep, strengthen, qualify, drop, correct, avoid),
+          a direction (reinforce, oppose or middle) with its reason, a thesis someone could dispute, at least one anchor and the names;
+          an unsupported claim marked keep becomes drop, and the analysis is written to share-analysis.md
+    And   the posts call gets the analysis instead of the article text, and a post carrying a number from a dropped claim
+          fails with must-fix "dropped_claim"
+
+  @S-share-015
+  Scenario: in a share run the first target is the article and the rest are references
+    Given a share run with the article text as target 1 and the project's GitHub page as target 2
+    When  the analysis is written
+    Then  the article excerpt holds only document D1, and D2 is given apart as a reference that may be the subject's own description,
+          not neutral evidence
+
+  @S-share-016
+  Scenario: a distilled post that corrects the article is not marked "not recommended"
+    Given a distill run with a confirmed red line whose analysis direction is "oppose" or "middle"
+    When  the posts pass the gate
+    Then  each post starts with "原文有紅線（…），本文以更正為方向" instead of "不建議分享"; a comment-angle post keeps "不建議分享"
 ```
 
 ## Must NOT
@@ -125,3 +152,4 @@ Feature: share
 - 2026-11-02 · ~S-share-001 · decision: none -- user: platform order Facebook, Threads, Instagram, X/Twitter, LinkedIn, LINE
 - 2026-11-02 · +S-share-009 · decision: none -- user: share mode should skip the structure weights and not score the article; whether to share it rests on red lines and the fact-check, not on writing quality
 - 2026-11-02 · ~S-share-001 +S-share-010..013 · decision: none -- user: a share angle, one of comment (reuse, extend or critique the article: the existing stances) or distill (filter out people and company names, distill the underlying logic, and develop it with independent thinking); the source line keeps distilling from becoming plagiarism
+- 2026-11-02 · ~S-share-011..012 +S-share-014..016 · decision: none -- live distill run (craft-anything): the posts ignored the confirmed hallucination and PR landmine, distilled the project's README (passed as a second target and merged into the article) into a truism, and the judge, seeing only the post, passed it; user: dig out the article's purpose, keep or strengthen what is true, drop or correct what is false, and land on reinforce, oppose or a middle view, never empty or self-evident

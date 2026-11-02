@@ -422,5 +422,16 @@
   "share.credit.yes": "Yes (recommended: distilled ideas still have a source)",
   "share.credit.no": "No",
   "via.github_readme": "GitHub README (raw)",
-  "via.jsonld": "JSON-LD articleBody"
+  "via.jsonld": "JSON-LD articleBody",
+  "share.corrects": "The article crossed a red line ({lines}); this post corrects it.",
+  "share.analysis.title": "Distill analysis",
+  "share.analysis.purpose": "Purpose of the article",
+  "share.analysis.claims": "Claims",
+  "share.analysis.claim": "Claim",
+  "share.analysis.status": "Fact-check",
+  "share.analysis.action": "Action",
+  "share.analysis.correction": "Correction",
+  "share.analysis.direction": "Direction",
+  "share.analysis.thesis": "Thesis",
+  "share.analysis.anchors": "Anchors"
 }

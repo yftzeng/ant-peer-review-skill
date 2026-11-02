@@ -297,8 +297,9 @@ def test_share_intake_asks_angle_and_distill_rules(env):
     assert "stance" not in intake["share"] and intake["share"]["styles"] == {"threads": ["insight"]}
 
 
-def distill_run(tmp_path, credit=True):
-    run, store = share_run(tmp_path, ["x", "instagram"], {"x": ["insight"], "instagram": ["insight"]})
+def distill_run(tmp_path, credit=True, flags=()):
+    run, store = share_run(tmp_path, ["x", "instagram"], {"x": ["insight"], "instagram": ["insight"]},
+                           flags=flags)
     intake = read_json(run.path("00-intake.json"))
     intake["share"].update(angle="distill", credit=credit)
     intake["share"].pop("stance", None)
@@ -315,17 +316,26 @@ IG_LEAK = "Jane Roe 提醒我，流程越短越好。"
 IG_OK = "流程越短，出錯的地方越少。交接本身就是風險。"
 
 
+ANALYSIS = {"purpose": "推一個新工具，用誇大的功能搶關注",
+            "claims": [{"claim": "原本幾天，現在 3 分鐘內搞定", "status": "unsupported", "action": "keep",
+                        "correction": ""},
+                       {"claim": "純 Rust 打造", "status": "supported", "action": "keep", "correction": ""}],
+            "direction": "middle", "why": "方法有價值，宣傳造假",
+            "thesis": "轉傳文說得比原始文件多的部分，預設是行銷。",
+            "anchors": ["主打功能在專案文件裡找不到"], "names": ["Acme"]}
+
+
 # @S-share-011
 # @S-share-012
 def test_distilled_post_names_no_one_and_ends_with_source(tmp_path):
     run, store = distill_run(tmp_path)
-    first = dict(posts(x_insight=X_LEAK, instagram_insight=IG_LEAK), names=["Acme"])
+    first = posts(x_insight=X_LEAK, instagram_insight=IG_LEAK)
     b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
-                       ("*", "share"): first,
+                       ("*", "share_analysis"): ANALYSIS, ("*", "share"): first,
                        ("*", "share_rewrite"): posts(x_insight=X_OK, instagram_insight=IG_OK)})
     decide(run, store, b)
     share_sys = [c for c in b.calls if c["task"] == "share"][0]["system"]
-    assert "underlying logic" in share_sys and "names" in share_sys
+    assert "Write from the analysis" in share_sys and "names" in share_sys
     ask = [c for c in b.calls if c["task"] == "share_rewrite"][0]["prompt"]
     assert "name_leak: Acme" in ask and "name_leak: Jane Roe" in ask
     x = run.path("share-x-insight.md").read_text().strip()
@@ -334,14 +344,17 @@ def test_distilled_post_names_no_one_and_ends_with_source(tmp_path):
     assert ig.endswith("延伸自：Title") and "https://" not in ig
     checks = run.path("share-checks.md").read_text()
     assert "no_concrete_detail" not in checks and "no_attribution" not in checks
-    judge_sys = [c for c in b.calls if c["task"] == "judge"][0]["system"]
-    assert "principle" in judge_sys and "own_thinking" in judge_sys
+    judge = [c for c in b.calls if c["task"] == "judge"][0]
+    for check in ("platitude", "paraphrase", "ignores_review", "direction"):
+        assert check in judge["system"], check
+    assert ANALYSIS["thesis"] in judge["prompt"]               # judged against the analysis
 
 
 def test_distill_without_credit_adds_no_source_line(tmp_path):
     run, store = distill_run(tmp_path, credit=False)
     b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
-                       ("*", "share"): dict(posts(x_insight=X_OK, instagram_insight=IG_OK), names=[])})
+                       ("*", "share_analysis"): ANALYSIS,
+                       ("*", "share"): posts(x_insight=X_OK, instagram_insight=IG_OK)})
     decide(run, store, b)
     assert run.path("share-x-insight.md").read_text().strip() == X_OK
 
@@ -350,11 +363,11 @@ def test_distill_without_credit_adds_no_source_line(tmp_path):
 def test_judge_extra_checks_need_quoted_evidence():
     from ant_peer_review.gate import DISTILL_CHECKS, STRONG, judge
     b = ScriptBackend({("*", "judge"): {"verdicts": [{"key": "k", "checks": [
-        {"name": "principle", "pass": False, "evidence": "流程越短"},
-        {"name": "own_thinking", "pass": False, "evidence": "not in the text"}]}]}})
-    out = judge(b, "opus", {"k": "流程越短，錯誤越少。"}, extra=DISTILL_CHECKS)
-    assert out == {"k": [{"code": "judge:principle", "level": STRONG, "detail": "流程越短"}]}
-    assert "own_thinking" in b.calls[0]["system"]
+        {"name": "platitude", "pass": False, "evidence": "流程越短"},
+        {"name": "paraphrase", "pass": False, "evidence": "not in the text"}]}]}})
+    out = judge(b, "opus", {"k": "流程越短，錯誤越少。"}, extra=DISTILL_CHECKS, context="ANALYSIS")
+    assert out == {"k": [{"code": "judge:platitude", "level": STRONG, "detail": "流程越短"}]}
+    assert "ignores_review" in b.calls[0]["system"] and "ANALYSIS" in b.calls[0]["prompt"]
 
 
 # @S-share-013
@@ -371,3 +384,65 @@ def test_angle_from_arguments(env):
     assert cli.main(["new", "--yes", "--purpose", "share", "--target", TEXT, "--platform", "x",
                      "--angle", "rant"], io=io, store=env) == cli.EXIT_USAGE
     assert "distill" in io.text
+
+
+def ledger(run, *rows):
+    for i, (text, status) in enumerate(rows, 1):
+        append_jsonl(run.path("factcheck/ledger.jsonl"), {
+            "id": f"C{i:02d}", "anchor": "D1.P03.S1", "text": text, "type": "number", "status": status,
+            "reason": f"reason {i}", "sources": [], "refs": [], "checked_by": "sonnet"})
+
+
+# @S-share-014
+def test_distill_starts_with_an_analysis(tmp_path):
+    run, store = distill_run(tmp_path, flags=["hallucination"])
+    ledger(run, ("原本幾天，現在 3 分鐘內搞定", "unsupported"), ("純 Rust 打造", "supported"))
+    assert compute_consensus(run, M, TH)["red_lines"]["hallucination"]["status"] == "confirmed"
+    leak = "轉傳文說得比原始文件多的部分，預設是行銷。號稱 3 分鐘完成的那種。"
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share_analysis"): ANALYSIS,
+                       ("*", "share"): posts(x_insight=leak, instagram_insight=IG_OK),
+                       ("*", "share_rewrite"): posts(x_insight=X_OK)})
+    decide(run, store, b)
+    tasks = [c["task"] for c in b.calls]
+    assert tasks.count("share_analysis") == 1 and tasks.index("share_analysis") < tasks.index("share")
+    ap = b.calls[tasks.index("share_analysis")]["prompt"]
+    for want in ("原本幾天，現在 3 分鐘內搞定", "unsupported", "reason 1", "oppose or middle",
+                 "Revenue grew 40% in 2025"):
+        assert want in ap, want
+    sp = b.calls[tasks.index("share")]["prompt"]
+    assert ANALYSIS["thesis"] in sp and "First para." not in sp        # the analysis, not the article
+    md = run.path("share-analysis.md").read_text()
+    assert "原本幾天，現在 3 分鐘內搞定" in md and "drop" in md and ANALYSIS["thesis"] in md
+    ask = b.calls[tasks.index("share_rewrite")]["prompt"]
+    assert "dropped_claim: 3" in ask
+
+
+# @S-share-015
+def test_first_target_is_the_article_rest_are_references(tmp_path):
+    from ant_peer_review.jsonio import write_text_atomic
+    run, store = distill_run(tmp_path)
+    write_text_atomic(run.path("01-sources/normalized/D2.md"), "README SELF DESCRIPTION of the project.\n")
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share_analysis"): ANALYSIS,
+                       ("*", "share"): posts(x_insight=X_OK, instagram_insight=IG_OK)})
+    decide(run, store, b)
+    ap = next(c for c in b.calls if c["task"] == "share_analysis")["prompt"]
+    art, refs = ap.index("Article excerpt"), ap.index("References")
+    assert art < ap.index("First para.") < refs < ap.index("README SELF DESCRIPTION")
+    assert "own description" in ap[refs:ap.index("README SELF DESCRIPTION")]
+
+
+# @S-share-016
+def test_correcting_distill_post_is_not_marked_not_recommended(tmp_path):
+    from ant_peer_review.i18n import T
+    run, store = distill_run(tmp_path, flags=["hallucination"])
+    ledger(run, ("Revenue grew 40% in 2025", "unsupported"))
+    assert compute_consensus(run, M, TH)["red_lines"]["hallucination"]["status"] == "confirmed"
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share_analysis"): ANALYSIS,
+                       ("*", "share"): posts(x_insight=X_OK, instagram_insight=IG_OK)})
+    decide(run, store, b)
+    text = run.path("share-x-insight.md").read_text()
+    head = T("en")("share.corrects", lines="x").split("(")[0]
+    assert text.startswith("> ⚠ " + head) and "Not recommended" not in text.split("\n")[0]

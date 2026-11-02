@@ -422,5 +422,16 @@
   "share.credit.yes": "要（建議：提煉來的想法仍有出處）",
   "share.credit.no": "不要",
   "via.github_readme": "GitHub README（原始檔）",
-  "via.jsonld": "JSON-LD 內文（articleBody）"
+  "via.jsonld": "JSON-LD 內文（articleBody）",
+  "share.corrects": "原文有紅線（{lines}），本文以更正為方向。",
+  "share.analysis.title": "概念提純分析",
+  "share.analysis.purpose": "原文目的",
+  "share.analysis.claims": "主張處理",
+  "share.analysis.claim": "主張",
+  "share.analysis.status": "查核",
+  "share.analysis.action": "處理",
+  "share.analysis.correction": "更正",
+  "share.analysis.direction": "方向",
+  "share.analysis.thesis": "論點",
+  "share.analysis.anchors": "錨點"
 }

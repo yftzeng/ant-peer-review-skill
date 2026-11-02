@@ -64,6 +64,11 @@ class FakeBackend(Backend):
         url = (re.findall(r'"url": "([^"]*)"', prompt) or [""])[0]
         return {"posts": [{"key": k, "text": f"[fake:{model}] {k} {url}".strip()} for k in keys]}
 
+    def _share_analysis(self, model, ids, paras, bias, prompt):
+        return {"purpose": f"[fake:{model}] purpose", "claims": [], "direction": "middle",
+                "why": "fake", "thesis": f"[fake:{model}] thesis", "anchors": ["fake anchor"],
+                "names": []}
+
     def _share_rewrite(self, model, ids, paras, bias, prompt):
         return {"posts": []}         # keep the texts; the gate marks what still fails
 

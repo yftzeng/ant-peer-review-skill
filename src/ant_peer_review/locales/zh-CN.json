@@ -422,5 +422,16 @@
   "share.credit.yes": "要（建议：提炼来的想法仍有出处）",
   "share.credit.no": "不要",
   "via.github_readme": "GitHub README（原始文件）",
-  "via.jsonld": "JSON-LD 正文（articleBody）"
+  "via.jsonld": "JSON-LD 正文（articleBody）",
+  "share.corrects": "原文有红线（{lines}），本文以更正为方向。",
+  "share.analysis.title": "概念提纯分析",
+  "share.analysis.purpose": "原文目的",
+  "share.analysis.claims": "主张处理",
+  "share.analysis.claim": "主张",
+  "share.analysis.status": "核查",
+  "share.analysis.action": "处理",
+  "share.analysis.correction": "更正",
+  "share.analysis.direction": "方向",
+  "share.analysis.thesis": "论点",
+  "share.analysis.anchors": "锚点"
 }
