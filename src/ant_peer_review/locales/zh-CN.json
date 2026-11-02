@@ -366,7 +366,7 @@
   "gate.issues": "问题（✗ 必改，△ 提醒）",
   "gate.replies": "回复",
   "deliver.gate_failed": "reply-{style}.md 未通过文字检查（{reasons}），已在文件头标示，发送前请修改。",
-  "intake.purpose.share": "分享 — 为这篇文章拟分享文，分享给我的关注者",
+  "intake.purpose.share": "分享（Share）— 为他人文章拟分享文",
   "share.platforms": "要分享到哪些平台？（各用你在该平台的语气）",
   "share.no_voice_mark": "（尚无语气档）",
   "share.stance": "你对这篇文章的立场：",

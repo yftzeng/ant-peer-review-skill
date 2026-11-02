@@ -366,7 +366,7 @@
   "gate.issues": "問題（✗ 必改，△ 提醒）",
   "gate.replies": "回覆",
   "deliver.gate_failed": "reply-{style}.md 未通過文字檢查（{reasons}），已在檔頭標示，送出前請修改。",
-  "intake.purpose.share": "分享 — 為這篇文章擬分享文，分享給我的追蹤者",
+  "intake.purpose.share": "分享（Share）— 為他人文章擬分享文",
   "share.platforms": "要分享到哪些平台？（各用你在該平台的語氣）",
   "share.no_voice_mark": "（尚無語氣檔）",
   "share.stance": "你對這篇文章的立場：",

@@ -366,7 +366,7 @@
   "gate.issues": "Issues (✗ must fix, △ warning)",
   "gate.replies": "replies",
   "deliver.gate_failed": "reply-{style}.md failed the writing check ({reasons}); it is marked, edit it before sending.",
-  "intake.purpose.share": "Share — write posts that share this article with my followers",
+  "intake.purpose.share": "Share — write posts sharing someone else's article",
   "share.platforms": "Share on which platforms? (each uses your voice there)",
   "share.no_voice_mark": "(no voice yet)",
   "share.stance": "Your stance on the article:",
