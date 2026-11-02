@@ -52,7 +52,7 @@ def test_review_gathers_every_check(tmp_path):
                  "## Anchored issues", "## Review process", "## Detail files", "06-report.v"):
         assert want in md, want
     checks = md.split("## Checks", 1)[1].split("\n## ", 1)[0]
-    assert sum(1 for ln in checks.splitlines() if ln.startswith("| ")) == 1 + 4 + 6 + 3  # header + rows
+    assert sum(1 for ln in checks.splitlines() if ln.startswith("| ")) == 1 + 4 + 6 + 4  # header + rows
 
 
 # @S-decision-010

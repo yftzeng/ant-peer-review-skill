@@ -148,6 +148,10 @@ def checks(run: Run, cons: dict, t: T, thresholds: dict) -> list[str]:
     flags = scan.get("flags", [])
     row(t("review.injection"), "borderline" if flags else "pass", str(len(flags)),
         "; ".join(f"{f['id']}: {', '.join(f.get('categories', []))}" for f in flags[:5]))
+    from .report import article_tells
+    tells = article_tells(run)
+    row(t("report.tells"), "borderline" if tells else "pass", str(len(tells)),
+        "; ".join(pid for pid, _ in tells[:8]))
     v = latest_version(run)
     lint = read_json(run.path(f"06-report.v{v}.json"), default={}).get("lint", []) if v else []
     row(t("review.lint"), "borderline" if lint else "pass", str(len(lint)), "; ".join(lint[:5]))

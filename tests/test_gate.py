@@ -118,6 +118,7 @@ def test_fixup_changes_what_needs_no_judgment():
     assert "removed Markdown" in changes and "hashtags 7 → 5" in changes
     assert autofix("該上 K8s 了」? 好")[0] == "該上 K8s 了」？ 好"
     assert autofix("自動化(服務發現、Helm)和 API (v2)")[0] == "自動化（服務發現、Helm）和 API (v2)"
+    assert autofix("- Workloads (工作負載介紹)")[0] == "- Workloads (工作負載介紹)"   # a term and its gloss
     url = "https://ex.example/a?x=1,2:3"
     assert autofix(f"好文,看這裡 {url}")[0] == f"好文，看這裡 {url}"      # URLs untouched
     out = run_gate({"a": "值得一提的是，這篇寫得清楚。"}, lambda f: {},

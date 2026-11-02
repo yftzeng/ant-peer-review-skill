@@ -79,7 +79,8 @@ CONTRAST = re.compile(r"不是[^。！？\n]{1,30}?[，,]\s*(?:而)?是([^。！
                       re.I)
 CJK = "[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff01-\uff60]"  # incl. CJK punctuation
 HAN = "[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]"
-HALF_PARENS = re.compile(rf"\(([^()\n]*{HAN}[^()\n]*)\)|(?<={HAN})\(([^()\n]*)\)")
+# only a parenthesis glued to a Han character: "Workloads (工作負載)" is a common, fine style
+HALF_PARENS = re.compile(rf"(?<={HAN})\(([^()\n]*)\)")
 HALFWIDTH = re.compile(rf"(?<={CJK})[,:;!?]|[,:;!?](?=\s?{CJK})")
 FULLWIDTH = {",": "，", ":": "：", ";": "；", "!": "！", "?": "？"}
 MARKDOWN = re.compile(r"\*\*|\[[^\]]+\]\(https?://|^#{1,6} ", re.M)
@@ -210,7 +211,7 @@ def autofix(text: str, *, platform: dict | None = None, allow=(), protect=()) ->
 
     out = URL_RE.sub(keep, text)
     new = HALFWIDTH.sub(lambda m: FULLWIDTH[m.group(0)], out)
-    new = HALF_PARENS.sub(lambda m: f"（{m.group(1) or m.group(2)}）", new)
+    new = HALF_PARENS.sub(lambda m: f"（{m.group(1)}）", new)
     if new != out:
         changes.append("halfwidth_punctuation → full width")
         out = new

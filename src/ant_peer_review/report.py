@@ -238,6 +238,7 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
             L.append(f"- **{f['id']}** ({', '.join(f['supporters'])}) — "
                      + "; ".join(f"{d['model']}: {cell(d['evidence'])}" for d in f["dissent"]))
     L += process_section(run, cons, t)
+    L += tells_section(run, t)
     if cons["unverified_findings"]:
         L.append("")
         L.append(f"## {t('report.unverified')}")
@@ -274,6 +275,41 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     L.append("")
     L.append(f"<sub>ledger@{snapshot(ledger)}</sub>")
     return "\n".join(L) + "\n"
+
+
+TELL_LEVELS = ("strong", "weak")
+
+
+def article_tells(run: Run) -> list[tuple[str, list[dict]]]:
+    """(paragraph id, tells) for each paragraph of the article that shows writing tells.
+    The author's own experience and tone are not style tells, so those checks are off."""
+    from .gate import needs_edit, rule_check
+    segs = read_json(run.path("01-sources/segments.json"), default={})
+    paras = [s for doc in segs.values() for s in doc if s.get("kind") != "heading"]
+    whole = "\n\n".join(s["text"] for s in paras)
+    titles = [d.get("title", "") for it in read_json(run.path("01-sources/manifest.json"),
+                                                    default={"items": []})["items"]
+              for d in it.get("docs", [])]
+    out = []
+    for s in paras:
+        # typography (half-width punctuation) is the author's convention, not a style tell
+        tells = [i for i in rule_check(s["text"], take=whole, protect=titles)
+                 if i["level"] in TELL_LEVELS]
+        if needs_edit(tells):   # a strong tell, or weak ones in company
+            out.append((s["id"], tells))
+    return out
+
+
+def tells_section(run: Run, t: T) -> list[str]:
+    found = article_tells(run)
+    if not found:
+        return []
+    L = ["", f"## {t('report.tells')}", "", f"> {t('report.tells_note')}", "",
+         f"| {t('report.location')} | {t('report.tells_found')} |", "|---|---|"]
+    for pid, tells in found:
+        L.append(f"| {pid} | " + cell("; ".join(f"{i['code']} {i['detail']}".strip()
+                                               for i in tells)) + " |")
+    return L
 
 
 def process_section(run: Run, cons: dict, t: T) -> list[str]:

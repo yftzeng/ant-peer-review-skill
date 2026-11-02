@@ -70,7 +70,7 @@ Feature: writing gate
     Given "值得一提的是，K8s 入門系列,先會 Docker。" and, for Instagram, "**重點** 好文 #a #b #c #d #e #f #g"
     When  the fix-up runs
     Then  the first becomes "K8s 入門系列，先會 Docker。" and the second "重點 好文 #a #b #c #d #e"
-    And   "了」?" becomes "了」？" and "自動化(服務發現、Helm)" becomes "自動化（服務發現、Helm）", while "API (v2)" and URLs stay
+    And   "了」?" becomes "了」？" and "自動化(服務發現、Helm)" becomes "自動化（服務發現、Helm）", while "API (v2)", "Workloads (工作負載介紹)" (a term and its gloss) and URLs stay
     And   each change is listed in the checks file under what was changed
 
   @S-writing-gate-010
@@ -106,10 +106,12 @@ Feature: writing gate
 ```
 
 ## Must NOT
-- @N-writing-gate-001 a text that failed the gate is written without a warning header
+- @N-writing-gate-001 a reply or post that failed the gate is written without a warning header; a revision paragraph that failed is not listed as failed in its plan's checks file
 
 ## Revisions
 - 2026-11-02 · created · decision: none -- no feature checks generated prose for machine-like writing: decision covers which outputs are written, review-panel checks the article, not our own text
 - 2026-11-02 · +S-writing-gate-001..007 +N-writing-gate-001 · decision: none -- user: replies and share posts must lose the "AI taste" behind a checklist gate; platform limits checked on 2026-11-02 (sources in data/platforms.json)
 - 2026-11-02 · +S-writing-gate-008 · decision: none -- live share run: zh-TW posts came back with ASCII commas and colons between Chinese characters
 - 2026-11-02 · ~S-writing-gate-001..002 ~S-writing-gate-005..008 +S-writing-gate-009..014 · decision: none -- user: de-AI must edit the text, not only check it; borrowed from humanizer (edit workflow, strong vs weak-alone tells, when not to act, keep facts), content-skills (hollow vs earned contrast), stop-slop (pattern families); Chinese tells written here
+- 2026-11-02 · ~N-writing-gate-001 · decision: none -- revision plans pass the gate too; a header inside the adopted article would end up in audit.md, so their failures go to the plan's checks file
+- 2026-11-02 · ~S-writing-gate-009 · decision: none -- live audit: "Term (中文註解)" list items were turned into "Term （…）"; only a parenthesis glued to a Han character is converted

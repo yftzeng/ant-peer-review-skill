@@ -49,6 +49,15 @@ Feature: revision
     Given findings F01 (macro), F02 (micro) and F03 (micro), plan A changing F02's paragraph and plan B addressing F01
     When  the revision phase ends
     Then  07-revision/coverage.json maps F01 to B, F02 to A and F03 to none, and the counts are printed
+
+  @S-revision-008
+  Scenario: the plans pass the writing gate, as far as they are ours
+    Given an audit whose plan A rewrites D1.P02 into "說到底，這段要改。" and leaves D1.P03 (the author's "值得一提的是…") as it was
+    When  the revision runs
+    Then  the fix-up and the rule checks run on D1.P02 only, one judging call covers the checked paragraphs,
+          an edit pass rewrites the flagged ones, A.md and A.diff carry the edited text, and 07-revision/A-checks.md lists them
+    And   plan B checks every paragraph, the author's included, since it restructures the piece
+    And   in a drafting run both plans check every paragraph, since the whole draft is ours
 ```
 
 ## Must NOT
@@ -59,3 +68,4 @@ Feature: revision
 - 2026-10-22 · +S-revision-006 · decision: none -- live run: models returned sentence ids and new paragraphs, which were dropped
 - 2026-10-22 · +S-revision-007 · decision: none -- re-evaluated references: black-yt rebuttal one-to-one coverage, no finding silently dropped
 - 2026-10-22 · ~S-revision-003 · decision: none -- user: replace concepts and terms taken from CC BY-NC / unlicensed references with independently sourced ones (see docs/REFERENCES.md)
+- 2026-11-02 · +S-revision-008 · decision: none -- user: de-AI also for drafting and for the audit's revision plans; only text we wrote is edited in the light plan A

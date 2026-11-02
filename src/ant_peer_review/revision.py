@@ -100,6 +100,60 @@ def _issue_view(f: dict) -> dict:
                               "action")}
 
 
+def gate_plan(run: Run, backend: Backend, models: list[str], writer: str, lang: str,
+              paras: dict[str, dict], rep: dict[str, str], *, plan: str, every: bool) -> dict:
+    """Pass a plan through the writing gate. every=False checks only the paragraphs the
+    plan changed (the author's own text stays as written in the light plan A); edited
+    paragraphs go back into rep. Failures are listed in 07-revision/<plan>-checks.md."""
+    from .gate import (EDIT_RULES, autofix, checks_md, judge, judge_model, rule_check,
+                       run_gate)
+    from .i18n import T
+    from .schemas import STR, arr, obj
+    body = [k for k, s in paras.items() if s.get("kind") != "heading"]
+    keys = body + [k for k in rep if k.endswith(INSERT)] if every else list(rep)
+    original = {k: paras[k]["text"] for k in body}
+    texts = {k: rep.get(k, original.get(k, "")) for k in keys}
+    texts = {k: v for k, v in texts.items() if v.strip()}
+    if not texts:
+        return {}
+    article = "\n\n".join(original.values())
+    titles = [s["text"].lstrip("# ").strip() for s in paras.values() if s.get("kind") == "heading"]
+    schema = obj({"paragraphs": arr(obj({"id": STR, "text": STR}))})
+
+    def check(k, text):
+        return [i for i in rule_check(text, take=article, protect=titles)
+                if i["code"] != "invented_experience"]
+
+    def rewrite(failed):
+        ask = "\n".join(f"- id {k}: fix {'; '.join(f['reasons'])}\n  current text:\n"
+                        f"{prompts.untrusted(f['text'])}" for k, f in failed.items())
+        try:
+            r = backend.run(writer, task="revision_edit", schema=schema, effort="medium",
+                            timeout=600, system=f"{EDIT_RULES} These are paragraphs of one "
+                            f"article, written in {prompts.LANG_NAMES.get(lang, lang)} or the "
+                            "article's own language: edit each on its own, keep its meaning "
+                            "and its place in the article.",
+                            prompt=f"Edit only these paragraphs:\n{ask}")
+        except BackendError:
+            return {}
+        return {x["id"]: x["text"] for x in (r.data or {}).get("paragraphs", [])
+                if x.get("id") in failed}
+
+    results = run_gate(texts, rewrite, check=check,
+                       fix=lambda k, text: autofix(text, protect=titles),
+                       sources=article + "\n" + "\n".join(texts.values()),
+                       judge_fn=lambda batch: judge(backend, judge_model(models, writer), batch))
+    for k, r in results.items():
+        if r["text"] != original.get(k):
+            rep[k] = r["text"]
+    shown = {k: r for k, r in results.items() if r["changes"] or r["issues"]}
+    t = T(lang)
+    write_text_atomic(run.path(f"07-revision/{plan}-checks.md"),
+                      checks_md(shown, t, t("gate.plan", plan=plan)) if shown else
+                      f"# {t('gate.title', what=t('gate.plan', plan=plan))}\n\n—\n")
+    return results
+
+
 def split_findings(cons: dict) -> tuple[list[dict], list[dict]]:
     a = [_issue_view(f) for f in cons["findings"] if f["level"] == "micro"]
     b = [_issue_view(f) for f in cons["findings"] if f["level"] in ("macro", "meso")]
@@ -130,6 +184,8 @@ def run_revision(run: Run, backend: Backend, models: list[str], lang: str, *, sa
         raise RuntimeError(f"plan A failed: {e}") from e
     rep_a, warn = apply_changes(paras, data.get("paragraphs", []))
     out["warnings"] += warn
+    drafting = intake.get("purpose") == "drafting"
+    gate_plan(run, backend, models, writer, lang, paras, rep_a, plan="A", every=drafting)
     write_text_atomic(run.path("07-revision/A.md"), render_text(paras, rep_a))
     write_text_atomic(run.path("07-revision/A.diff"), diff_text(paras, rep_a))
     write_json(run.path("07-revision/corrections.json"), data.get("corrections", []))
@@ -147,6 +203,7 @@ def run_revision(run: Run, backend: Backend, models: list[str], lang: str, *, sa
                                                   "notes": "refused"}
         rep_b, warn = apply_changes(paras, bdata.get("paragraphs", []))
         out["warnings"] += warn
+        gate_plan(run, backend, models, writer, lang, paras, rep_b, plan="B", every=True)
         b_text = render_text(paras, rep_b)
         write_text_atomic(run.path("07-revision/B.md"), b_text)
         write_text_atomic(run.path("07-revision/B.diff"), diff_text(paras, rep_b))

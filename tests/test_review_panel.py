@@ -300,3 +300,28 @@ def test_report_process_with_one_reviewer(tmp_path):
     sec, _ = _process_md(tmp_path, ("opus",), {"opus": ok("opus", review_data(
         issues=[{"id": "I1"}]))})
     assert "no cross-review" in sec and "single opinion" in sec
+
+
+# @S-review-panel-026
+def test_report_lists_ai_writing_tells_as_signals(tmp_path):
+    from ant_peer_review.deliver import render_review
+    from ant_peer_review.i18n import T
+    from ant_peer_review.jsonio import write_json
+    from ant_peer_review.refresh import compute_consensus
+    from ant_peer_review.report import write_report
+    run = make_run(tmp_path, text="# T\n\n說到底，真正的問題是心態。\n\n作者寫過「值得一提的是」這句。"
+                                  "\n\n這一步至關重要。")
+    for m in ("opus", "sonnet"):
+        write_json(run.path(f"03-reviews/{m}.json"), ok(m, review_data()))
+    cons = compute_consensus(run, ["opus", "sonnet"], TH)
+    meta = write_report(run, cons, lang="en")
+    md = run.path(f"06-report.v{meta['version']}.md").read_text()
+    sec = md.split("## AI writing tells", 1)[1].split("\n## ", 1)[0]
+    assert "D1.P02" in sec and "說到底" in sec and "D1.P03" not in sec
+    assert "D1.P04" not in sec                                      # one weak tell alone
+    assert "not proof" in sec
+    assert compute_consensus(run, ["opus", "sonnet"], TH)["total"] == cons["total"]
+    review = render_review(run, cons, T("en"), TH, None)
+    row = next(ln for ln in review.splitlines() if ln.startswith("| AI writing tells"))
+    assert "fail" not in row and "1" in row
+

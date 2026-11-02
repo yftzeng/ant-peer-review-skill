@@ -162,6 +162,14 @@ Feature: review panel
     When  synthesis runs
     Then  that claim is a warning, not evidence, so the red line is not confirmed by it
     And   with an unsupported claim whose strength is strong, single or ungraded, "hallucination" is "confirmed" with it as evidence, as before
+
+  @S-review-panel-026
+  Scenario: the report lists AI writing tells in the article as signals, never as a verdict
+    Given an article whose D1.P02 says "說到底，真正的問題是心態。" and whose D1.P03 quotes 「值得一提的是」
+    When  the report is written
+    Then  an "AI writing tells" section lists D1.P02 with its tells, D1.P03 is not listed, half-width punctuation is never listed, a paragraph with a single weak tell is not listed,
+          and the section says these are signals of style, not proof of authorship; no red line or score changes
+    And   review.md has a checks row for it with the count, never "fail"
 ```
 
 ## Must NOT
@@ -179,3 +187,5 @@ Feature: review panel
 - 2026-10-25 · +S-review-panel-022 · decision: none -- user: live run asked for a veto ruling over a translated section title (C09) that no reviewer flagged; names and translations only warn
 - 2026-10-25 · +S-review-panel-023..024 · decision: none -- user: the report must disclose the models' proposals, debate and cross-review, with key points and the conclusion
 - 2026-10-26 · +S-review-panel-025 · decision: none -- user: 按你建議 (a single C-grade page may no longer confirm a veto)
+- 2026-11-02 · +S-review-panel-026 · decision: none -- user: evaluate AI-writing tells in audits; listed as style signals only (humanizer: judging by feel is near chance, several tells together are the safeguard)
+- 2026-11-02 · ~S-review-panel-026 · decision: none -- live audit: 29 rows of half-width parentheses and one lone buzzword drowned the signal; list only what the gate would edit

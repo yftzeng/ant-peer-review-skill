@@ -66,7 +66,7 @@ Feature: decision
     When  the plan is chosen
     Then  review.md has a verdict, a summary, key points that each cite finding ids, a checks table with one row per
           rubric dimension (score, pass / borderline / fail, the reviewers' reasons), one row per red line, and rows for
-          the fact-check, the injection scan and the report lint, then the findings, the review process and where the detail files are
+          the fact-check, the injection scan, the AI writing tells and the report lint, then the findings, the review process and where the detail files are
 
   @S-decision-010
   Scenario: the summary only keeps what the findings back
@@ -104,3 +104,4 @@ Feature: decision
 - 2026-10-22 · +S-decision-006 · decision: none -- adversarial security review (sonnet) proved these by running
 - 2026-10-25 · +S-decision-007..008 · decision: none -- user: the ruling prompt showed only "(b) ... —" with no reason, text or article, so the editor could not tell what to rule on
 - 2026-10-25 · ~S-decision-002 +S-decision-009..013 · decision: none -- user: end with audit (the best revision, like final), review (one detailed report with summary, key points and every check's score, result and reason) and reply files, one per style (appreciative, empathetic, pragmatic, socratic, critical), English names; drafting gets no reply
+- 2026-11-02 · ~S-decision-009 · decision: none -- review.md gains a checks row for the article's AI writing tells (S-review-panel-026)

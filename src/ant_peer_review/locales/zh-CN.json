@@ -405,5 +405,9 @@
   "share.voice.neutral": "用中性语气",
   "share.voice.never": "用中性语气，之后不再问这个平台",
   "share.voice.rebuild": "重新创建此平台语气（粘贴新的旧帖子）",
-  "gate.changed": "已修改"
+  "gate.changed": "已修改",
+  "report.tells": "AI 写作痕迹",
+  "report.tells_note": "这些是生成式文风的信号，供修稿参考，不能证明是谁或什么写的：人也会这样写，要多个一起出现才有参考价值。不影响分数，也不构成红线。",
+  "report.tells_found": "痕迹",
+  "gate.plan": "方案 {plan}"
 }

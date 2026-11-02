@@ -405,5 +405,9 @@
   "share.voice.neutral": "Write neutrally",
   "share.voice.never": "Write neutrally, and never ask again for this platform",
   "share.voice.rebuild": "Rebuild this platform's voice from new posts",
-  "gate.changed": "Changed"
+  "gate.changed": "Changed",
+  "report.tells": "AI writing tells",
+  "report.tells_note": "Signals of a generated style, for editing. They are not proof of who or what wrote the text: people use these too, and only several together mean much. They change no score and no red line.",
+  "report.tells_found": "Tells",
+  "gate.plan": "plan {plan}"
 }
