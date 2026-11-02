@@ -339,7 +339,15 @@ def interactive_intakes(io: IO, store: Store, ctx: Ctx) -> list[dict]:
         # The posts are for the user's followers: no audience card or brand to ask; the
         # article's suggested audience still guides the review.
         audience = sug
-        share = ask_share(io, t, store.home)
+
+        def make_voice(platform, posts, allow, deny):
+            from .voice import build_voice, save_voice
+            v = build_voice(ctx.backend, ctx.models[0], platform, posts, ctx.lang,
+                            allow=allow, deny=deny)
+            save_voice(store.home, v)
+            return v
+
+        share = ask_share(io, t, store.home, make_voice=make_voice)
     else:
         audience = ask_audience(io, t, initial=sug if any(sug.values()) else None)
     fact_sources = ask_fact_sources(io, t, res.get("fact_sources", []))
@@ -529,7 +537,7 @@ def cmd_deliver(args, io, store, cfg) -> int:
 def cmd_voice(args, io, store, cfg) -> int:
     """Paste past posts (--- between them, /done to end); one call describes the voice."""
     from .platforms import load_platforms
-    from .voice import PLATFORMS, build_voice, load_voice, save_voice
+    from .voice import PLATFORMS, build_voice, collect_posts, load_voice, save_voice
     t = T(cfg.lang)
     plats = load_platforms(store.home)
     if args.platform == "list":
@@ -541,26 +549,10 @@ def cmd_voice(args, io, store, cfg) -> int:
     if args.platform not in PLATFORMS:
         io.say(f"error: platform must be one of {', '.join(PLATFORMS)} or list")
         return EXIT_USAGE
-    io.say(question(t("voice.paste", platform=plats[args.platform]["name"])))
-    posts, cur = [], []
-    while True:
-        try:
-            line = io.ask(prompt(""))
-        except EOFError:
-            break
-        if line.strip() in END_TOKENS:
-            break
-        if line.strip() == "---":
-            posts.append("\n".join(cur).strip())
-            cur = []
-        else:
-            cur.append(line)
-    posts = [p for p in posts + ["\n".join(cur).strip()] if p]
+    posts, allow, deny = collect_posts(io, t, plats[args.platform]["name"])
     if not posts:
         io.say(t("voice.none"))
         return EXIT_USAGE
-    allow = [w.strip() for w in ask_text(io, t("voice.allow")).split(",") if w.strip()]
-    deny = [w.strip() for w in ask_text(io, t("voice.deny")).split(",") if w.strip()]
     ctx = make_ctx(args, io, store, cfg)
     v = build_voice(ctx.backend, ctx.models[0], args.platform, posts, ctx.lang,
                     allow=allow, deny=deny)

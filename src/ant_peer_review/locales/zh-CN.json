@@ -397,5 +397,12 @@
   "voice.allow": "你常用、不算 AI 味的词（逗号分隔，Enter 跳过）：",
   "voice.deny": "分享文一律不能用的词（逗号分隔，Enter 跳过）：",
   "voice.saved": "已从 {n} 篇帖子创建你的 {platform} 语气档：{path}",
-  "voice.row": "{n} 篇 · {date}"
+  "voice.row": "{n} 篇 · {date}",
+  "share.voice_applied": "{platform}：套用你的语气（{n} 篇，{date}）。",
+  "share.voice.ask": "{platform} 还没有你的语气档：",
+  "share.voice.create": "现在创建（粘贴 3–5 篇你在 {platform} 的旧帖子）",
+  "share.voice.borrow": "借用 {source} 的语气（按 {platform} 惯例调整）",
+  "share.voice.neutral": "用中性语气",
+  "share.voice.never": "用中性语气，之后不再问这个平台",
+  "share.voice.rebuild": "重新创建此平台语气（粘贴新的旧帖子）"
 }

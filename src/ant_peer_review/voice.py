@@ -72,8 +72,8 @@ def save_voice(home: Path, voice: dict) -> Path:
     return p
 
 
-def load_voice(home: Path, platform: str) -> dict | None:
-    return read_json(voice_path(home, platform), default=None)
+def load_voice(home: Path | None, platform: str) -> dict | None:
+    return read_json(voice_path(home, platform), default=None) if home else None
 
 
 def voice_for(home: Path, platform: str) -> tuple[dict | None, str | None]:
@@ -95,3 +95,43 @@ def preselected_style(home: Path, platform: str) -> str:
     if counts and max(counts.values()) > 0:
         return max(SHARE_STYLES, key=lambda s: counts.get(s, 0))
     return DEFAULT_STYLE[platform]
+
+
+def settings_path(home: Path) -> Path:
+    return Path(home) / "voices" / "_settings.json"
+
+
+def never_ask(home: Path) -> list[str]:
+    return read_json(settings_path(home), default={}).get("never_ask", [])
+
+
+def set_never_ask(home: Path, platform: str) -> None:
+    cfg = read_json(settings_path(home), default={})
+    cfg["never_ask"] = sorted(set(cfg.get("never_ask", [])) | {platform})
+    write_json(settings_path(home), cfg)
+
+
+def collect_posts(io, t, platform_name: str) -> tuple[list[str], list[str], list[str]]:
+    """Pasted posts (--- between them, /done or Ctrl-D to end), then allow and deny words."""
+    from .ui import END_TOKENS, ask_text, prompt, question
+    io.say(question(t("voice.paste", platform=platform_name)))
+    posts, cur = [], []
+    while True:
+        try:
+            line = io.ask(prompt(""))
+        except EOFError:
+            break
+        if line.strip() in END_TOKENS:
+            break
+        if line.strip() == "---":
+            posts.append("\n".join(cur).strip())
+            cur = []
+        else:
+            cur.append(line)
+    posts = [p for p in posts + ["\n".join(cur).strip()] if p]
+    if not posts:
+        return [], [], []
+    allow = [w.strip() for w in ask_text(io, t("voice.allow")).split(",") if w.strip()]
+    deny = [w.strip() for w in ask_text(io, t("voice.deny")).split(",") if w.strip()]
+    return posts, allow, deny
+

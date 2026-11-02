@@ -88,8 +88,12 @@ def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T
     source = article_text(run)
     take = share.get("take", "")
     voices, borrowed = {}, {}
+    chosen = share.get("voices") or {}
     for p in {p for p, _ in pairs}:
-        voices[p], borrowed[p] = voice_for(home, p) if home else (None, None)
+        if chosen.get(p) == "neutral" or not home:   # the user asked for no voice here
+            voices[p], borrowed[p] = None, None
+        else:
+            voices[p], borrowed[p] = voice_for(home, p)
     vetoed = [k for k, v in cons["red_lines"].items() if v["status"] == "confirmed"]
     unsupported = [c["text"] for c in read_ledger(run) if c["status"] == "unsupported"]
 

@@ -88,7 +88,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | 指令 | 用途 |
 |---|---|
 | `ant-peer-review resume <run>` | 從第一個沒完成的階段繼續。 |
-| `ant-peer-review voice <平台>` / `voice list` | 從你在某平台（x、facebook、threads、instagram、linkedin、line）發過的 3–5 篇貼文學出你的語氣，可加白名單和禁用詞。該平台的分享文會套用它，並預選你最常寫的風格；沒有語氣檔的平台會借用最接近的。 |
+| `ant-peer-review voice <平台>` / `voice list` | 從你在某平台（x、facebook、threads、instagram、linkedin、line）發過的 3–5 篇貼文學出你的語氣，可加白名單和禁用詞。通常用不到：分享模式的互動流程會針對沒有語氣檔的平台詢問（現在建立、借用最接近的、中性語氣，或之後不再問），風格選單旁也能重新建立。該平台的分享文會套用它，並預選你最常寫的風格；沒有語氣檔的平台會借用最接近的。 |
 | `ant-peer-review more [<run>]` | 從先前某個工作的 feed 再挑文章（預設是最近一個 feed 工作），沿用它的用途、受眾卡、品牌與事實來源，直接跳到文章清單。清單每頁 10 篇、由舊到新，已審過的會註明；再勾一次就是重審。 |
 | `ant-peer-review rerun <run> --from review` | 從指定階段重跑。 |
 | `ant-peer-review factcheck <run> --continue` | 補查還沒驗證的事實。中途停下時，可選「下次再繼續」或「終止並完成」。選「終止並完成」時，只有事實真的有變化才會產生新版報告並附變更紀錄，而且不會重新呼叫 reviewer。 |

@@ -189,31 +189,83 @@ def parse_share(platforms: str | None, stance: str | None, take: str | None,
                 raise ValueError(f"--share-style: platform=style+style with styles from "
                                  f"{', '.join(SHARE_STYLES)}")
             chosen[p] = vals
+    from .voice import load_voice
     order = [p for p in PLATFORMS if p in picked]
     return {"platforms": order, "stance": stance, "take": (take or "").strip(),
-            "styles": {p: chosen.get(p) or [preselected_style(home, p)] for p in order}}
+            "styles": {p: chosen.get(p) or [preselected_style(home, p)] for p in order},
+            "voices": {p: "own" if load_voice(home, p) else "borrow" for p in order}}
 
 
-def ask_share(io: IO, t: T, home) -> dict:
-    """Platforms (preselected where a voice exists), stance, own take, styles per platform."""
+def ask_share(io: IO, t: T, home, make_voice=None) -> dict:
+    """Platforms (ticked where a voice exists), a voice for each platform without one,
+    stance, own take, styles per platform (preselected from the voice).
+    make_voice(platform, posts, allow, deny) builds and saves a voice; None: cannot."""
     from .platforms import load_platforms
     from .share import STANCES
     from .ui import ask_text
-    from .voice import PLATFORMS, SHARE_STYLES, load_voice, preselected_style
+    from .voice import (PLATFORMS, SHARE_STYLES, collect_posts, load_voice, never_ask,
+                        preselected_style, set_never_ask, voice_for)
     plats = load_platforms(home)
     have = [p for p in PLATFORMS if load_voice(home, p)]
     platforms = checkbox(io, t, t("share.platforms"),
                          [(p, plats[p]["name"] + ("" if p in have else f"  {t('share.no_voice_mark')}"))
                           for p in PLATFORMS], have, min_selected=1)
+
+    def create(p: str) -> bool:
+        posts, allow, deny = collect_posts(io, t, plats[p]["name"])
+        if not posts or make_voice is None:
+            io.say(t("voice.none"))
+            return False
+        v = make_voice(p, posts, allow, deny)
+        io.say(dim("  " + t("voice.saved", platform=plats[p]["name"], n=v["posts"], path="")
+                   .rstrip(": ")))
+        return True
+
+    voices = {}
+    for p in platforms:
+        name = plats[p]["name"]
+        own = load_voice(home, p)
+        if own:
+            voices[p] = "own"
+            io.say(dim("  " + t("share.voice_applied", platform=name, n=own["posts"],
+                                date=own.get("updated_at", "")[:10])))
+            continue
+        if p in never_ask(home):
+            voices[p] = "neutral"
+            continue
+        _, borrowed = voice_for(home, p)
+        opts = [("create", t("share.voice.create", platform=name))]
+        if borrowed:
+            opts.append(("borrow", t("share.voice.borrow", source=plats[borrowed]["name"],
+                                     platform=name)))
+        opts += [("neutral", t("share.voice.neutral")), ("never", t("share.voice.never"))]
+        ans = radio(io, t, t("share.voice.ask", platform=name), opts,
+                    default="borrow" if borrowed else "neutral")
+        if ans == "never":
+            set_never_ask(home, p)
+        if ans == "create" and create(p):
+            voices[p] = "own"
+        else:   # a voice that could not be created falls back to neutral
+            voices[p] = "borrow" if ans == "borrow" else "neutral"
     stance = radio(io, t, t("share.stance"), [(s, t("share.stance." + s)) for s in STANCES],
                    default="recommend")
     take = ask_text(io, t("share.take")).strip()
     styles = {}
     for p in platforms:
-        styles[p] = checkbox(io, t, t("share.styles", platform=plats[p]["name"]),
-                             [(s, t("share.style." + s)) for s in SHARE_STYLES],
-                             [preselected_style(home, p)], min_selected=1)
-    return {"platforms": platforms, "stance": stance, "take": take, "styles": styles}
+        while True:
+            opts = [(s, t("share.style." + s)) for s in SHARE_STYLES]
+            if voices[p] == "own":
+                opts.append(("__rebuild__", t("share.voice.rebuild")))
+            picked = checkbox(io, t, t("share.styles", platform=plats[p]["name"]), opts,
+                              [preselected_style(home, p) if voices[p] == "own"
+                               else preselected_style(None, p)], min_selected=1)
+            if "__rebuild__" in picked:
+                create(p)
+                continue
+            styles[p] = picked
+            break
+    return {"platforms": platforms, "stance": stance, "take": take, "styles": styles,
+            "voices": voices}
 
 
 def run_intake_interactive(io: IO, t: T, lang: str) -> dict:

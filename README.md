@@ -83,7 +83,7 @@ Every run lives in its own folder, with `state.json` recording each phase's inpu
 | Command | What it does |
 |---|---|
 | `ant-peer-review resume <run>` | Continue from the first unfinished phase. |
-| `ant-peer-review voice <platform>` / `voice list` | Learn your voice on a platform (x, facebook, threads, instagram, linkedin, line) from 3-5 of your past posts there, with words you allow and words to ban. Share posts on that platform use it, and its most used style is preselected; a platform without a voice borrows the nearest one. |
+| `ant-peer-review voice <platform>` / `voice list` | Learn your voice on a platform (x, facebook, threads, instagram, linkedin, line) from 3-5 of your past posts there, with words you allow and words to ban. You rarely need it: the share intake asks for a voice for each chosen platform that has none (create now, borrow the nearest, neutral, or never ask again), and offers to rebuild one next to its styles. Share posts on that platform use it, and its most used style is preselected; a platform without a voice borrows the nearest one. |
 | `ant-peer-review more [<run>]` | Pick more articles from the feed of an earlier run (default: the latest feed run), reusing its purpose, audience, brand and fact sources. The list shows 10 a page, oldest first, and marks articles already reviewed; ticking one again re-reviews it. |
 | `ant-peer-review rerun <run> --from review` | Redo the run from a chosen phase. |
 | `ant-peer-review factcheck <run> --continue` | Retry unverified claims. When it stops, choose **continue another time** or **stop and finalize**. Finalize writes the next report version, with a changelog, only if facts changed. No reviewer is called again. |

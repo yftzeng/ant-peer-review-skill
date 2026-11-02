@@ -12,13 +12,16 @@ preselected from that voice. Every post passes the writing gate.
 ```gherkin
 Feature: share
   @S-share-001
-  Scenario: the share intake asks for platforms, stance, the user's own take and styles, not the audience card
+  Scenario: the share intake asks for platforms, voices, stance, the user's own take and styles, not the audience card
     Given a voice file for LinkedIn whose posts were mostly "insight", and no other voice file
-    When  the user chooses purpose "share", enters a URL and goes through the intake
+    When  the user chooses purpose "share", enters a URL, ticks X as well and borrows the LinkedIn voice for X
     Then  after the content check a checkbox lists X/Twitter, Facebook, Threads, Instagram, LinkedIn, LINE in that order
-          with LinkedIn ticked, then the stance (recommend, extend, reserved, rebut), then an optional own take,
-          then one style checkbox per chosen platform with LinkedIn preselecting "insight" and X preselecting "summary"
-    And   no audience card and no brand are asked, and 00-intake.json holds share {platforms, stance, take, styles}
+          with LinkedIn ticked; X, having no voice, is asked whether to create one, borrow LinkedIn's, write neutrally,
+          or write neutrally and never ask again; LinkedIn is not asked and its voice is shown as applied;
+          then the stance (recommend, extend, reserved, rebut), an optional own take,
+          and one style checkbox per platform with LinkedIn preselecting "insight" and X preselecting "summary"
+    And   no audience card and no brand are asked, and 00-intake.json holds share {platforms, stance, take, styles, voices}
+          with voices {x: "borrow", linkedin: "own"}
 
   @S-share-002
   Scenario: a voice file is learned from pasted posts, per platform
@@ -55,6 +58,22 @@ Feature: share
     When  "ant-peer-review new --yes --purpose share --target <text> --platform x,linkedin --stance recommend --take '我們也遇過'" runs, then "decide <run> --yes"
     Then  the run pauses at the decision, and decide writes share-x-summary.md and share-linkedin-insight.md (the platform defaults)
     And   an unknown platform or stance is refused with the allowed values
+
+  @S-share-007
+  Scenario: a missing voice is created inside the intake and preselects the style at once
+    Given no voice file
+    When  the user ticks Threads, chooses "create it now", pastes three posts separated by "---", allows one word and denies one
+    Then  one model call builds voices/threads.json, the Threads style checkbox preselects that voice's most used style,
+          and the run records voices {threads: "own"}
+    And   on a later run the style checkbox for Threads offers "rebuild this platform's voice"; ticking it asks for posts again,
+          replaces the voice file and asks the styles again
+
+  @S-share-008
+  Scenario: a neutral voice is honoured, and "never ask" is remembered
+    Given a voice file for Threads only
+    When  the user ticks X and chooses "neutral, and never ask again for this platform"
+    Then  the X post is written with no voice even though Threads' could be borrowed,
+          and the next share intake does not ask about X's voice
 ```
 
 ## Must NOT
@@ -64,3 +83,4 @@ Feature: share
 - 2026-11-02 · created · decision: none -- audit writes to the author and drafting writes a new piece for readers; nothing writes a post that recommends someone else's article to the user's own followers, in the user's own voice per platform
 - 2026-11-02 · +S-share-001..006 +N-share-001 · decision: none -- user: share mode; platforms multi-select in the order X/Twitter, Facebook, Threads, Instagram, LinkedIn, LINE; the voice follows the platform and preselects the style instead of being picked separately
 - 2026-11-02 · ~S-share-004 · decision: none -- live share run: the shared link kept ithelp's ?sc=rss.iron tracking parameter
+- 2026-11-02 · ~S-share-001 +S-share-007..008 · decision: none -- user: the voice should come up during the interaction, not only through a separate command; it is asked only for platforms without one, then applied automatically

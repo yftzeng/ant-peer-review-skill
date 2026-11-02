@@ -116,6 +116,7 @@ def test_borrowed_voice(tmp_path):
 @pytest.fixture
 def env(tmp_path, monkeypatch):
     from test_cli import OfflineCrawler
+    CountingFake.calls = []
     monkeypatch.setattr(cli, "get_backend", lambda name: CountingFake())
     monkeypatch.setattr(cli, "make_feed_crawler", lambda store: OfflineCrawler())
     store = Store(tmp_path / "home")
@@ -144,6 +145,7 @@ def test_share_intake_order_and_preselection(env):
     save_voice(env.home, voice("linkedin", insight=3, summary=1))
     io = ScriptedIO(["3", "Some pasted article text with 2025 numbers.", "/done",
                      "1", "",          # platforms: tick X as well, confirm
+                     "2",              # X has no voice: borrow LinkedIn's
                      "",               # stance: recommend
                      "",               # own take: none
                      "", "",           # styles for X, LinkedIn: keep preselection
@@ -154,11 +156,65 @@ def test_share_intake_order_and_preselection(env):
     first = text.index("X/Twitter")
     assert [text.index(lb, first) for lb in labels] == sorted(text.index(lb, first) for lb in labels)
     assert "[x] LinkedIn" in text
+    assert "X/Twitter has no voice of yours" in text and "LinkedIn has no voice" not in text
+    assert "LinkedIn: your voice is applied (3 posts" in text
     intake = read_json(list_runs(env.runs_dir)[0].path("00-intake.json"))
     assert intake["purpose"] == "share"
     assert intake["share"] == {"platforms": ["x", "linkedin"], "stance": "recommend", "take": "",
-                               "styles": {"x": ["summary"], "linkedin": ["insight"]}}
+                               "styles": {"x": ["summary"], "linkedin": ["insight"]},
+                               "voices": {"x": "borrow", "linkedin": "own"}}
     assert "Audience card" not in text and "Brand name" not in text
+
+
+# @S-share-007
+def test_voice_created_inside_the_intake(env):
+    answers = ["3", "Some pasted article text with 2025 numbers.", "/done",
+               "3", "",                                      # platforms: Threads only
+               "1",                                          # create its voice now
+               "一篇。", "---", "兩篇。", "---", "三篇。", "/done", "扎實", "賦能",
+               "", "",                                       # stance, own take
+               "", ""]                                       # Threads styles, fact sources
+    io = ScriptedIO(answers)
+    cli.main([], io=io, store=env)
+    v = load_voice(env.home, "threads")
+    assert v["posts"] == 3 and v["allow"] == ["扎實"] and v["deny"] == ["賦能"]
+    intake = read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))
+    assert intake["share"]["styles"]["threads"] == ["insight"]      # the fake voice's top style
+    assert intake["share"]["voices"] == {"threads": "own"}
+    assert [t for _, t in CountingFake.calls].count("voice") == 1
+
+    io = ScriptedIO(["",                                     # unfinished-run menu: start new
+                     "3", "Another article, 2026.", "/done", "", "", "",   # Threads is ticked now
+                     "6", "",                                # tick "rebuild this voice"
+                     "新的一篇。", "/done", "", "",
+                     "", ""])                                # styles again, fact sources
+    cli.main([], io=io, store=env)
+    assert "rebuild" in io.text.lower()
+    assert load_voice(env.home, "threads")["posts"] == 1
+
+
+# @S-share-008
+def test_neutral_never_ask_is_remembered(env, tmp_path):
+    save_voice(env.home, voice("threads", question=3))
+    io = ScriptedIO(["3", "Article text, 2025.", "/done", "1 3", "",  # X only (Threads was ticked)
+                     "4", "", "", "", ""])                          # never ask; stance, take, style, facts
+    cli.main([], io=io, store=env)
+    run = list_runs(env.runs_dir)[-1]
+    assert read_json(run.path("00-intake.json"))["share"]["voices"] == {"x": "neutral"}
+    io = ScriptedIO(["", "3", "Article text, 2026.", "/done", "1 3", "", "", "", "", ""])
+    cli.main([], io=io, store=env)
+    assert "X/Twitter has no voice of yours" not in io.text and "Post styles for X" in io.text
+
+    run2, store2 = share_run(tmp_path / "w", ["x"], {"x": ["summary"]})
+    save_voice(store2.home, voice("threads", question=3))
+    intake = read_json(run2.path("00-intake.json"))
+    intake["share"]["voices"] = {"x": "neutral"}
+    write_json(run2.path("00-intake.json"), intake)
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share"): posts(x_summary=X_POST)})
+    decide(run2, store2, b)
+    prompt = [c for c in b.calls if c["task"] == "share"][0]["prompt"]
+    assert "threads voice" not in prompt and "no voice file" in prompt
 
 
 # @S-share-006

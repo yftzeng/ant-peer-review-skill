@@ -397,5 +397,12 @@
   "voice.allow": "Words you use that are not 'AI taste' (comma-separated, Enter to skip):",
   "voice.deny": "Words the posts must never use (comma-separated, Enter to skip):",
   "voice.saved": "Saved your {platform} voice from {n} posts: {path}",
-  "voice.row": "{n} posts · {date}"
+  "voice.row": "{n} posts · {date}",
+  "share.voice_applied": "{platform}: your voice is applied ({n} posts, {date}).",
+  "share.voice.ask": "{platform} has no voice of yours:",
+  "share.voice.create": "Create it now (paste 3-5 of your past {platform} posts)",
+  "share.voice.borrow": "Borrow your {source} voice (adapted to {platform})",
+  "share.voice.neutral": "Write neutrally",
+  "share.voice.never": "Write neutrally, and never ask again for this platform",
+  "share.voice.rebuild": "Rebuild this platform's voice from new posts"
 }
