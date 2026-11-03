@@ -150,7 +150,8 @@ def slug_for(target: str) -> str:
         return f"{u.hostname or 'url'} {Path(last[0]).stem}".strip()
     first = s.splitlines()[0] if s else "run"
     looks_like_path = "\n" not in s and " " not in s and ("/" in s or "\\" in s)
-    if len(s) < 4096 and (looks_like_path or ("\n" not in s and Path(s).expanduser().exists())):
+    from .intake import existing_path
+    if len(s) < 4096 and (looks_like_path or existing_path(s)):
         return Path(s).stem or Path(s).name
     return first.lstrip("#").strip()[:40] or "run"
 

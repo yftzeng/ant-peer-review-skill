@@ -20,15 +20,24 @@ LAYER_KEYS = [k for k, _ in AUDIENCE_LAYERS]
 URL_RE = re.compile(r"^https?://\S+$", re.I)
 
 
+def existing_path(s: str) -> Path | None:
+    """S-intake-015: the only check whether typed text names an existing file or folder.
+    A long pasted line exceeds the 255-byte limit of one path part; that is text, not an error."""
+    if not s or len(s) >= 4096 or "\n" in s:
+        return None
+    try:
+        p = Path(s).expanduser()
+        return p if p.exists() else None
+    except (OSError, ValueError):
+        return None
+
+
 def classify_target(s: str) -> dict:
     s = s.strip()
     if URL_RE.match(s):
         return {"kind": "url", "value": s}
-    try:   # S-intake-015: a long pasted line exceeds the 255-byte limit of one path part
-        if len(s) < 4096 and "\n" not in s and (p := Path(s).expanduser()).exists():
-            return {"kind": "path", "value": str(p.resolve())}
-    except (OSError, ValueError):
-        pass
+    if p := existing_path(s):
+        return {"kind": "path", "value": str(p.resolve())}
     return {"kind": "text", "value": s}
 
 

@@ -108,3 +108,17 @@ def test_long_pasted_line_is_text_not_a_crash():
     assert classify_target(line) == {"kind": "text", "value": line}
     io = ScriptedIO([line, "/done"])
     assert collect_targets(io, T("zh-TW")) == [{"kind": "text", "value": line}]
+
+
+# @S-intake-015
+def test_slug_of_a_long_line_and_one_path_check():
+    import re
+    from pathlib import Path
+    from ant_peer_review.cli import slug_for
+    line = "深度學習中，神經網絡權重通常靠梯度下降調整。" * 10 + " https://blog.example/post/"
+    assert slug_for(line) == line[:40]
+    src = Path(__file__).parents[1] / "src" / "ant_peer_review"
+    direct = re.compile(r"Path\([^()]*\)(?:\.expanduser\(\))?\.exists\(")
+    hits = [f"{f.relative_to(src)}:{i}" for f in src.rglob("*.py")
+            for i, l in enumerate(f.read_text().splitlines(), 1) if direct.search(l)]
+    assert hits == [], f"check typed paths with intake.existing_path: {hits}"

@@ -101,6 +101,7 @@ Feature: intake
   Scenario: a long pasted line that cannot be a file name is text
     When  the user enters one line of 200 Chinese characters ending with a URL (over 255 bytes, the limit of one path part)
     Then  it is one text target and nothing crashes
+    And   the run folder is named after its first words; every check whether typed text is an existing path goes through one helper
 ```
 
 ## Must NOT
@@ -112,3 +113,4 @@ Feature: intake
 - 2026-10-22 · +S-intake-009 · decision: none -- user: academic fact-checking only when the user asks for it, chosen in a checkbox after the audience
 - 2026-10-25 · ~S-intake-009 +S-intake-010..014 · decision: none -- user: analyse the targets right after they are entered (identity, content, structure; sample a long or messy text) and use the checklist to preselect the next steps, audience card included, still adjustable
 - 2026-11-03 · +S-intake-015 · decision: none -- live run: a 207-character pasted line crashed intake with OSError ENAMETOOLONG when checked as a path
+- 2026-11-03 · ~S-intake-015 · decision: none -- live run: the same line then crashed slug_for, a second unguarded path check; one helper now, and a test refuses a direct one
