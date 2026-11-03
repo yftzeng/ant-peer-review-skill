@@ -343,9 +343,9 @@ def test_distilled_post_names_no_one_and_ends_with_source(tmp_path):
     ask = [c for c in b.calls if c["task"] == "share_rewrite"][0]["prompt"]
     assert "name_leak: Acme" in ask and "name_leak: Jane Roe" in ask
     x = run.path("share-x-insight.md").read_text().strip()
-    assert x.startswith("流程越短") and x.endswith("延伸自：Title https://ex.example/a")
+    assert x.startswith("流程越短") and x.endswith("延伸自: Title https://ex.example/a")   # no voice: casual
     ig = run.path("share-instagram-insight.md").read_text().strip()
-    assert ig.endswith("延伸自：Title") and "https://" not in ig
+    assert ig.endswith("延伸自: Title") and "https://" not in ig
     checks = run.path("share-checks.md").read_text()
     assert "no_concrete_detail" not in checks and "no_attribution" not in checks
     judge = [c for c in b.calls if c["task"] == "judge"][0]
@@ -360,7 +360,8 @@ def test_distill_without_credit_adds_no_source_line(tmp_path):
                        ("*", "share_analysis"): ANALYSIS,
                        ("*", "share"): posts(x_insight=X_OK, instagram_insight=IG_OK)})
     decide(run, store, b)
-    assert run.path("share-x-insight.md").read_text().strip() == X_OK
+    from ant_peer_review.gate import autofix
+    assert run.path("share-x-insight.md").read_text().strip() == autofix(X_OK, punct="casual")[0]
 
 
 # @S-share-012
@@ -503,3 +504,31 @@ def test_correcting_distill_post_is_not_marked_not_recommended(tmp_path):
     text = run.path("share-x-insight.md").read_text()
     head = T("en")("share.corrects", lines="x").split("(")[0]
     assert text.startswith("> ⚠ " + head) and "Not recommended" not in text.split("\n")[0]
+
+
+# @S-share-018
+def test_share_posts_use_the_users_punctuation(tmp_path):
+    from ant_peer_review.voice import punct_of, punct_style
+    run, store = share_run(tmp_path, ["facebook", "threads"],
+                           {"facebook": ["insight"], "threads": ["insight"]})
+    intake = read_json(run.path("00-intake.json"))
+    intake["output_langs"] = ["zh-TW"]
+    intake["share"]["voices"] = {"facebook": "neutral", "threads": "own"}
+    write_json(run.path("00-intake.json"), intake)
+    full = ["我覺得流程要短，交接要少。", "今天讀到一篇好文，推薦給大家。", "重點只有一個：先量測。"]
+    save_voice(store.home, dict(voice("threads", insight=3), samples=full, punct=punct_style(full)))
+    text = "流程越短，錯誤越少。交接本身就是風險。Title https://ex.example/a"
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share"): posts(facebook_insight=text, threads_insight=text)})
+    decide(run, store, b)
+    fb = run.path("share-facebook-insight.md").read_text()
+    th = run.path("share-threads-insight.md").read_text()
+    assert "，" not in fb and "。" not in fb and "流程越短, 錯誤越少 交接本身就是風險" in fb
+    assert "流程越短，錯誤越少。" in th
+    sp = next(c for c in b.calls if c["task"] == "share")["prompt"]
+    fb_line = next(ln for ln in sp.splitlines() if "key facebook-insight" in ln)
+    th_line = next(ln for ln in sp.splitlines() if "key threads-insight" in ln)
+    assert "half-width" in fb_line and "full-width" in th_line
+    assert punct_style(["隨手寫寫 沒有標點", "今天讀到好文, 推薦!"]) == "casual"
+    assert punct_of(dict(voice("x"), samples=full)) == "full"        # a voice file from before
+    assert punct_of(None) == "casual"

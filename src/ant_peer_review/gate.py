@@ -84,6 +84,13 @@ HAN = "[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]"
 HALF_PARENS = re.compile(rf"(?<={HAN})\(([^()\n]*)\)")
 HALFWIDTH = re.compile(rf"(?<={CJK})[,:;!?]|[,:;!?](?=\s?{CJK})")
 FULLWIDTH = {",": "，", ":": "：", ";": "；", "!": "！", "?": "？"}
+BLOCKS = re.compile(r"[\u2580-\u259f\u25a0\u25ae]")       # ▋ █ ■ ▮: cursor and layout leftovers
+DASH = re.compile(r"[—–―]+")
+DASH_SPACED = re.compile(r"[ \t]*[—–―]+[ \t]*")
+PUNCT_STYLES = ("full", "casual")
+# S-writing-gate-016, casual: the half-width mark and whether a space follows it.
+CASUAL = {"，": ",", "、": ",", "；": ",", "：": ":", "！": "!", "？": "?"}
+FULL_MARKS = re.compile(r"[，、；：！？。「」『』“”（）]")
 MARKDOWN = re.compile(r"\*\*|\[[^\]]+\]\(https?://|^#{1,6} ", re.M)
 QUOTED = re.compile(r"「[^」]*」|『[^』]*』|“[^”]*”|\"[^\"\n]*\"")
 NUMBER = re.compile(r"\d[\d.,]*\d%?|\d%?")
@@ -115,7 +122,7 @@ def _scan_view(text: str, protect=()) -> str:
 
 def rule_check(text: str, *, platform: dict | None = None, take: str = "", allow=(),
                deny=(), source: str = "", attribution: dict | None = None,
-               protect=(), lang: str | None = None) -> list[dict]:
+               protect=(), lang: str | None = None, punct: str = "full") -> list[dict]:
     """Must-fix problems and strong / weak tells found without a model."""
     out: list[dict] = []
     view = _scan_view(text, protect)
@@ -147,14 +154,20 @@ def rule_check(text: str, *, platform: dict | None = None, take: str = "", allow
             out.append(_issue("tone", HARD, name))
     if EXPERIENCE.search(view) and not take.strip():
         out.append(_issue("invented_experience", HARD, EXPERIENCE.search(view).group(0)))
-    half = HALFWIDTH.findall(URL_RE.sub(" ", text)) + \
-        ["()" for _ in HALF_PARENS.finditer(URL_RE.sub(" ", text))]
-    if half:
-        out.append(_issue("halfwidth_punctuation", HARD, "".join(half)[:10]))
-    n_units = max(units(text), 1)
-    dashes = len(re.findall(r"—+|–", text))
-    if dashes >= 2 and dashes * 100 / n_units > 2:
-        out.append(_issue("dashes", WEAK, str(dashes)))
+    bare = URL_RE.sub(" ", text)
+    if punct == "casual":
+        full = FULL_MARKS.findall(bare)
+        if full:
+            out.append(_issue("fullwidth_punctuation", HARD, "".join(full)[:10]))
+    else:
+        half = HALFWIDTH.findall(bare) + ["()" for _ in HALF_PARENS.finditer(bare)]
+        if half:
+            out.append(_issue("halfwidth_punctuation", HARD, "".join(half)[:10]))
+    if BLOCKS.search(text):
+        out.append(_issue("block_char", HARD, BLOCKS.search(text).group(0)))
+    dashes = DASH.findall(_scan_view(text, protect))
+    if dashes:
+        out.append(_issue("dashes", HARD, str(len(dashes))))
     paras = [units(p) for p in re.split(r"\n\s*\n", text) if units(p) >= 8]
     if len(paras) >= 4 and statistics.pstdev(paras) / statistics.mean(paras) < 0.15:
         out.append(_issue("uniform_paragraphs", WEAK, str(len(paras))))
@@ -201,8 +214,51 @@ def needs_edit(issues: list[dict]) -> bool:
 
 
 # ---- the fix-up: changes that need no judgment ------------------------------------------
+def _dash(m: re.Match, text: str, casual: bool) -> str:
+    before, after = text[m.start() - 1:m.start()], text[m.end():m.end() + 1]
+    if before.isdigit() and after.isdigit():
+        return "-"
+    if casual:
+        return ", " if after not in ("", "\n") else ","
+    return "，" if re.match(CJK, before or " ") or re.match(CJK, after or " ") else ", "
+
+
+def _casual(text: str) -> str:
+    """S-writing-gate-016: full-width marks to half-width ones; the full stop goes."""
+    out = []
+    for i, ch in enumerate(text):
+        nxt = text[i + 1:i + 2]
+        if ch in CASUAL:
+            out.append(CASUAL[ch] + ("" if nxt in ("", "\n", " ") else " "))
+        elif ch == "。":
+            out.append("" if nxt in ("", "\n") else " ")
+        elif ch in "「『“":
+            out.append((" " if out and out[-1][-1:] not in (" ", "\n", "(") else "") + '"')
+        elif ch in "」』”":
+            out.append('"' + ("" if nxt in ("", "\n", " ") or nxt in ",.:!?)" + "".join(CASUAL) + "。"
+                              else " "))
+        elif ch == "（":
+            out.append((" " if out and out[-1][-1:] not in (" ", "\n") else "") + "(")
+        elif ch == "）":
+            out.append(")" + ("" if nxt in ("", "\n", " ", "。") or nxt in "".join(CASUAL) else " "))
+        else:
+            out.append(ch)
+    s = re.sub(r"[ \t]{2,}", " ", "".join(out))
+    return re.sub(r"[ \t]+$", "", s, flags=re.M)
+
+
+def _outside(text: str, shields: list[str], fn) -> str:
+    """fn applied to the text between quotes and protected strings, which stay as they are."""
+    rx = "|".join([QUOTED.pattern] + [re.escape(p) for p in shields if p])
+    parts, last = [], 0
+    for m in re.finditer(rx, text):
+        parts += [fn(text[last:m.start()]), m.group(0)]
+        last = m.end()
+    return "".join(parts + [fn(text[last:])])
+
+
 def autofix(text: str, *, platform: dict | None = None, allow=(), protect=(),
-            lang: str | None = None) -> tuple[str, list[str]]:
+            lang: str | None = None, punct: str = "full") -> tuple[str, list[str]]:
     """(fixed text, what changed). Never touches quotes, URLs or protected strings."""
     changes: list[str] = []
     allowed = {a.lower() for a in allow if a}
@@ -213,11 +269,30 @@ def autofix(text: str, *, platform: dict | None = None, allow=(), protect=(),
         return f"\x00{len(urls) - 1}\x00"
 
     out = URL_RE.sub(keep, text)
-    new = HALFWIDTH.sub(lambda m: FULLWIDTH[m.group(0)], out)
-    new = HALF_PARENS.sub(lambda m: f"（{m.group(1)}）", new)
+    casual = punct == "casual"
+    new = BLOCKS.sub("", out)
+    new = re.sub(r"[ \t]{2,}", " ", new) if new != out else new
     if new != out:
-        changes.append("halfwidth_punctuation → full width")
+        changes.append("removed block characters")
         out = new
+    found: list[str] = []
+    _outside(out, list(protect), lambda seg: found.extend(DASH.findall(seg)) or seg)
+    n = len(found)
+    if n:
+        out = _outside(out, list(protect),
+                       lambda seg: DASH_SPACED.sub(lambda m: _dash(m, seg, casual), seg))
+        changes.append(f"{n} dashes → commas")
+    if casual:
+        new = _casual(out)
+        if new != out:
+            changes.append("full-width punctuation → half width")
+            out = new
+    else:
+        new = HALFWIDTH.sub(lambda m: FULLWIDTH[m.group(0)], out)
+        new = HALF_PARENS.sub(lambda m: f"（{m.group(1)}）", new)
+        if new != out:
+            changes.append("halfwidth_punctuation → full width")
+            out = new
     for phrase in FILLER_OPENERS:
         if phrase.lower() in allowed:
             continue
@@ -225,11 +300,6 @@ def autofix(text: str, *, platform: dict | None = None, allow=(), protect=(),
         if rx.search(out) and not any(phrase in p for p in protect):
             out = rx.sub(lambda m: m.group(1), out)
             changes.append(f"removed filler opener “{phrase}”")
-    dashes = len(re.findall(r"—+|–", out))
-    if dashes >= 2 and dashes * 100 / max(units(out), 1) > 2:
-        out = re.sub(rf"(?<={CJK})\s*—+\s*|\s*—+\s*(?={CJK})", "，", out)
-        out = re.sub(r"\s+[—–]+\s+|[—–]+", ", ", out)
-        changes.append(f"{dashes} dashes → commas")
     if platform is not None:
         if MARKDOWN.search(out):
             out = re.sub(r"\*\*(.+?)\*\*", r"\1", out)

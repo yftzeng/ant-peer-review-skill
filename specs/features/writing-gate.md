@@ -22,10 +22,11 @@ Feature: writing gate
     And   with "值得一提的是" in the user's allow list only the first fails; a word in the deny list fails like a stock phrase
 
   @S-writing-gate-002
-  Scenario: structural tells are weak alone
-    Given a text with 3 em dashes in 100 units and 3 lines that start with an emoji, and a text of 4 paragraphs of equal length
+  Scenario: structural tells are weak alone; a dash is a must-fix
+    Given a text with 3 lines that start with an emoji, a text of 4 paragraphs of equal length, and a text with one "——"
     When  the rule check runs on each
-    Then  "dashes", "uniform_paragraphs" and "emoji_bullets" are weak tells and nothing is a must-fix
+    Then  "uniform_paragraphs" and "emoji_bullets" are weak tells and nothing else is; the dash is a must-fix "dashes",
+          as is any "—", "–" or "―" outside quotes
 
   @S-writing-gate-003
   Scenario: an invented personal experience is a hard failure
@@ -75,7 +76,7 @@ Feature: writing gate
 
   @S-writing-gate-010
   Scenario: one strong tell or two weak ones start an edit; one weak tell does not
-    Given texts with only many em dashes, with em dashes and emoji bullets, and with "說到底，"
+    Given texts with only emoji bullets, with emoji bullets and four equal paragraphs, and with "說到底，"
     When  the gate runs
     Then  the first is left as written, the second and third are edited
 
@@ -103,6 +104,23 @@ Feature: writing gate
     Given texts with "真正的問題是", "讓我們來看看", "我不是說", "希望這對你有幫助" and their English counterparts
     When  the rule check runs
     Then  they are strong tells "deep_saying", "run_up", "straw_man" and "chatbot_residue"
+
+  @S-writing-gate-015
+  Scenario: block characters and dashes are removed from every text the tool writes
+    Given "重點 ▋ 先看結果——再談方法。2020–2025 年，「原文——引述」不動。"
+    When  the fix-up runs
+    Then  it becomes "重點 先看結果，再談方法。2020-2025 年，「原文——引述」不動。": ▋ and the other block characters (U+2580-U+259F, ■, ▮) are deleted,
+          a dash between digits becomes "-", other dashes become a comma, and quoted text keeps its dashes
+    And   a block character left in a text is a must-fix "block_char"
+
+  @S-writing-gate-016
+  Scenario: casual punctuation turns full-width marks into half-width ones, and drops the full stop
+    Given the punctuation style "casual" and "先看結果，再談方法；重點是「迴圈」（不是能力）。真的嗎？是的！\n下一段：結束。"
+    When  the fix-up runs
+    Then  it becomes "先看結果, 再談方法, 重點是 \"迴圈\" (不是能力) 真的嗎? 是的!\n下一段: 結束": ，、； become ", ", ：！？ become ": " "! " "? ",
+          「」『』“” become \", （） become (), 。 becomes a space inside a line and nothing at a line end; spaces are not doubled
+    And   with "casual" a full-width mark left in a text is a must-fix "fullwidth_punctuation" and half-width marks are not a tell;
+          the style "full" (the default) keeps S-writing-gate-008 and 009 as they are
 ```
 
 ## Must NOT
@@ -115,3 +133,4 @@ Feature: writing gate
 - 2026-11-02 · ~S-writing-gate-001..002 ~S-writing-gate-005..008 +S-writing-gate-009..014 · decision: none -- user: de-AI must edit the text, not only check it; borrowed from humanizer (edit workflow, strong vs weak-alone tells, when not to act, keep facts), content-skills (hollow vs earned contrast), stop-slop (pattern families); Chinese tells written here
 - 2026-11-02 · ~N-writing-gate-001 · decision: none -- revision plans pass the gate too; a header inside the adopted article would end up in audit.md, so their failures go to the plan's checks file
 - 2026-11-02 · ~S-writing-gate-009 · decision: none -- live audit: "Term (中文註解)" list items were turned into "Term （…）"; only a parenthesis glued to a Han character is converted
+- 2026-11-03 · ~S-writing-gate-002 ~S-writing-gate-010 +S-writing-gate-015..016 · decision: none -- user: de-AI also means no ▋, no —— and, in social posts, no full-width punctuation (half-width, or none); replies and revised articles keep full-width, the Taiwan norm

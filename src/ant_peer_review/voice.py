@@ -5,6 +5,8 @@ most, so the style is preselected instead of chosen every time. A platform witho
 voice borrows the nearest one and adapts it to the platform's register."""
 from __future__ import annotations
 
+import re
+
 import statistics
 from datetime import datetime
 from pathlib import Path
@@ -63,7 +65,32 @@ def build_voice(backend: Backend, model: str, platform: str, posts: list[str], l
             "hashtags_per_post": round(sum(len(hashtags(p)) for p in posts) / len(posts), 1)
             if posts else 0,
             "allow": [w for w in allow if w], "deny": [w for w in deny if w],
+            "punct": punct_style(posts) or "casual",
             "updated_at": datetime.now().isoformat(timespec="seconds")}
+
+
+_FULL_P = re.compile(r"[，、；：！？。「」（）]")
+_HALF_P = re.compile(r"(?<=[\u4e00-\u9fff])[,;:!?]|[,;:!?](?=\s?[\u4e00-\u9fff])")
+
+
+def punct_style(posts: list[str]) -> str | None:
+    """S-share-018: "full" when the user's posts mostly use full-width marks, "casual" when
+    they use half-width ones or none; None when no post is in Chinese."""
+    zh = [p for p in posts if re.search(r"[\u4e00-\u9fff]", p)]
+    if not zh:
+        return None
+    full = sum(len(_FULL_P.findall(p)) for p in zh)
+    half = sum(len(_HALF_P.findall(p)) for p in zh)
+    cjk = sum(len(re.findall(r"[\u4e00-\u9fff]", p)) for p in zh)
+    return "full" if full > half and full * 40 >= cjk else "casual"
+
+
+def punct_of(voice: dict | None) -> str:
+    """The punctuation for posts in this voice: learned, else from its samples (a voice
+    file from before), else casual."""
+    if not voice:
+        return "casual"
+    return voice.get("punct") or punct_style(voice.get("samples") or []) or "casual"
 
 
 def save_voice(home: Path, voice: dict) -> Path:

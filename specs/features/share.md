@@ -158,6 +158,15 @@ Feature: share
     Then  it fails with must-fix "missing_subject GPT-6 Astra" and "missing_subject MATH-500" and is rewritten;
           a term without Latin letters or digits ("權重") is left to the judge, since another output language words it differently
     And   the writing rules say: no original creators, companies or sites; open with the topic and the main subject
+
+  @S-share-018
+  Scenario: share posts use the punctuation of the user's own posts, casual by default
+    Given a Threads voice learned from posts written with "，" and "。", and no Facebook voice
+    When  posts for Facebook and Threads are written in zh-TW
+    Then  the Facebook post is checked and fixed with the punctuation style "casual" and Threads with "full",
+          and each post's writing brief states its punctuation
+    And   a voice file learned from posts with half-width marks or none has the style "casual"; a voice file from before this
+          change gets its style from its stored samples
 ```
 
 ## Must NOT
@@ -175,3 +184,4 @@ Feature: share
 - 2026-11-03 · ~S-share-014 · decision: none -- live distill run: the claims table listed near-duplicate ledger claims twice (佔/占, 搞定/完成) and showed the model's own status words when it reworded a claim
 - 2026-11-03 · ~S-share-001 ~S-share-010 ~S-share-013 · decision: none -- user: tick Facebook by default; no source line by default (the analysis, own thesis and the paraphrase check now keep a distilled post from copying the article)
 - 2026-11-03 · ~S-share-011 ~S-share-012 ~S-share-014 +S-share-017 · decision: none -- live distill run (weight-space programming): the post named none of GPT-6 Astra, Qwen3.5-0.8B, MATH-500, because every product, benchmark and even Python was banned as a name; user: leave out the original creators, companies and sites; focus on the topic, the main subject and related people
+- 2026-11-03 · +S-share-018 · decision: none -- user: social posts without full-width punctuation; the voice already learns from the user's own posts, so it learns their punctuation too

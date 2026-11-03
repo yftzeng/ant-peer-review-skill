@@ -27,10 +27,13 @@ def test_stock_phrases_with_allow_and_deny():
 
 # @S-writing-gate-002
 def test_structural_tells_are_soft():
-    text = "流程要先理順——真的——就是這樣——。\n🚀 一\n✅ 二\n🔥 三"
+    text = "流程要先理順。真的就是這樣。\n🚀 一\n✅ 二\n🔥 三"
     issues = rule_check(text)
     assert codes(issues, "hard") == [] and codes(issues, "strong") == []
-    assert {"dashes", "emoji_bullets"} <= set(codes(issues, "weak"))
+    assert "emoji_bullets" in codes(issues, "weak")
+    for dash in ("——", "—", "–", "―"):
+        assert "dashes" in codes(rule_check(f"先看結果{dash}再談方法。"), "hard"), dash
+    assert "dashes" not in codes(rule_check("他說「先看——再談」。"))
     para = "這段話有二十個字左右，長度都很接近彼此差不多。"
     issues = rule_check("\n\n".join([para] * 4))
     assert codes(issues, "hard") == [] and "uniform_paragraphs" in codes(issues, "weak")
@@ -129,10 +132,11 @@ def test_fixup_changes_what_needs_no_judgment():
 
 # @S-writing-gate-010
 def test_strong_or_two_weak_start_an_edit():
-    many_dashes = "流程要先理順——真的——就是這樣——對吧。"
-    two_weak = many_dashes + "\n🚀 一\n✅ 二\n🔥 三"
+    bullets = "🚀 一\n✅ 二\n🔥 三"
+    para = "這段話有二十個字左右，長度都很接近彼此差不多。"
+    two_weak = bullets + "\n\n" + "\n\n".join([para] * 4)
     strong = "說到底，問題在結構。"
-    assert not needs_edit(rule_check(many_dashes)) and needs_edit(rule_check(two_weak))
+    assert not needs_edit(rule_check(bullets)) and needs_edit(rule_check(two_weak))
     assert needs_edit(rule_check(strong))
     seen = []
     run_gate({"one": "流程要先理順。真的就是這樣，對吧，" + "很長的一句話" * 3,
@@ -185,3 +189,27 @@ def test_staging_tells_in_both_languages():
     for text, code in cases.items():
         assert code in codes(rule_check(text), "strong"), text
 
+
+
+# @S-writing-gate-015
+def test_blocks_and_dashes_removed_everywhere():
+    text = "重點 ▋ 先看結果——再談方法。2020–2025 年，「原文——引述」不動。"
+    out, changes = autofix(text)
+    assert out == "重點 先看結果，再談方法。2020-2025 年，「原文——引述」不動。", out
+    assert changes
+    assert not any("dash" in c for c in autofix("他說「重點在這裡」。")[1])
+    assert autofix("共 1,000 人 — 不少")[0] == "共 1,000 人，不少"
+    assert autofix("共 1,000 人 — 不少", punct="casual")[0] == "共 1,000 人, 不少"
+    for ch in "▋▌█■▮":
+        assert "block_char" in codes(rule_check(f"重點{ch}結果。"), "hard"), ch
+
+
+# @S-writing-gate-016
+def test_casual_punctuation():
+    text = "先看結果，再談方法；重點是「迴圈」（不是能力）。真的嗎？是的！\n下一段：結束。"
+    out, changes = autofix(text, punct="casual")
+    assert out == '先看結果, 再談方法, 重點是 "迴圈" (不是能力) 真的嗎? 是的!\n下一段: 結束', out
+    assert "fullwidth_punctuation" in codes(rule_check("先看結果，再談。", punct="casual"), "hard")
+    assert codes(rule_check("先看結果, 再談方法 真的嗎?", punct="casual"), "hard") == []
+    assert "halfwidth_punctuation" in codes(rule_check("先看結果,再談方法。"), "hard")
+    assert autofix("K8s 入門系列,先會 Docker。")[0] == "K8s 入門系列，先會 Docker。"
