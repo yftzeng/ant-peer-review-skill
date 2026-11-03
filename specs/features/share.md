@@ -16,7 +16,7 @@ Feature: share
     Given a voice file for LinkedIn whose posts were mostly "insight", and no other voice file
     When  the user chooses purpose "share", enters a URL, ticks X as well and borrows the LinkedIn voice for X
     Then  after the content check a checkbox lists Facebook, Threads, Instagram, X/Twitter, LinkedIn, LINE in that order
-          with LinkedIn ticked; X, having no voice, is asked whether to create one, borrow LinkedIn's, write neutrally,
+          with Facebook (the default platform) and LinkedIn (it has a voice) ticked, and the user unticks Facebook; X, having no voice, is asked whether to create one, borrow LinkedIn's, write neutrally,
           or write neutrally and never ask again; LinkedIn is not asked and its voice is shown as applied;
           then the stance (recommend, extend, reserved, rebut), an optional own take,
           and one style checkbox per platform with LinkedIn preselecting "insight" and X preselecting "summary"
@@ -89,8 +89,9 @@ Feature: share
     When  the user chooses purpose "share", enters a text, keeps the output language and picks the angle "distill"
     Then  the angle question lists "comment" (論評此文) and "distill" (概念提純), before the platforms
     And   no stance is asked, each platform's style checkbox offers only "insight" and "question" (insight preselected),
-          a question asks whether to end with a source line (yes by default),
-          and 00-intake.json holds share {angle: "distill", credit: true} with no stance
+          a question asks whether to end with a source line (no by default, neither answer marked as recommended),
+          and 00-intake.json holds share {angle: "distill", credit: false} with no stance
+    And   with no voice file at all, Facebook alone is ticked in the platform checkbox
 
   @S-share-011
   Scenario: a distilled post names no one from the article and ends with the source line
@@ -111,9 +112,11 @@ Feature: share
 
   @S-share-013
   Scenario: the angle and the source line from arguments
-    When  "ant-peer-review new --yes --purpose share --target <text> --platform x --angle distill --no-credit" runs
-    Then  00-intake.json holds share {angle: "distill", credit: false, styles {x: ["insight"]}} and no stance
+    When  "ant-peer-review new --yes --purpose share --target <text> --platform x --angle distill" runs
+    Then  00-intake.json holds share {angle: "distill", credit: false, styles {x: ["insight"]}} and no stance;
+          with "--credit" credit is true, and "--no-credit" is still accepted and keeps it false
     And   without --angle the angle is "comment"; "--angle rant" is refused with the allowed values
+    And   without --platform the platforms are ["facebook"]
 
   @S-share-014
   Scenario: distilling starts with an analysis of the article's purpose and of each claim's truth
@@ -156,3 +159,4 @@ Feature: share
 - 2026-11-02 · ~S-share-001 +S-share-010..013 · decision: none -- user: a share angle, one of comment (reuse, extend or critique the article: the existing stances) or distill (filter out people and company names, distill the underlying logic, and develop it with independent thinking); the source line keeps distilling from becoming plagiarism
 - 2026-11-02 · ~S-share-011..012 +S-share-014..016 · decision: none -- live distill run (craft-anything): the posts ignored the confirmed hallucination and PR landmine, distilled the project's README (passed as a second target and merged into the article) into a truism, and the judge, seeing only the post, passed it; user: dig out the article's purpose, keep or strengthen what is true, drop or correct what is false, and land on reinforce, oppose or a middle view, never empty or self-evident
 - 2026-11-03 · ~S-share-014 · decision: none -- live distill run: the claims table listed near-duplicate ledger claims twice (佔/占, 搞定/完成) and showed the model's own status words when it reworded a claim
+- 2026-11-03 · ~S-share-001 ~S-share-010 ~S-share-013 · decision: none -- user: tick Facebook by default; no source line by default (the analysis, own thesis and the paraphrase check now keep a distilled post from copying the article)

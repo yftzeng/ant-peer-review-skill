@@ -145,7 +145,7 @@ def test_share_intake_order_and_preselection(env):
     save_voice(env.home, voice("linkedin", insight=3, summary=1))
     io = ScriptedIO(["3", "Some pasted article text with 2025 numbers.", "/done",
                      "", "",           # output languages, angle: comment
-                     "4", "",          # platforms: tick X as well, confirm
+                     "1", "4", "",     # platforms: untick Facebook, tick X as well, confirm
                      "2",              # X has no voice: borrow LinkedIn's
                      "",               # stance: recommend
                      "",               # own take: none
@@ -156,7 +156,7 @@ def test_share_intake_order_and_preselection(env):
     labels = ["Facebook", "Threads", "Instagram", "X/Twitter", "LinkedIn", "LINE"]
     first = text.index("Facebook")
     assert [text.index(lb, first) for lb in labels] == sorted(text.index(lb, first) for lb in labels)
-    assert "[x] LinkedIn" in text
+    assert "[x] Facebook" in text and "[x] LinkedIn" in text
     assert "X/Twitter has no voice of yours" in text and "LinkedIn has no voice" not in text
     assert "LinkedIn: your voice is applied (3 posts" in text
     intake = read_json(list_runs(env.runs_dir)[0].path("00-intake.json"))
@@ -171,7 +171,7 @@ def test_share_intake_order_and_preselection(env):
 # @S-share-007
 def test_voice_created_inside_the_intake(env):
     answers = ["3", "Some pasted article text with 2025 numbers.", "/done", "", "",
-               "2", "",                                      # platforms: Threads only
+               "1 2", "",                                    # platforms: Threads only
                "1",                                          # create its voice now
                "一篇。", "---", "兩篇。", "---", "三篇。", "/done", "扎實", "賦能",
                "", "",                                       # stance, own take
@@ -185,7 +185,7 @@ def test_voice_created_inside_the_intake(env):
     assert intake["share"]["voices"] == {"threads": "own"}
     assert [t for _, t in CountingFake.calls].count("voice") == 1
 
-    io = ScriptedIO(["3", "Another article, 2026.", "/done", "", "", "", "", "",   # Threads is ticked now
+    io = ScriptedIO(["3", "Another article, 2026.", "/done", "", "", "1", "", "", "",  # Threads ticked now; Facebook off
                      "6", "",                                # tick "rebuild this voice"
                      "新的一篇。", "/done", "", "",
                      "", ""])                                # styles again, fact sources
@@ -197,12 +197,12 @@ def test_voice_created_inside_the_intake(env):
 # @S-share-008
 def test_neutral_never_ask_is_remembered(env, tmp_path):
     save_voice(env.home, voice("threads", question=3))
-    io = ScriptedIO(["3", "Article text, 2025.", "/done", "", "", "2 4", "",  # X only (Threads was ticked)
+    io = ScriptedIO(["3", "Article text, 2025.", "/done", "", "", "1 2 4", "",  # X only (Facebook, Threads were ticked)
                      "4", "", "", "", ""])                          # never ask; stance, take, style, facts
     cli.main([], io=io, store=env)
     run = list_runs(env.runs_dir)[-1]
     assert read_json(run.path("00-intake.json"))["share"]["voices"] == {"x": "neutral"}
-    io = ScriptedIO(["3", "Article text, 2026.", "/done", "", "", "2 4", "", "", "", "", ""])
+    io = ScriptedIO(["3", "Article text, 2026.", "/done", "", "", "1 2 4", "", "", "", "", ""])
     cli.main([], io=io, store=env)
     assert "X/Twitter has no voice of yours" not in io.text and "Post styles for X" in io.text
 
@@ -275,11 +275,11 @@ def test_share_intake_asks_angle_and_distill_rules(env):
     io = ScriptedIO(["3", "Some pasted article text with 2025 numbers.", "/done",
                      "",               # output language
                      "2",              # angle: distill
-                     "2", "",          # platforms: Threads
+                     "1", "2", "",     # platforms: Facebook (ticked) off, Threads on
                      "",               # Threads has no voice: neutral
                      "",               # own take: none
                      "",               # Threads styles: keep insight
-                     "",               # source line: yes
+                     "",               # source line: no (the default)
                      ""])              # fact sources
     cli.main([], io=io, store=env)
     text = io.text
@@ -293,7 +293,9 @@ def test_share_intake_asks_angle_and_distill_rules(env):
     assert f"[x] {t('share.style.insight')}" in styles and t("share.style.question") in styles
     assert t("share.style.summary") not in styles and t("share.style.pick") not in styles
     intake = read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))
-    assert intake["share"]["angle"] == "distill" and intake["share"]["credit"] is True
+    assert intake["share"]["angle"] == "distill" and intake["share"]["credit"] is False
+    assert "1) [x] Facebook" in text and "2) [ ] Threads" in text
+    assert "recommended" not in t("share.credit.yes").lower()
     assert "stance" not in intake["share"] and intake["share"]["styles"] == {"threads": ["insight"]}
 
 
@@ -373,9 +375,16 @@ def test_judge_extra_checks_need_quoted_evidence():
 # @S-share-013
 def test_angle_from_arguments(env):
     cli.main(["new", "--yes", "--backend", "fake", "--purpose", "share", "--target", TEXT,
-              "--platform", "x", "--angle", "distill", "--no-credit"], io=NoAskIO(), store=env)
+              "--platform", "x", "--angle", "distill"], io=NoAskIO(), store=env)
     share = read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))["share"]
     assert share["angle"] == "distill" and share["credit"] is False
+    for flag, want in (("--credit", True), ("--no-credit", False)):
+        cli.main(["new", "--yes", "--backend", "fake", "--purpose", "share", "--target", TEXT,
+                  "--platform", "x", "--angle", "distill", flag], io=NoAskIO(), store=env)
+        assert read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))["share"]["credit"] is want
+    cli.main(["new", "--yes", "--backend", "fake", "--purpose", "share", "--target", TEXT],
+             io=NoAskIO(), store=env)
+    assert read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))["share"]["platforms"] == ["facebook"]
     assert share["styles"] == {"x": ["insight"]} and "stance" not in share
     cli.main(["new", "--yes", "--backend", "fake", "--purpose", "share", "--target", TEXT,
               "--platform", "x"], io=NoAskIO(), store=env)

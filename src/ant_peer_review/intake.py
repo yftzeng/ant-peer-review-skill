@@ -190,15 +190,15 @@ def build_intake_from_args(purpose: str, targets: list[str], audience: str | Non
 
 
 def parse_share(platforms: str | None, stance: str | None, take: str | None,
-                styles: str | None, home, angle: str | None = None, credit: bool = True) -> dict:
+                styles: str | None, home, angle: str | None = None, credit: bool = False) -> dict:
     """--platform x,linkedin --stance recommend --take ... --share-style x=summary+pick
-    --angle comment|distill --no-credit"""
+    --angle comment|distill --credit"""
     from .share import ANGLES, DISTILL_STYLES, STANCES
     angle = angle or "comment"
     if angle not in ANGLES:
         raise ValueError(f"--angle must be one of {', '.join(ANGLES)}")
     from .voice import PLATFORMS, SHARE_STYLES, preselected_style
-    picked = [p.strip().lower() for p in (platforms or "").split(",") if p.strip()]
+    picked = [p.strip().lower() for p in (platforms or "facebook").split(",") if p.strip()]
     bad = [p for p in picked if p not in PLATFORMS]
     if not picked or bad:
         raise ValueError(f"--platform needs one or more of {', '.join(PLATFORMS)}"
@@ -244,7 +244,7 @@ def ask_share(io: IO, t: T, home, make_voice=None) -> dict:
     have = [p for p in PLATFORMS if load_voice(home, p)]
     platforms = checkbox(io, t, t("share.platforms"),
                          [(p, plats[p]["name"] + ("" if p in have else f"  {t('share.no_voice_mark')}"))
-                          for p in PLATFORMS], have, min_selected=1)
+                          for p in PLATFORMS], ["facebook"] + have, min_selected=1)
 
     def create(p: str) -> bool:
         posts, allow, deny = collect_posts(io, t, plats[p]["name"])
@@ -308,7 +308,7 @@ def ask_share(io: IO, t: T, home, make_voice=None) -> dict:
         del out["stance"]
         out["credit"] = radio(io, t, t("share.credit"), [("yes", t("share.credit.yes")),
                                                          ("no", t("share.credit.no"))],
-                              default="yes") == "yes"
+                              default="no") == "yes"
     return out
 
 
