@@ -433,5 +433,7 @@
   "share.analysis.correction": "更正",
   "share.analysis.direction": "方向",
   "share.analysis.thesis": "論點",
-  "share.analysis.anchors": "錨點"
+  "share.analysis.anchors": "錨點",
+  "share.analysis.subject": "主題",
+  "share.analysis.origin": "不提及（原創者）"
 }

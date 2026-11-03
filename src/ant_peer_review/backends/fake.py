@@ -67,7 +67,7 @@ class FakeBackend(Backend):
     def _share_analysis(self, model, ids, paras, bias, prompt):
         return {"purpose": f"[fake:{model}] purpose", "claims": [], "direction": "middle",
                 "why": "fake", "thesis": f"[fake:{model}] thesis", "anchors": ["fake anchor"],
-                "names": []}
+                "subject": {"topic": "", "terms": []}, "origin": []}
 
     def _share_rewrite(self, model, ids, paras, bias, prompt):
         return {"posts": []}         # keep the texts; the gate marks what still fails

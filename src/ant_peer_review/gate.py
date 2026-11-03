@@ -303,6 +303,9 @@ DISTILL_CHECKS = {
                                "or leaves out the analysis's main correction"),
     "direction": (STRONG, "fail when the post does not take the analysis's direction "
                           "(reinforce, oppose or middle)"),
+    "no_subject": (STRONG, "fail when a reader who sees only the post cannot tell what field "
+                           "and what thing it is about: the topic or the main subject is left out "
+                           "or only hinted at"),
 }
 
 

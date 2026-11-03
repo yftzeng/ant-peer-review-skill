@@ -94,10 +94,12 @@ Feature: share
     And   with no voice file at all, Facebook alone is ticked in the platform checkbox
 
   @S-share-011
-  Scenario: a distilled post names no one from the article and ends with the source line
-    Given a distill share run for X and Instagram whose article is by "Jane Roe" at "Example News" and mentions "Acme"
-    When  the analysis lists the names ["Acme"] and the writer returns an X post that says "Acme" and an Instagram post that names no one
-    Then  the X post fails with must-fix "name_leak Acme" and is rewritten; author and site count as names too
+  Scenario: a distilled post leaves out the original creators and ends with the source line
+    Given a distill share run for X and Instagram whose article is by "Jane Roe" at "Example News" and reports work by "Acme"
+    When  the analysis lists the origin ["Acme"] and the subject terms ["Rust"], and the writer returns an X post that says "Acme"
+          and an Instagram post that names no one from the origin
+    Then  the X post fails with must-fix "name_leak Acme" and is rewritten; the article's author and site count as origin too
+    And   the subject, its main players and related people (products, models, benchmarks, techniques) are named freely
     And   neither post needs a concrete detail of the article or its title in the body,
           the X file ends with "延伸自：Title https://ex.example/a" and the Instagram file with "延伸自：Title" and no link,
           the platform limit counts the source line; with credit off no source line is added
@@ -108,7 +110,8 @@ Feature: share
     Then  the judge is given the analysis (purpose, claims and their actions, direction, thesis, anchors) and also answers, each strong
           and failing only with quoted words of the post: "platitude" (the point is one nobody would dispute),
           "paraphrase" (it restates the article's or the subject's own pitch), "ignores_review" (it leans on a claim the analysis drops
-          or leaves out its main correction) and "direction" (it does not take the analysis's direction)
+          or leaves out its main correction), "direction" (it does not take the analysis's direction) and "no_subject"
+          (a reader of the post alone cannot tell what field and what thing it is about)
 
   @S-share-013
   Scenario: the angle and the source line from arguments
@@ -124,8 +127,10 @@ Feature: share
     When  the posts are written
     Then  one "share_analysis" call before the posts gets the article, the review findings, the red lines and every checked claim
           with its status and reason, and a suggested direction ("oppose or middle" here: a red line is confirmed)
-    And   it returns the article's purpose, each claim with an action (keep, strengthen, qualify, drop, correct, avoid),
-          a direction (reinforce, oppose or middle) with its reason, a thesis someone could dispute, at least one anchor and the names;
+    And   it returns the article's purpose, the subject (a one-line topic and 2-4 terms a reader needs), each claim with an action
+          (keep, strengthen, qualify, drop, correct, avoid), a direction (reinforce, oppose or middle) with its reason,
+          a thesis someone could dispute, at least one anchor (which may name the subject) and the origin
+          (the article's author and the creators of the work it reports, their organizations, sites and publications);
           an unsupported claim marked keep becomes drop, and the analysis is written to share-analysis.md
     And   each analysis row names the checked claims it covers by id, and its status is the fact-check's status, never the model's
           own words; an unsupported claim no row covers is added once, near-duplicates ("佔用"/"占用", "搞定"/"完成") as one row
@@ -144,6 +149,15 @@ Feature: share
     Given a distill run with a confirmed red line whose analysis direction is "oppose" or "middle"
     When  the posts pass the gate
     Then  each post starts with "原文有紅線（…），本文以更正為方向" instead of "不建議分享"; a comment-angle post keeps "不建議分享"
+
+  @S-share-017
+  Scenario: a distilled post that leaves out its subject fails
+    Given a distill run whose analysis has the topic "editing neural network weights with an LLM" and the terms
+          ["GPT-6 Astra", "MATH-500", "權重"]
+    When  the writer returns a post that says "一個小模型的數學基準" and names none of them
+    Then  it fails with must-fix "missing_subject GPT-6 Astra" and "missing_subject MATH-500" and is rewritten;
+          a term without Latin letters or digits ("權重") is left to the judge, since another output language words it differently
+    And   the writing rules say: no original creators, companies or sites; open with the topic and the main subject
 ```
 
 ## Must NOT
@@ -160,3 +174,4 @@ Feature: share
 - 2026-11-02 · ~S-share-011..012 +S-share-014..016 · decision: none -- live distill run (craft-anything): the posts ignored the confirmed hallucination and PR landmine, distilled the project's README (passed as a second target and merged into the article) into a truism, and the judge, seeing only the post, passed it; user: dig out the article's purpose, keep or strengthen what is true, drop or correct what is false, and land on reinforce, oppose or a middle view, never empty or self-evident
 - 2026-11-03 · ~S-share-014 · decision: none -- live distill run: the claims table listed near-duplicate ledger claims twice (佔/占, 搞定/完成) and showed the model's own status words when it reworded a claim
 - 2026-11-03 · ~S-share-001 ~S-share-010 ~S-share-013 · decision: none -- user: tick Facebook by default; no source line by default (the analysis, own thesis and the paraphrase check now keep a distilled post from copying the article)
+- 2026-11-03 · ~S-share-011 ~S-share-012 ~S-share-014 +S-share-017 · decision: none -- live distill run (weight-space programming): the post named none of GPT-6 Astra, Qwen3.5-0.8B, MATH-500, because every product, benchmark and even Python was banned as a name; user: leave out the original creators, companies and sites; focus on the topic, the main subject and related people

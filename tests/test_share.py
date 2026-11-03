@@ -313,7 +313,7 @@ def distill_run(tmp_path, credit=True, flags=()):
 
 
 X_LEAK = "Acme 的經驗說明，流程越短，錯誤越少。你的團隊會先砍哪一步？"
-X_OK = "流程越短，錯誤越少。每多一次交接，就多一個出錯的地方。你會先砍哪一步？"
+X_OK = "流程越短，錯誤越少。每多一次交接，就多一個出錯的地方。你會先砍哪一步？用 Rust 也一樣。"
 IG_LEAK = "Jane Roe 提醒我，流程越短越好。"
 IG_OK = "流程越短，出錯的地方越少。交接本身就是風險。"
 
@@ -324,7 +324,8 @@ ANALYSIS = {"purpose": "推一個新工具，用誇大的功能搶關注",
                        {"claim": "純 Rust 打造", "status": "supported", "action": "keep", "correction": ""}],
             "direction": "middle", "why": "方法有價值，宣傳造假",
             "thesis": "轉傳文說得比原始文件多的部分，預設是行銷。",
-            "anchors": ["主打功能在專案文件裡找不到"], "names": ["Acme"]}
+            "anchors": ["主打功能在專案文件裡找不到"], "origin": ["Acme"],
+            "subject": {"topic": "縮短流程", "terms": ["流程"]}}
 
 
 # @S-share-011
@@ -337,7 +338,8 @@ def test_distilled_post_names_no_one_and_ends_with_source(tmp_path):
                        ("*", "share_rewrite"): posts(x_insight=X_OK, instagram_insight=IG_OK)})
     decide(run, store, b)
     share_sys = [c for c in b.calls if c["task"] == "share"][0]["system"]
-    assert "Write from the analysis" in share_sys and "names" in share_sys
+    assert "Write from the analysis" in share_sys and "original creators" in share_sys
+    assert "Rust" in X_OK and "name_leak: Rust" not in [c for c in b.calls if c["task"] == "share_rewrite"][0]["prompt"]
     ask = [c for c in b.calls if c["task"] == "share_rewrite"][0]["prompt"]
     assert "name_leak: Acme" in ask and "name_leak: Jane Roe" in ask
     x = run.path("share-x-insight.md").read_text().strip()
@@ -347,7 +349,7 @@ def test_distilled_post_names_no_one_and_ends_with_source(tmp_path):
     checks = run.path("share-checks.md").read_text()
     assert "no_concrete_detail" not in checks and "no_attribution" not in checks
     judge = [c for c in b.calls if c["task"] == "judge"][0]
-    for check in ("platitude", "paraphrase", "ignores_review", "direction"):
+    for check in ("platitude", "paraphrase", "ignores_review", "direction", "no_subject"):
         assert check in judge["system"], check
     assert ANALYSIS["thesis"] in judge["prompt"]               # judged against the analysis
 
@@ -447,6 +449,30 @@ def test_analysis_rows_cite_claim_ids_and_merge_near_duplicates(tmp_path):
     assert [r["status"] for r in rows] == ["unsupported", "unchecked", "supported", "unsupported", "unsupported"]
     assert rows[0]["ids"] == ["C01", "C04"] and rows[3]["ids"] == ["C03", "C05"] and rows[4]["ids"] == ["C06"]
     assert all(r["action"] == "drop" for r in rows[3:])
+
+
+# @S-share-017
+def test_distilled_post_without_its_subject_fails(tmp_path):
+    run, store = distill_run(tmp_path)
+    analysis = dict(ANALYSIS, subject={"topic": "editing neural network weights with an LLM",
+                                       "terms": ["GPT-6 Astra", "MATH-500", "權重", "Example Lab"]},
+                    origin=["Example Lab"])
+    vague = "一個小模型的數學基準大幅進步，修的是推理迴圈。你怎麼看？"
+    good = "GPT-6 Astra 直接改權重，讓小模型的 MATH-500 從 7.9% 升到 48.1%。修的是推理迴圈。"
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share_analysis"): analysis,
+                       ("*", "share"): posts(x_insight=vague, instagram_insight=good),
+                       ("*", "share_rewrite"): posts(x_insight=good)})
+    decide(run, store, b)
+    ask = next(c for c in b.calls if c["task"] == "share_rewrite")["prompt"]
+    assert "missing_subject: GPT-6 Astra" in ask and "missing_subject: MATH-500" in ask
+    assert "missing_subject: Example Lab" not in ask              # origin wins over a term
+    assert "missing_subject: 權重" not in ask and "instagram-insight" not in ask.split("missing_subject")[0][-200:]
+    assert run.path("share-x-insight.md").read_text().strip().startswith("GPT-6 Astra")
+    sys_ = next(c for c in b.calls if c["task"] == "share")["system"]
+    assert "topic and the main subject" in sys_
+    sp = next(c for c in b.calls if c["task"] == "share")["prompt"]
+    assert "GPT-6 Astra" in sp and "Example Lab" not in sp
 
 
 # @S-share-015

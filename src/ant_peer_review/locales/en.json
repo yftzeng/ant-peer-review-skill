@@ -433,5 +433,7 @@
   "share.analysis.correction": "Correction",
   "share.analysis.direction": "Direction",
   "share.analysis.thesis": "Thesis",
-  "share.analysis.anchors": "Anchors"
+  "share.analysis.anchors": "Anchors",
+  "share.analysis.subject": "Subject",
+  "share.analysis.origin": "Left out (original creators)"
 }
