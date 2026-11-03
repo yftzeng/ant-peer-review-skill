@@ -412,7 +412,7 @@ def run_sources(run: Run, crawler: Crawler, *, on_progress=None, renderer=None,
         items.append(entry)
         if on_progress:
             on_progress(entry)
-    manifest = {"items": items}
+    manifest = {"items": items, "cited": _cited(run, crawler, intake, manifest.get("cited", []))}
     write_json(manifest_path, manifest)
 
     segs: dict[str, list[dict]] = {}
@@ -428,6 +428,71 @@ def run_sources(run: Run, crawler: Crawler, *, on_progress=None, renderer=None,
     flat = [s for doc in segs.values() for s in doc]
     write_json(run.path("01-sources/injection-scan.json"), scan(flat, hidden_all))
     return manifest
+
+
+MAX_CITED = 3
+_CITED_RE = re.compile(r"https?://[^\s<>\"'，。、；：！？「」『』（）()\[\]]+", re.I)
+
+
+def cited_urls(intake: dict) -> list[str]:
+    """S-source-acquisition-050: URLs written inside text targets, not already targets."""
+    from ..factcheck import norm_url
+    seen = {norm_url(t["value"]) for t in intake["targets"] if t["kind"] in ("url", "feed_item")}
+    out = []
+    for t in intake["targets"]:
+        if t["kind"] != "text":
+            continue
+        for u in _CITED_RE.findall(t["value"]):
+            u = u.rstrip(".,;:!?")
+            n = norm_url(u)
+            if n and n not in seen:
+                seen.add(n)
+                out.append(u)
+    return out[:MAX_CITED]
+
+
+def _cited(run: Run, crawler: Crawler, intake: dict, prior: list[dict]) -> list[dict]:
+    """Each cited URL fetched once into 01-sources/cited/R<n>.md: a reference for the
+    fact-check and the share analysis, never a document under review. No fallbacks and no
+    questions: a failure is recorded and the run goes on."""
+    if crawler is None:        # text-only runs in tests: nothing to fetch with
+        return []
+    done = {c["url"]: c for c in prior if c.get("status") == "ok"}
+    out = []
+    for n, url in enumerate(cited_urls(intake), 1):
+        if url in done and run.path(done[url]["file"]).exists():
+            out.append(done[url])
+            continue
+        rid, entry = f"R{n}", {"url": redact(url)}
+        try:
+            raw = github_raw(url)
+            if raw:
+                res = crawler.fetch(raw, types=("text/plain", "text/markdown"))
+                md, title, ext = html_blocks_to_text(res.body.decode("utf-8", "replace")), "", "md"
+                title = first_heading(md)
+            else:
+                res = crawler.fetch(url)
+                if res.content_type in FEED_TYPES:
+                    raise FetchError("is_feed", redact(url))
+                md, _, title, ext, problem = _convert(res)
+                if problem:
+                    raise FetchError(problem, redact(res.final_url))
+            file = f"01-sources/cited/{rid}.md"
+            _store_raw(run, f"{rid}.{ext}", res.body)
+            write_text_atomic(run.path(file), md.strip() + "\n")
+            entry.update(id=rid, status="ok", file=file, title=title or redact(url),
+                         chars=len(md.strip()))
+        except (FetchError, ConvertError) as e:
+            entry.update(id=rid, status="failed", reason=e.reason)
+        out.append(entry)
+    return out
+
+
+def cited_sources(run: Run) -> list[dict]:
+    """The cited sources that were read, with their text."""
+    m = read_json(run.path("01-sources/manifest.json"), default={})
+    return [dict(c, text=run.path(c["file"]).read_text(encoding="utf-8"))
+            for c in m.get("cited", []) if c.get("status") == "ok" and run.path(c["file"]).exists()]
 
 
 def failed_items(manifest: dict) -> list[dict]:

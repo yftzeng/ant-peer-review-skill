@@ -24,9 +24,11 @@ def classify_target(s: str) -> dict:
     s = s.strip()
     if URL_RE.match(s):
         return {"kind": "url", "value": s}
-    p = Path(s).expanduser()
-    if len(s) < 4096 and "\n" not in s and p.exists():
-        return {"kind": "path", "value": str(p.resolve())}
+    try:   # S-intake-015: a long pasted line exceeds the 255-byte limit of one path part
+        if len(s) < 4096 and "\n" not in s and (p := Path(s).expanduser()).exists():
+            return {"kind": "path", "value": str(p.resolve())}
+    except (OSError, ValueError):
+        pass
     return {"kind": "text", "value": s}
 
 

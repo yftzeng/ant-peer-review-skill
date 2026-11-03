@@ -96,6 +96,11 @@ Feature: intake
     Given a feed target
     When  the interactive intake runs
     Then  the order is purpose, targets, the article list, the checklist, the audience, fact sources, brand
+
+  @S-intake-015
+  Scenario: a long pasted line that cannot be a file name is text
+    When  the user enters one line of 200 Chinese characters ending with a URL (over 255 bytes, the limit of one path part)
+    Then  it is one text target and nothing crashes
 ```
 
 ## Must NOT
@@ -106,3 +111,4 @@ Feature: intake
 - 2026-10-22 · ~S-intake-005 ~S-intake-006 ~S-intake-007 +S-intake-008 · decision: none -- user request: every audience layer is a multi-select checkbox
 - 2026-10-22 · +S-intake-009 · decision: none -- user: academic fact-checking only when the user asks for it, chosen in a checkbox after the audience
 - 2026-10-25 · ~S-intake-009 +S-intake-010..014 · decision: none -- user: analyse the targets right after they are entered (identity, content, structure; sample a long or messy text) and use the checklist to preselect the next steps, audience card included, still adjustable
+- 2026-11-03 · +S-intake-015 · decision: none -- live run: a 207-character pasted line crashed intake with OSError ENAMETOOLONG when checked as a path

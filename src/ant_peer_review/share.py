@@ -119,6 +119,8 @@ def documents(run: Run) -> tuple[str, str]:
     art, refs = [], []
     for p in sorted(run.path("01-sources/normalized").glob("*.md")):
         (art if p.stem.split("-")[0] == "D1" else refs).append(p.read_text(encoding="utf-8"))
+    from .sources.acquire import cited_sources       # S-source-acquisition-050
+    refs += [f"<!-- cited by the article: {c['url']} -->\n\n{c['text']}" for c in cited_sources(run)]
     return "\n\n".join(art), "\n\n".join(refs)
 
 

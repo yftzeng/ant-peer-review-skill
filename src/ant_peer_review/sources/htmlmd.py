@@ -160,6 +160,7 @@ def _find_element(html: str, lower: str, tag: str, pos: int = 0) -> tuple[int, i
 
 
 MAX_REGIONS = 50
+MIN_SHARE = 0.25   # a region with less of the page's text is a box beside the story
 
 
 def _visible_chars(fragment: str) -> int:
@@ -171,9 +172,11 @@ def _visible_chars(fragment: str) -> int:
 
 def _main_region(html: str) -> str:
     """S-source-acquisition-049: the <article> with the most visible text, else the <main>;
-    one with under MIN_CANDIDATE_CHARS of text (a teaser card, a comment) does not count.
+    one with under MIN_CANDIDATE_CHARS of text (a teaser card, a comment), or under MIN_SHARE
+    of the page's text (a citation box), does not count.
     The whole page when none does (the content-like container is chosen later)."""
     lower = html.lower()
+    floor = max(MIN_CANDIDATE_CHARS, MIN_SHARE * _visible_chars(html))
     for tag in ("article", "main"):
         best, best_n, pos = None, 0, 0
         for _ in range(MAX_REGIONS):
@@ -184,7 +187,7 @@ def _main_region(html: str) -> str:
             if n > best_n:
                 best, best_n = hit, n
             pos = hit[2]
-        if best and best_n >= MIN_CANDIDATE_CHARS:
+        if best and best_n >= floor:
             return html[best[0]:best[2]]
     return html
 
@@ -209,7 +212,8 @@ def html_to_markdown(html: str) -> Converted:
         # No <article>/<main>: the innermost content-like container that still holds
         # most (>= 80%) of the text of the largest one, so wrappers with share
         # buttons and view counters lose to the article body inside them.
-        good = [c for c in p.candidates if c[0] >= MIN_CANDIDATE_CHARS and c[3] > c[2]]
+        floor = max(MIN_CANDIDATE_CHARS, MIN_SHARE * p.textlen)
+        good = [c for c in p.candidates if c[0] >= floor and c[3] > c[2]]
         if good:
             top = max(c[0] for c in good)
             _, _, start, end = max((c for c in good if c[0] >= 0.8 * top),

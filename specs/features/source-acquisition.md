@@ -311,6 +311,18 @@ Feature: source acquisition
     When  each is converted
     Then  the first yields the story and not the teaser, and the second yields the post-content text;
           an <article> or <main> with under 200 characters of text is skipped, and at most 50 are compared
+    And   a region or content-like container with under a quarter of the page's visible text does not count either:
+          a Distill page whose only <article> is its BibTeX citation, and whose story sits in <d-article>, yields the story
+
+  @S-source-acquisition-050
+  Scenario: a URL written inside a text target is fetched as a cited source, not as the article
+    Given a text target that ends with "https://blog.example/post", and a second URL target
+    When  the sources are read
+    Then  the URL is fetched once into 01-sources/cited/R1.md and listed under "cited" in the manifest with its status
+    And   it is not a document: the segments, the review and the article view hold only the targets
+    And   at most 3 cited URLs are fetched, a URL that is already a target is not fetched again, and a cited URL that fails
+          is recorded as failed without asking the user anything
+    And   in a share run the analysis gets the cited sources among the references
 ```
 
 ## Must NOT
@@ -331,3 +343,5 @@ Feature: source acquisition
 - 2026-11-02 · ~S-source-acquisition-024 +S-source-acquisition-044 · decision: none -- user: give up on a link that cannot be reached within N seconds; a dead URL could hold the run for minutes (20 s socket timeout, 120 s per request, 2 retries, then browser, AMP and archive each with their own limits)
 - 2026-11-02 · +S-source-acquisition-045..048 · decision: none -- (045: a live README began with <p align="center"> blocks that reached the review as raw tags) user: read agent-ready forms first (structured data, Markdown), then the extracted page; the JSON-LD body can differ from what readers see, so it only stands in for a page that yields too little text
 - 2026-11-02 · +S-source-acquisition-049 · decision: none -- user: Readability-style extraction; the first <article> or <main> won even when it was a teaser card or a comment. Link-dense blocks are kept: an article's reference list looks like a menu and the fact-check needs it
+- 2026-11-03 · +S-source-acquisition-050 · decision: none -- live run: a pasted post cited its source URL at the end; nothing fetched it, so its numbers (0.016%, 7.9% to 48.1%) could only be searched for; user chose to fetch it as a reference (option A)
+- 2026-11-03 · ~S-source-acquisition-049 · decision: none -- live run (rikiyat.github.io, Distill template): the only <article> was the 346-character BibTeX citation, and a citation box won the content-container pick too; 30,000 characters of story were dropped

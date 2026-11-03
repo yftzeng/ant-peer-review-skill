@@ -128,13 +128,40 @@ def _provenance_filter(sources: list[dict], tool_results: list[str]) -> list[dic
     return [s for s in sources if (n := norm_url(s.get("url") or "")) and n in seen]
 
 
-def check_claim(backend: Backend, model: str, claim: dict, context: str, lang: str) -> dict:
+CITED_CHARS = 3000
+_TOKEN_RE = re.compile(r"\d+(?:\.\d+)?%?|[A-Za-z][A-Za-z0-9.\-]{2,}")
+
+
+def cited_excerpt(cited: list[dict], claim: str, limit: int = CITED_CHARS) -> str:
+    """S-factcheck-ledger-017: per cited source, the paragraphs sharing the claim's numbers
+    and Latin terms (a Chinese post and an English source still share those)."""
+    want = {t.lower().rstrip(".-") for t in _TOKEN_RE.findall(claim)}
+    out = []
+    for c in cited:
+        paras = [p.strip() for p in re.split(r"\n\s*\n", c["text"]) if p.strip()]
+        hits = [(len(want & {t.lower().rstrip(".-") for t in _TOKEN_RE.findall(p)}), i)
+                for i, p in enumerate(paras)]
+        keep, used = set(), 0
+        for score, i in sorted(hits, key=lambda h: (-h[0], h[1])):
+            if score == 0 or used + len(paras[i]) > limit:
+                continue
+            keep.add(i)
+            used += len(paras[i])
+        body = "\n\n".join(paras[i] for i in sorted(keep)) or "(no paragraph shares the claim's terms)"
+        out.append(f"[{c['id']}] {c['url']}\n{body}")
+    return "\n\n".join(out)
+
+
+def check_claim(backend: Backend, model: str, claim: dict, context: str, lang: str,
+                cited: list[dict] | None = None) -> dict:
     c = dict(claim)
     c["checked_by"] = model
     c["updated_at"] = datetime.now().isoformat(timespec="seconds")
     try:
         res = backend.run(model, task="factcheck", system=prompts.factcheck_system(lang),
-                          prompt=prompts.factcheck_prompt(claim, context), schema=FACTCHECK,
+                          prompt=prompts.factcheck_prompt(
+                              claim, context, cited_excerpt(cited, claim["text"]) if cited else ""),
+                          schema=FACTCHECK,
                           tools=SEARCH_TOOLS, effort="medium")
     except BackendError as e:
         reason = e.reason if e.reason in ("offline", "timeout") else "error"
@@ -149,7 +176,8 @@ def check_claim(backend: Backend, model: str, claim: dict, context: str, lang: s
         return c
     data = res.data
     sources = [dict(s, accessed_at=c["updated_at"], grade=grade_source(s["url"], s.get("kind")))
-               for s in _provenance_filter(data.get("sources", []), res.tool_results)]
+               for s in _provenance_filter(data.get("sources", []), res.tool_results
+                                           + [c["url"] for c in cited or []])]
     status = data["status"]
     if status != "cannot_verify" and not sources:
         c.update(status="cannot_verify", reason="no_source", sources=[])
@@ -180,13 +208,15 @@ def run_checks(run: Run, backend: Backend, checker: str, lang: str, *,
                only_retryable: bool = True, say=print) -> dict:
     """Check pending/retryable claims one by one, saving after each.
     KeyboardInterrupt stops cleanly, leaving the rest for later."""
-    ledger = read_ledger(run)
+    from .sources.acquire import cited_sources
+    ledger, cited = read_ledger(run), cited_sources(run)
     try:
         for i, c in enumerate(ledger):
             if not is_retryable(c) or c["type"] == "citation":  # citations: scholarly.py
                 continue
             say(f"  … {c['id']} {c['text'][:70]}")
-            ledger[i] = check_claim(backend, checker, c, context_for(run, c["anchor"]), lang)
+            ledger[i] = check_claim(backend, checker, c, context_for(run, c["anchor"]), lang,
+                                    cited=cited)
             write_ledger(run, ledger)
             say(f"    → {ledger[i]['status']}"
                 + (f" ({ledger[i]['reason']})" if ledger[i]["status"] == "cannot_verify" else ""))

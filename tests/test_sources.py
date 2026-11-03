@@ -304,3 +304,17 @@ def test_main_region_is_the_article_with_most_text():
     t0 = time.monotonic()
     html_to_markdown(many)                                # at most 50 compared: bounded
     assert time.monotonic() - t0 < 3
+
+
+# @S-source-acquisition-049
+def test_a_region_with_a_sliver_of_the_page_does_not_count():
+    from ant_peer_review.sources.htmlmd import html_to_markdown
+    bib = "@misc{takehi2026, title = {Sparks of Weight-Space Programming}, author = {A and B and C}, " \
+          "year = {2026}, howpublished = {https://blog.example/post}, note = {Blog post} } " * 2
+    story = "".join(f"<p>Story paragraph {i}: MATH-500 rose from 7.9% to 48.1% with few edits, and "
+                    f"more words follow so the body is long.</p>" for i in range(40))
+    html = (f"<html><body><d-title><h1>Sparks</h1></d-title><d-article>{story}</d-article>"
+            f"<d-appendix><div class='citation-article'><article><pre>{bib}</pre></article></div>"
+            f"</d-appendix></body></html>")
+    md = html_to_markdown(html).markdown
+    assert "Story paragraph 39" in md and "Story paragraph 0" in md

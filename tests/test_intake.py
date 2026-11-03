@@ -98,3 +98,13 @@ def test_ctrl_d_with_nothing_entered_ends_the_intake():
     with pytest.raises(EOFError):          # it used to ask for a target again, forever
         collect_targets(ScriptedIO([]), t)
 
+
+
+# @S-intake-015
+def test_long_pasted_line_is_text_not_a_crash():
+    from ant_peer_review.intake import classify_target
+    line = "深度學習中，神經網絡權重通常靠梯度下降調整。" * 10 + " https://blog.example/post/"
+    assert len(line.encode()) > 255
+    assert classify_target(line) == {"kind": "text", "value": line}
+    io = ScriptedIO([line, "/done"])
+    assert collect_targets(io, T("zh-TW")) == [{"kind": "text", "value": line}]
