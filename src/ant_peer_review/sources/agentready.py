@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+from html import unescape
 from urllib.parse import urlsplit
 
 ARTICLE_TYPES = {"article", "newsarticle", "blogposting", "techarticle", "scholarlyarticle",
@@ -112,9 +113,9 @@ def jsonld(html: str) -> dict:
             types = types if isinstance(types, list) else [types]
             if not any(str(t).lower() in ARTICLE_TYPES for t in types if t):
                 continue
-            return {"title": str(n.get("headline") or n.get("name") or "").strip()[:300],
-                    "author": _name(n.get("author"))[:200],
+            return {"title": unescape(str(n.get("headline") or n.get("name") or "")).strip()[:300],
+                    "author": unescape(_name(n.get("author")))[:200],
                     "date": str(n.get("datePublished") or "")[:10],
-                    "organization": _name(n.get("publisher"))[:200],
+                    "organization": unescape(_name(n.get("publisher")))[:200],
                     "body": str(n.get("articleBody") or "").strip()}
     return {}

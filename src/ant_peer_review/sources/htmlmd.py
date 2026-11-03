@@ -7,6 +7,7 @@ display:none, hidden, aria-hidden, zero font size, comments) and attribute text
 from __future__ import annotations
 
 import re
+from html import unescape
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 
@@ -206,7 +207,7 @@ def html_to_markdown(html: str) -> Converted:
         seen = {(h["kind"], h["text"]) for h in p.hidden}
         p.hidden += [h for h in outer.hidden if (h["kind"], h["text"]) not in seen
                      and h["kind"] != "chrome"]
-    title = " ".join(html[t_hit[1]:t_hit[2] - len("</title>")].split()) if t_hit else ""
+    title = " ".join(unescape(html[t_hit[1]:t_hit[2] - len("</title>")]).split()) if t_hit else ""
     blocks = p.blocks
     if len(region) == len(html):
         # No <article>/<main>: the innermost content-like container that still holds

@@ -128,3 +128,23 @@ def test_jsonld_body_only_for_thin_pages(tmp_path):
     assert item["via"] == "direct" and "Paragraph 3 of the full article" in text_of(run)
     assert "structured data" not in text_of(run)
     assert read_json(run.path("01-sources/manifest.json"))["items"][0]["via"] == "direct"
+
+
+# @S-source-acquisition-051
+def test_title_entities_are_unescaped(tmp_path):
+    from ant_peer_review.sources.htmlmd import html_to_markdown
+    raw = "Sparks: LLMs can read &amp; write weights &#8212; a &quot;test&quot;"
+    want = 'Sparks: LLMs can read & write weights — a "test"'
+    ld = json.dumps({"@type": "Article", "headline": raw})
+    html = (f"<html><head><title>{raw}</title><script type='application/ld+json'>{ld}</script>"
+            f"</head><body><article>{'<p>Body text paragraph with enough words.</p>' * 10}</article></body></html>")
+    assert html_to_markdown(html).title == want
+    assert identity({"kind": "url", "value": URL}, html, "")["title"] == want
+    from ant_peer_review.sources.acquire import run_sources
+    from ant_peer_review.jsonio import write_json
+    from ant_peer_review.workspace import create_run
+    run = create_run(tmp_path / "runs", "t", models=["opus"], backend="x", lang="en")
+    write_json(run.path("00-intake.json"), {"purpose": "audit", "audience": {}, "lang": "en",
+               "targets": [{"kind": "text", "value": "See https://blog.example/p"}]})
+    m = run_sources(run, FakeCrawler(pages={"https://blog.example/p": ("text/html", html)}))
+    assert m["cited"][0]["title"] == want
