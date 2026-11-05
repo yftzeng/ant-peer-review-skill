@@ -1,0 +1,4 @@
+# a share run's hint names no plan choice (S-decision-014)
+@@ src/ant_peer_review/pipeline.py
+-         ctx.say(ctx.t("decide.hint_share" if share else "decide.hint", run=run.id))
++         ctx.say(ctx.t("decide.hint", run=run.id))

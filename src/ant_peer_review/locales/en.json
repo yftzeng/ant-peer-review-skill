@@ -435,5 +435,6 @@
   "share.analysis.thesis": "Thesis",
   "share.analysis.anchors": "Anchors",
   "share.analysis.subject": "Subject",
-  "share.analysis.origin": "Left out (original creators)"
+  "share.analysis.origin": "Left out (original creators)",
+  "decide.hint_share": "Review done. To write the share posts, run: ant-peer-review decide {run} --yes [--rule <red_line>=confirmed|dismissed]"
 }

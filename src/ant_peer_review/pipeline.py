@@ -317,8 +317,9 @@ def ph_revision(run: Run, ctx: Ctx) -> None:
 
 
 def ph_decision(run: Run, ctx: Ctx) -> None:
-    if not ctx.interactive:
-        ctx.say(ctx.t("decide.hint", run=run.id))
+    if not ctx.interactive:  # S-decision-014: a share run has no plan to choose
+        share = read_json(run.path("00-intake.json"), default={}).get("purpose") == "share"
+        ctx.say(ctx.t("decide.hint_share" if share else "decide.hint", run=run.id))
         raise Stop("awaiting decision")
     try:
         run_decision(ctx.io, run, ctx.store, models=ctx.models, lang=ctx.lang,

@@ -62,7 +62,7 @@ Do not soften or upgrade the report's judgments. Quote the anchors (e.g. `D1.P03
 
 - **Red lines that need a ruling:** ask the user to confirm or dismiss each one. Show both sides first: the supporters' comments and the dissent evidence.
 - **The final version:** show `07-revision/A.diff` (line edit) and `07-revision/B.md` (developmental edit, with `rereview.json` verdicts). Then ask which one to adopt: A, B or manual.
-- Then run: `ant-peer-review decide <run> --yes --choice A|B|manual [--rule <red_line>=confirmed|dismissed] [--file <path>]`.
+- Then run: `ant-peer-review decide <run> --yes --choice A|B|manual [--rule <red_line>=confirmed|dismissed] [--file <path>]`. A share run has no plan to adopt: run `ant-peer-review decide <run> --yes` (no `--choice`) and it writes the posts.
 
 ## 5. Other commands
 

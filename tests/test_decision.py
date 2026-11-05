@@ -146,3 +146,29 @@ def test_postponed_ruling_pauses_the_phase(tmp_path):
     except Stop:
         pass
     assert f"ant-peer-review decide {run.id}" in io.text
+
+
+# @S-decision-014
+def test_share_run_hint_has_no_plan_choice(tmp_path):
+    import pytest
+    from ant_peer_review.i18n import T
+    from ant_peer_review.pipeline import Stop, ph_decision
+    from ant_peer_review.workspace import create_run
+    from ant_peer_review.jsonio import write_json
+    from ant_peer_review.ui import ScriptedIO
+
+    class Ctx:
+        interactive, lang = False, "zh-TW"
+        io = ScriptedIO()
+        t = T("zh-TW")
+        say = io.say
+    for purpose, want, avoid in (("share", "--yes", "--choice"), ("audit", "--choice", None)):
+        run = create_run(tmp_path / purpose, "r", models=["opus"], backend="x", lang="zh-TW")
+        write_json(run.path("00-intake.json"), {"purpose": purpose})
+        Ctx.io = ScriptedIO()
+        Ctx.say = Ctx.io.say
+        with pytest.raises(Stop):
+            ph_decision(run, Ctx)
+        assert want in Ctx.io.text and (avoid is None or avoid not in Ctx.io.text), Ctx.io.text
+    for lang in ("en", "zh-CN"):
+        assert T(lang)("decide.hint_share", run="x") != "decide.hint_share"

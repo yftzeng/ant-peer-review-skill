@@ -94,6 +94,11 @@ Feature: decision
     Given the reply model returns a critical reply containing "the author is clueless"
     When  the replies are written
     Then  the file is written with a warning at its top and the editor is told which style failed the tone check
+  @S-decision-014
+  Scenario: a share run's hint names decide without a plan choice
+    Given a non-interactive share run that reached the decision phase, and an audit run that did
+    When  the decision phase pauses
+    Then  the share run's hint reads "ant-peer-review decide <run> --yes" with no --choice (there is no plan to adopt: the posts are the output), and the audit run's hint still names --choice A|B|manual
 ```
 
 ## Must NOT
@@ -106,3 +111,4 @@ Feature: decision
 - 2026-10-25 · ~S-decision-002 +S-decision-009..013 · decision: none -- user: end with audit (the best revision, like final), review (one detailed report with summary, key points and every check's score, result and reason) and reply files, one per style (appreciative, empathetic, pragmatic, socratic, critical), English names; drafting gets no reply
 - 2026-11-02 · ~S-decision-009 · decision: none -- review.md gains a checks row for the article's AI writing tells (S-review-panel-026)
 - 2026-11-02 · ~S-decision-011 · decision: none -- replies are written in the chosen output language (S-output-language-005), not the article's
+- 2026-11-06 · +S-decision-014 a share run's hint names no plan choice (user: <A|B|manual> 是什麼？ …; 修正) · decision: none -- the hint only; decide already ignored --choice for a share run

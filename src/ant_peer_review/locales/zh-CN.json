@@ -435,5 +435,6 @@
   "share.analysis.thesis": "论点",
   "share.analysis.anchors": "锚点",
   "share.analysis.subject": "主题",
-  "share.analysis.origin": "不提及（原创者）"
+  "share.analysis.origin": "不提及（原创者）",
+  "decide.hint_share": "审稿完成。生成分享帖文请执行：ant-peer-review decide {run} --yes [--rule <红线>=confirmed|dismissed]"
 }
