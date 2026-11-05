@@ -523,12 +523,13 @@ def test_share_posts_use_the_users_punctuation(tmp_path):
     decide(run, store, b)
     fb = run.path("share-facebook-insight.md").read_text()
     th = run.path("share-threads-insight.md").read_text()
-    assert "，" not in fb and "。" not in fb and "流程越短, 錯誤越少 交接本身就是風險" in fb
+    assert "，" not in fb and "流程越短, 錯誤越少。交接本身就是風險。" in fb
     assert "流程越短，錯誤越少。" in th
     sp = next(c for c in b.calls if c["task"] == "share")["prompt"]
     fb_line = next(ln for ln in sp.splitlines() if "key facebook-insight" in ln)
     th_line = next(ln for ln in sp.splitlines() if "key threads-insight" in ln)
     assert "half-width" in fb_line and "full-width" in th_line
+    assert "end a sentence with 。" in fb_line and "end a sentence with a space" not in fb_line
     assert punct_style(["隨手寫寫 沒有標點", "今天讀到好文, 推薦!"]) == "casual"
     assert punct_of(dict(voice("x"), samples=full)) == "full"        # a voice file from before
     assert punct_of(None) == "casual"

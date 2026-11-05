@@ -208,7 +208,11 @@ def test_blocks_and_dashes_removed_everywhere():
 def test_casual_punctuation():
     text = "先看結果，再談方法；重點是「迴圈」（不是能力）。真的嗎？是的！\n下一段：結束。"
     out, changes = autofix(text, punct="casual")
-    assert out == '先看結果, 再談方法, 重點是 "迴圈" (不是能力) 真的嗎? 是的!\n下一段: 結束', out
+    assert out == '先看結果, 再談方法, 重點是 "迴圈" (不是能力)。真的嗎? 是的!\n下一段: 結束。', out
+    # the user's case: a sentence end next to Latin text keeps its mark
+    assert autofix("可以用超過 256 位元組的密碼登入。OpenSSH 10.6p2 已經推出", punct="casual")[0] \
+        == "可以用超過 256 位元組的密碼登入。OpenSSH 10.6p2 已經推出"
+    assert codes(rule_check("先看結果, 再談。真的嗎?", punct="casual"), "hard") == []
     assert "fullwidth_punctuation" in codes(rule_check("先看結果，再談。", punct="casual"), "hard")
     assert codes(rule_check("先看結果, 再談方法 真的嗎?", punct="casual"), "hard") == []
     assert "halfwidth_punctuation" in codes(rule_check("先看結果,再談方法。"), "hard")

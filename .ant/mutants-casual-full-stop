@@ -1,0 +1,10 @@
+# casual keeps the full stop (S-writing-gate-016, S-share-018)
+@@ src/ant_peer_review/gate.py
+- FULL_MARKS = re.compile(r"[，、；：！？「」『』“”（）]")  # casual keeps 。
++ FULL_MARKS = re.compile(r"[，、；：！？。「」『』“”（）]")  # casual keeps 。
+@@ src/ant_peer_review/gate.py
+-         elif ch in "「『“":
++         elif ch in "「『“。":
+@@ src/ant_peer_review/share.py
+-               "except: end a sentence with 。 (a space would not show where it ends next to "
++               "except: end a sentence with a space (a space would not show where it ends next to "

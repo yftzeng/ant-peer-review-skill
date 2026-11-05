@@ -90,7 +90,7 @@ DASH_SPACED = re.compile(r"[ \t]*[—–―]+[ \t]*")
 PUNCT_STYLES = ("full", "casual")
 # S-writing-gate-016, casual: the half-width mark and whether a space follows it.
 CASUAL = {"，": ",", "、": ",", "；": ",", "：": ":", "！": "!", "？": "?"}
-FULL_MARKS = re.compile(r"[，、；：！？。「」『』“”（）]")
+FULL_MARKS = re.compile(r"[，、；：！？「」『』“”（）]")  # casual keeps 。
 MARKDOWN = re.compile(r"\*\*|\[[^\]]+\]\(https?://|^#{1,6} ", re.M)
 QUOTED = re.compile(r"「[^」]*」|『[^』]*』|“[^”]*”|\"[^\"\n]*\"")
 NUMBER = re.compile(r"\d[\d.,]*\d%?|\d%?")
@@ -224,14 +224,13 @@ def _dash(m: re.Match, text: str, casual: bool) -> str:
 
 
 def _casual(text: str) -> str:
-    """S-writing-gate-016: full-width marks to half-width ones; the full stop goes."""
+    """S-writing-gate-016: full-width marks to half-width ones; the full stop stays, since a
+    space would not mark a sentence end next to Latin text or a figure."""
     out = []
     for i, ch in enumerate(text):
         nxt = text[i + 1:i + 2]
         if ch in CASUAL:
             out.append(CASUAL[ch] + ("" if nxt in ("", "\n", " ") else " "))
-        elif ch == "。":
-            out.append("" if nxt in ("", "\n") else " ")
         elif ch in "「『“":
             out.append((" " if out and out[-1][-1:] not in (" ", "\n", "(") else "") + '"')
         elif ch in "」』”":

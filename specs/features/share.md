@@ -185,3 +185,4 @@ Feature: share
 - 2026-11-03 · ~S-share-001 ~S-share-010 ~S-share-013 · decision: none -- user: tick Facebook by default; no source line by default (the analysis, own thesis and the paraphrase check now keep a distilled post from copying the article)
 - 2026-11-03 · ~S-share-011 ~S-share-012 ~S-share-014 +S-share-017 · decision: none -- live distill run (weight-space programming): the post named none of GPT-6 Astra, Qwen3.5-0.8B, MATH-500, because every product, benchmark and even Python was banned as a name; user: leave out the original creators, companies and sites; focus on the topic, the main subject and related people
 - 2026-11-03 · +S-share-018 · decision: none -- user: social posts without full-width punctuation; the voice already learns from the user's own posts, so it learns their punctuation too
+- 2026-11-06 · S-share-018 unchanged in steps: casual posts now keep 。 at a sentence end (S-writing-gate-016) · decision: none -- see writing-gate

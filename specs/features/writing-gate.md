@@ -114,12 +114,12 @@ Feature: writing gate
     And   a block character left in a text is a must-fix "block_char"
 
   @S-writing-gate-016
-  Scenario: casual punctuation turns full-width marks into half-width ones, and drops the full stop
+  Scenario: casual punctuation turns full-width marks into half-width ones and keeps the full stop
     Given the punctuation style "casual" and "先看結果，再談方法；重點是「迴圈」（不是能力）。真的嗎？是的！\n下一段：結束。"
     When  the fix-up runs
-    Then  it becomes "先看結果, 再談方法, 重點是 \"迴圈\" (不是能力) 真的嗎? 是的!\n下一段: 結束": ，、； become ", ", ：！？ become ": " "! " "? ",
-          「」『』“” become \", （） become (), 。 becomes a space inside a line and nothing at a line end; spaces are not doubled
-    And   with "casual" a full-width mark left in a text is a must-fix "fullwidth_punctuation" and half-width marks are not a tell;
+    Then  it becomes "先看結果, 再談方法, 重點是 \"迴圈\" (不是能力)。真的嗎? 是的!\n下一段: 結束。": ，、； become ", ", ：！？ become ": " "! " "? ",
+          「」『』“” become \", （） become (), 。 stays (a space would not mark the sentence end next to Latin text or a figure); spaces are not doubled
+    And   with "casual" a full-width mark other than 。 left in a text is a must-fix "fullwidth_punctuation" and half-width marks are not a tell;
           the style "full" (the default) keeps S-writing-gate-008 and 009 as they are
 ```
 
@@ -134,3 +134,4 @@ Feature: writing gate
 - 2026-11-02 · ~N-writing-gate-001 · decision: none -- revision plans pass the gate too; a header inside the adopted article would end up in audit.md, so their failures go to the plan's checks file
 - 2026-11-02 · ~S-writing-gate-009 · decision: none -- live audit: "Term (中文註解)" list items were turned into "Term （…）"; only a parenthesis glued to a Han character is converted
 - 2026-11-03 · ~S-writing-gate-002 ~S-writing-gate-010 +S-writing-gate-015..016 · decision: none -- user: de-AI also means no ▋, no —— and, in social posts, no full-width punctuation (half-width, or none); replies and revised articles keep full-width, the Taiwan norm
+- 2026-11-06 · ~S-writing-gate-016 casual keeps 。: as a space it could not be told from the gap before Latin text or a figure ("可以用超過 256 位元組的密碼登入 OpenSSH 10.6p2 已經推出") (user: 其中有多處兩句子間沒有「符號」…; 保留「。」) · decision: none -- a refinement of the casual style the user asked for on 2026-11-03
