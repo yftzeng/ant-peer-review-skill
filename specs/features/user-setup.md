@@ -69,6 +69,11 @@ Feature: user setup
   Scenario: a one-off single-reviewer override runs with a warning
     When  a run starts with --models opus
     Then  the run uses ["opus"] and the banner warns that there is no peer review
+  @S-user-setup-011
+  Scenario: with no saved settings the language defaults to the system's
+    Given no config.toml, and the environment LC_ALL, LC_MESSAGES, LANG or LANGUAGE (the first set one wins)
+    When  the settings are loaded
+    Then  zh_TW, zh_HK, zh_MO or zh_Hant gives "zh-TW", any other zh gives "zh-CN", anything else (C, POSIX, en_US, unset) gives "en"; the first-use menu starts on that language, and a saved lang or --lang always wins
 ```
 
 ## Must NOT
@@ -78,3 +83,4 @@ Feature: user setup
 - 2026-10-22 · +S-user-setup-001..007 +N-user-setup-001 · decision: none -- first spec, decisions live in docs/DESIGN.md §1
 - 2026-10-22 · +S-user-setup-008 · decision: none -- user: consecutive questions ran together and the reviewer banner looked like an answer
 - 2026-10-25 · ~S-user-setup-002 +S-user-setup-009..010 · decision: none -- docs/DESIGN.md reviewer-roster row revised in place; user: at least 1 reviewer, checked after submit and not shown in the UI; the UI recommends 2 to split the work and cross-review
+- 2026-11-06 · +S-user-setup-011 the first-use language defaults to the system locale; SKILL.md tells the agent to pass --lang in the user's language, as in ant-pr-review (user: 關於預設語系 …; 好) · decision: none -- a default for the first run only; the saved setting and --lang keep their order

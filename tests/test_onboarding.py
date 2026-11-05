@@ -123,3 +123,27 @@ def test_single_reviewer_override_warns():
     assert parse_models_override("opus") == ["opus"]
     assert "no cross-review" in banner(T("en"), ["opus"])
     assert "no cross-review" not in banner(T("en"), ["opus", "sonnet"])
+
+
+# @S-user-setup-011
+import pytest as _pytest
+
+
+@_pytest.mark.parametrize("env,lang", [
+    ({"LANG": "zh_TW.UTF-8"}, "zh-TW"), ({"LC_ALL": "zh_HK.UTF-8", "LANG": "en_US.UTF-8"}, "zh-TW"),
+    ({"LANGUAGE": "zh_Hant"}, "zh-TW"), ({"LANG": "zh_CN.UTF-8"}, "zh-CN"),
+    ({"LC_MESSAGES": "zh_SG", "LANG": "zh_TW"}, "zh-CN"), ({"LANG": "zh"}, "zh-CN"),
+    ({"LANG": "C.UTF-8"}, "en"), ({"LANG": "en_US.UTF-8"}, "en"), ({}, "en"),
+    ({"LC_ALL": "", "LANG": "zh_TW.UTF-8"}, "zh-TW")])
+def test_first_use_language_from_the_system(tmp_path, monkeypatch, env, lang):
+    from ant_peer_review.store import Store, system_lang
+    for k in ("LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"):
+        monkeypatch.delenv(k, raising=False)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
+    assert system_lang() == lang
+    store = Store(tmp_path / "home")
+    assert store.load_config().lang == lang
+    (tmp_path / "home").mkdir(exist_ok=True)
+    store.config_path.write_text('lang = "en"\n', encoding="utf-8")
+    assert store.load_config().lang == "en"          # a saved language always wins

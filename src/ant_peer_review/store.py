@@ -53,6 +53,17 @@ class Config:
     configured: bool = False
 
 
+def system_lang(env=None) -> str:
+    """The first set of LC_ALL, LC_MESSAGES, LANG, LANGUAGE, as one of LANGS: Traditional
+    for Taiwan, Hong Kong, Macau or Hant, Simplified for any other Chinese, else English."""
+    env = os.environ if env is None else env
+    raw = next((env[k] for k in ("LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE") if env.get(k)), "")
+    tag = raw.split(":")[0].split(".")[0].replace("-", "_").lower()
+    if not tag.startswith("zh"):
+        return "en"
+    return "zh-TW" if any(x in tag for x in ("_tw", "_hk", "_mo", "hant")) else "zh-CN"
+
+
 class Store:
     def __init__(self, home: Path | None = None):
         self.home = Path(home) if home else default_home()
@@ -87,7 +98,7 @@ class Store:
 
     def load_config(self) -> Config:
         if not self.config_path.exists():
-            return Config()
+            return Config(lang=system_lang())  # S-user-setup-011: first use only
         data = tomllib.loads(self.config_path.read_text(encoding="utf-8"))
         cfg = Config()
         cfg.lang = data.get("lang", cfg.lang)

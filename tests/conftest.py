@@ -27,3 +27,11 @@ def _no_politeness_delay(monkeypatch):
     """Tests talk to local servers; the 1 s per-host politeness pause only slows them."""
     import ant_peer_review.sources.crawler as crawler
     monkeypatch.setattr(crawler, "DEFAULT_MIN_INTERVAL", 0.0)
+
+
+@pytest.fixture(autouse=True)
+def _english_locale(monkeypatch):
+    """S-user-setup-011 reads the system locale on first use: tests start from English."""
+    for k in ("LC_ALL", "LC_MESSAGES", "LANGUAGE"):
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("LANG", "C.UTF-8")

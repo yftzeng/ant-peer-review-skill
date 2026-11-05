@@ -1,0 +1,13 @@
+# first-use language from the system locale (S-user-setup-011)
+@@ src/ant_peer_review/store.py
+-             return Config(lang=system_lang())  # S-user-setup-011: first use only
++             return Config()  # S-user-setup-011: first use only
+@@ src/ant_peer_review/store.py
+-     return "zh-TW" if any(x in tag for x in ("_tw", "_hk", "_mo", "hant")) else "zh-CN"
++     return "zh-TW" if any(x in tag for x in ("_tw",)) else "zh-CN"
+@@ src/ant_peer_review/store.py
+-     raw = next((env[k] for k in ("LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE") if env.get(k)), "")
++     raw = next((env[k] for k in ("LANG", "LC_ALL", "LC_MESSAGES", "LANGUAGE") if env.get(k)), "")
+@@ src/ant_peer_review/store.py
+-     if not tag.startswith("zh"):
++     if not tag:

@@ -37,6 +37,8 @@ robots.txt, a site-profile block, internal addresses and a login or paywall neve
     [--models opus,sonnet] [--lang en|zh-TW|zh-CN] [--academic]
   ```
 
+Always pass `--lang` in the language the user writes to you in: `zh-TW` for Traditional Chinese, `zh-CN` for Simplified Chinese, `en` otherwise. The saved setting (asked at first use, defaulting to the system locale) only applies to runs started without `--lang`; a resumed run keeps the language it was created with.
+
 Pass `--academic` only when the user wants cited papers checked. It verifies DOIs and arXiv ids against doi.org, Crossref and arXiv: does the paper exist, does the title match, has it been retracted. Interactively, the CLI asks this in a checkbox right after the audience.
 
 The first line of the output names the active reviewers. Exit codes:
