@@ -67,6 +67,11 @@ Feature: menus
     Given the same checkbox without a menu-capable terminal
     When  the user types "n", then "12", then an empty line
     Then  page 2 lists options 11-20 numbered 11-20, and the answer is option 12
+  @S-menus-011
+  Scenario: pasted text with broken UTF-8 is cleaned when it is read, never left to crash a later write
+    Given the terminal hands input() a line whose bytes it could not decode (lone surrogates, as Python's surrogateescape gives them)
+    When  the line is read
+    Then  bytes that form a valid character are put back together ("\udce4\udcb8\udcad" becomes "中") and bytes that do not become "\ufffd"; the run's intake is written
 ```
 
 ## Must NOT
@@ -75,3 +80,4 @@ Feature: menus
 ## Revisions
 - 2026-10-22 · +S-menus-001..008 +N-menus-001 · decision: none -- user chose stdlib arrow menus (option B) over adding questionary/prompt_toolkit: keeps zero runtime deps and the in-list custom entry
 - 2026-10-25 · +S-menus-009..010 · decision: none -- user: the article list shows 10 a page with previous/next page
+- 2026-11-06 · +S-menus-011 input is cleaned of lone surrogates when read (user: 評估 ant peer review 又出錯了 … UnicodeEncodeError: surrogates not allowed) · decision: none -- a bug fix at the input boundary

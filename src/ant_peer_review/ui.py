@@ -66,12 +66,19 @@ class IO(Protocol):
     def ask(self, prompt: str) -> str: ...  # raises EOFError on Ctrl-D
 
 
+def clean_input(s: str) -> str:
+    """Bytes the terminal could not decode arrive as lone surrogates (surrogateescape under a
+    C or UTF-8 locale): put back what forms a valid character, replace the rest with U+FFFD,
+    so a pasted text can always be written as UTF-8."""
+    return s.encode("utf-8", "surrogateescape").decode("utf-8", "replace")
+
+
 class ConsoleIO:
     def say(self, text: str = "") -> None:
         print(text, flush=True)
 
     def ask(self, prompt: str) -> str:
-        return input(prompt)
+        return clean_input(input(prompt))
 
     # ---- arrow-key menus (only on a real terminal) ----
     def interactive(self) -> bool:

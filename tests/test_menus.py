@@ -200,3 +200,12 @@ def test_line_mode_pages_with_global_numbers():
     assert "11) [ ] Option 11" in io.text and "20) [ ] Option 20" in io.text
     first_page = io.text.split("page 2/3")[0]
     assert "Option 11" not in first_page and "10) [ ] Option 10" in first_page
+
+
+# @S-menus-011
+def test_broken_utf8_in_pasted_text_is_cleaned(monkeypatch):
+    import builtins
+    from ant_peer_review.ui import ConsoleIO
+    monkeypatch.setattr(builtins, "input", lambda prompt="": "a\udce4\udcb8\udcad b\udcff\udcf0\udc9f")
+    got = ConsoleIO().ask("? ")
+    assert got == "a中 b\ufffd\ufffd" and got.encode("utf-8")

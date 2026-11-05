@@ -1,0 +1,7 @@
+# input is cleaned of lone surrogates when read
+@@ src/ant_peer_review/ui.py
+-         return clean_input(input(prompt))
++         return input(prompt)
+@@ src/ant_peer_review/ui.py
+-     return s.encode("utf-8", "surrogateescape").decode("utf-8", "replace")
++     return s.encode("utf-8", "surrogatepass").decode("utf-8", "surrogatepass")
