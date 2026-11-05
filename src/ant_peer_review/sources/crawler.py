@@ -19,7 +19,7 @@ import ssl
 import urllib.robotparser
 from dataclasses import dataclass, field
 from typing import Callable
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import quote, urljoin, urlsplit
 
 DEFAULT_UA = "ant-peer-review/0.1 (+article review; respects robots.txt)"
 ALLOWED_TYPES = ("text/html", "application/xhtml+xml", "text/plain", "text/markdown",
@@ -133,6 +133,10 @@ class Crawler:
     # -- public -------------------------------------------------------------
     def preflight(self, url: str) -> str:
         """Site-profile block and robots.txt; returns the User-Agent to use."""
+        try:  # a lone surrogate cannot go on the wire: a fetch error, never a crash
+            url.encode("utf-8")
+        except UnicodeError as e:
+            raise FetchError("bad_url", str(e)[:80])
         profile = self.profile_for(url)
         if profile.get("blocked"):
             raise FetchError("site_profile_blocked", profile.get("note", ""))
@@ -207,6 +211,10 @@ class Crawler:
         host = parts.hostname
         if not host:
             raise FetchError("no_host")
+        try:  # a Chinese domain goes out as IDNA, a Chinese path or query percent-encoded
+            host = host.encode("idna").decode("ascii")
+        except UnicodeError as e:
+            raise FetchError("bad_url", str(e)[:80])
         port = port_ or (443 if parts.scheme == "https" else 80)
         if cache:  # a browser asks per subresource; one lookup per host and port
             key = (host, port)
@@ -221,9 +229,12 @@ class Crawler:
             if not ips or not all(address_allowed(ip) for ip in ips):
                 raise FetchError("blocked_address", host)
             allowed = ips
-        path = parts.path or "/"
-        if parts.query:
-            path += "?" + parts.query
+        try:  # "%" is kept, so a URL already encoded is not encoded twice
+            path = quote(parts.path or "/", safe="/%:@!$&'()*+,;=-._~")
+            if parts.query:
+                path += "?" + quote(parts.query, safe="/?%:@!$&'()*+,;=-._~")
+        except UnicodeError as e:
+            raise FetchError("bad_url", str(e)[:80])
         return parts.scheme, host, port, allowed[0], path
 
     def _request(self, url: str, ua: str, until: float | None = None,

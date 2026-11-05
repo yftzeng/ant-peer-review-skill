@@ -329,6 +329,11 @@ Feature: source acquisition
     Given a page titled "Sparks: LLMs can read &amp; write weights &#8212; a &quot;test&quot;" with the same JSON-LD headline
     When  it is converted and its identity is read
     Then  the title is 'Sparks: LLMs can read & write weights — a "test"' in the document, the cited source and the identity
+  @S-source-acquisition-052
+  Scenario: a cited URL ends where Chinese text starts, and a URL with Chinese in it is sent encoded
+    Given a text target with "論文：https://arxiv.org/abs/2610.37741这篇论文，首次证明" and a server answering /wiki/%E8%87%BA%E7%81%A3?q=%E4%B8%AD
+    When  the cited URLs are read, and "http://pub.example/wiki/臺灣?q=中" and a URL holding a character that cannot be encoded are fetched
+    Then  the cited URL is "https://arxiv.org/abs/2610.37741"; the Chinese path reaches the page percent-encoded (an encoded URL is not encoded twice); the last raises a fetch error "bad_url", so a cited source fails and the run goes on
 ```
 
 ## Must NOT
@@ -352,3 +357,4 @@ Feature: source acquisition
 - 2026-11-03 · +S-source-acquisition-050 · decision: none -- live run: a pasted post cited its source URL at the end; nothing fetched it, so its numbers (0.016%, 7.9% to 48.1%) could only be searched for; user chose to fetch it as a reference (option A)
 - 2026-11-03 · ~S-source-acquisition-049 · decision: none -- live run (rikiyat.github.io, Distill template): the only <article> was the 346-character BibTeX citation, and a citation box won the content-container pick too; 30,000 characters of story were dropped
 - 2026-11-03 · +S-source-acquisition-051 · decision: none -- live run: the cited source's title kept "&amp;" (rikiyat.github.io); the <title> slice was never unescaped, while the identity parser already was
+- 2026-11-06 · +S-source-acquisition-052 cited URLs stop at Chinese text; non-ASCII URLs go out encoded; an unsendable URL is a fetch error (user: 評估 … 發生的錯誤 UnicodeEncodeError) · decision: none -- a bug fix: run 20261106-0304 crashed on "…2610.37741这篇论文"

@@ -57,3 +57,14 @@ def test_checker_gets_matching_paragraphs_of_cited_sources():
     assert "rose from 7.9% to 48.1%" in p and "Unrelated paragraph 5" not in p
     assert "not neutral evidence" in p and POST in p
     assert c["status"] == "supported" and [s["url"] for s in c["sources"]] == [POST + "/"]
+
+
+# @S-source-acquisition-052 the run 20261106-0304 case
+def test_cited_url_stops_at_chinese_text():
+    from ant_peer_review.sources.acquire import cited_urls
+    text = "我們新的論文：https://arxiv.org/abs/2610.37741这篇论文，首次证明预训练投毒"
+    assert cited_urls({"targets": [{"kind": "text", "value": text}]}) == \
+        ["https://arxiv.org/abs/2610.37741"]
+    assert cited_urls({"targets": [{"kind": "text", "value":
+                                     "見 https://zh.wikipedia.org/wiki/%E8%87%BA%E7%81%A3 一文"}]}) \
+        == ["https://zh.wikipedia.org/wiki/%E8%87%BA%E7%81%A3"]

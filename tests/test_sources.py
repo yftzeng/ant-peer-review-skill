@@ -318,3 +318,20 @@ def test_a_region_with_a_sliver_of_the_page_does_not_count():
             f"</d-appendix></body></html>")
     md = html_to_markdown(html).markdown
     assert "Story paragraph 39" in md and "Story paragraph 0" in md
+
+
+# @S-source-acquisition-052
+def test_non_ascii_url_is_encoded_and_unsendable_is_a_fetch_error(server):
+    port = server.server_address[1]
+    Handler.routes["/wiki/%E8%87%BA%E7%81%A3?q=%E4%B8%AD"] = (
+        200, {"Content-Type": "text/html; charset=utf-8"}, b"<p>tw</p>")
+    c = local_crawler()
+    assert c.fetch(f"http://pub.example:{port}/wiki/臺灣?q=中").body == b"<p>tw</p>"
+    assert c.fetch(f"http://pub.example:{port}/wiki/%E8%87%BA%E7%81%A3?q=%E4%B8%AD").body \
+        == b"<p>tw</p>"
+    Handler.routes["/a"] = (200, {"Content-Type": "text/html; charset=utf-8"}, b"<p>idn</p>")
+    idn = local_crawler(hosts=("xn--fsqu00a.example",))
+    assert idn.fetch(f"http://例子.example:{port}/a").body == b"<p>idn</p>"   # sent as IDNA
+    with pytest.raises(FetchError) as e:
+        c.fetch(f"http://pub.example:{port}/a\udcff")
+    assert e.value.reason == "bad_url"

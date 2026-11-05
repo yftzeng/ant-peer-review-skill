@@ -431,7 +431,10 @@ def run_sources(run: Run, crawler: Crawler, *, on_progress=None, renderer=None,
 
 
 MAX_CITED = 3
-_CITED_RE = re.compile(r"https?://[^\s<>\"'，。、；：！？「」『』（）()\[\]]+", re.I)
+# A URL in pasted text ends at the first CJK character or full-width mark: "…/2610.37741这篇论文"
+# is the paper's URL followed by prose, never one path (a copied Chinese path is %-encoded).
+_CITED_RE = re.compile(r"https?://[^\s<>\"'，。、；：！？「」『』（）()\[\]⺀-鿿豈-﫿＀-￯]+",
+                       re.I)
 
 
 def cited_urls(intake: dict) -> list[str]:

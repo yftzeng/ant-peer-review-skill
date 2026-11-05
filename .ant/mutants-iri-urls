@@ -1,0 +1,19 @@
+# non-ASCII URLs go out encoded; an unsendable one is a fetch error (S-source-acquisition-052)
+@@ src/ant_peer_review/sources/crawler.py
+-             host = host.encode("idna").decode("ascii")
++             host = host
+@@ src/ant_peer_review/sources/crawler.py
+-             path = quote(parts.path or "/", safe="/%:@!$&'()*+,;=-._~")
++             path = parts.path or "/"
+@@ src/ant_peer_review/sources/crawler.py
+-                 path += "?" + quote(parts.query, safe="/?%:@!$&'()*+,;=-._~")
++                 path += "?" + parts.query
+@@ src/ant_peer_review/sources/crawler.py
+-             path = quote(parts.path or "/", safe="/%:@!$&'()*+,;=-._~")
++             path = quote(parts.path or "/", safe="/:@!$&'()*+,;=-._~")
+@@ src/ant_peer_review/sources/crawler.py
+-             url.encode("utf-8")
++             pass
+@@ src/ant_peer_review/sources/acquire.py
+- _CITED_RE = re.compile(r"https?://[^\s<>\"'，。、；：！？「」『』（）()\[\]⺀-鿿豈-﫿＀-￯]+",
++ _CITED_RE = re.compile(r"https?://[^\s<>\"'，。、；：！？「」『』（）()\[\]]+",
