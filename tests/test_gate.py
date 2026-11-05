@@ -213,6 +213,12 @@ def test_casual_punctuation():
     assert autofix("可以用超過 256 位元組的密碼登入。OpenSSH 10.6p2 已經推出", punct="casual")[0] \
         == "可以用超過 256 位元組的密碼登入。OpenSSH 10.6p2 已經推出"
     assert codes(rule_check("先看結果, 再談。真的嗎?", punct="casual"), "hard") == []
+    # a half-width mark the model wrote gets its space; numbers, URLs and closing marks do not
+    assert autofix('鎖定帳號,例如 root;還有:這些!真的?是', punct="casual")[0] == \
+        "鎖定帳號, 例如 root; 還有: 這些! 真的? 是"
+    assert autofix("共 1,000 人,10:30 開始,見 https://ex.example/a?b=1,2", punct="casual")[0] == \
+        "共 1,000 人, 10:30 開始, 見 https://ex.example/a?b=1,2"
+    assert autofix('他說 "好,"\n下一行:\n結束?)', punct="casual")[0] == '他說 "好,"\n下一行:\n結束?)'
     assert "fullwidth_punctuation" in codes(rule_check("先看結果，再談。", punct="casual"), "hard")
     assert codes(rule_check("先看結果, 再談方法 真的嗎?", punct="casual"), "hard") == []
     assert "halfwidth_punctuation" in codes(rule_check("先看結果,再談方法。"), "hard")

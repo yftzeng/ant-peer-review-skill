@@ -119,6 +119,7 @@ Feature: writing gate
     When  the fix-up runs
     Then  it becomes "先看結果, 再談方法, 重點是 \"迴圈\" (不是能力)。真的嗎? 是的!\n下一段: 結束。": ，、； become ", ", ：！？ become ": " "! " "? ",
           「」『』“” become \", （） become (), 。 stays (a space would not mark the sentence end next to Latin text or a figure); spaces are not doubled
+    And   a half-width , ; : ! ? already in the text gets one space after it ("鎖定帳號,例如 root" becomes "鎖定帳號, 例如 root"), except inside a number ("1,000", "10:30"), in a URL, or before a space, a line end or a closing mark
     And   with "casual" a full-width mark other than 。 left in a text is a must-fix "fullwidth_punctuation" and half-width marks are not a tell;
           the style "full" (the default) keeps S-writing-gate-008 and 009 as they are
 ```
@@ -135,3 +136,4 @@ Feature: writing gate
 - 2026-11-02 · ~S-writing-gate-009 · decision: none -- live audit: "Term (中文註解)" list items were turned into "Term （…）"; only a parenthesis glued to a Han character is converted
 - 2026-11-03 · ~S-writing-gate-002 ~S-writing-gate-010 +S-writing-gate-015..016 · decision: none -- user: de-AI also means no ▋, no —— and, in social posts, no full-width punctuation (half-width, or none); replies and revised articles keep full-width, the Taiwan norm
 - 2026-11-06 · ~S-writing-gate-016 casual keeps 。: as a space it could not be told from the gap before Latin text or a figure ("可以用超過 256 位元組的密碼登入 OpenSSH 10.6p2 已經推出") (user: 其中有多處兩句子間沒有「符號」…; 保留「。」) · decision: none -- a refinement of the casual style the user asked for on 2026-11-03
+- 2026-11-06 · ~S-writing-gate-016 a half-width mark the model wrote gets the space after it too (user: 同時若中文只是","等類似的符合時，後面加個空白) · decision: none -- the casual style's own spacing rule, applied to marks that were already half width

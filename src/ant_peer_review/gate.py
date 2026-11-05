@@ -242,7 +242,12 @@ def _casual(text: str) -> str:
             out.append(")" + ("" if nxt in ("", "\n", " ", "。") or nxt in "".join(CASUAL) else " "))
         else:
             out.append(ch)
-    s = re.sub(r"[ \t]{2,}", " ", "".join(out))
+    s = "".join(out)
+    # a half-width mark already in the text gets its space too, except inside a number
+    # (1,000, 10:30) or before a space, a line end or a closing mark (URLs are shielded)
+    s = re.sub(r"(?<!\d)([,;:!?])(?=[^\s,;:!?\"')\]\x00])|(?<=\d)([,;:!?])(?=[^\s\d,;:!?\"')\]\x00])",
+               lambda m: (m.group(1) or m.group(2)) + " ", s)
+    s = re.sub(r"[ \t]{2,}", " ", s)
     return re.sub(r"[ \t]+$", "", s, flags=re.M)
 
 
