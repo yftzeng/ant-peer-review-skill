@@ -85,6 +85,8 @@ Feature: writing gate
     Given "這不是技巧，而是心態。" and "這不是加機器，而是把查詢從 3 秒降到 0.2 秒。"
     When  the rule check runs
     Then  the first is a strong tell "hollow_contrast" and the second is not flagged
+    And   the reversed form counts too: "要管的是 AI「默默改變做法」，不是創新本身。" and "It's a habit, not a tool." are strong
+          tells, "瓶頸是 3 秒的查詢，不是機器。" is not
 
   @S-writing-gate-012
   Scenario: quoted words and the article title are not tells
@@ -104,6 +106,7 @@ Feature: writing gate
     Given texts with "真正的問題是", "讓我們來看看", "我不是說", "希望這對你有幫助" and their English counterparts
     When  the rule check runs
     Then  they are strong tells "deep_saying", "run_up", "straw_man" and "chatbot_residue"
+    And   an objection nobody raised is a "straw_man" too: "有人會說這樣綁手綁腳", "你可能會覺得", "Some might say"
 
   @S-writing-gate-015
   Scenario: block characters and dashes are removed from every text the tool writes
@@ -137,3 +140,4 @@ Feature: writing gate
 - 2026-11-03 · ~S-writing-gate-002 ~S-writing-gate-010 +S-writing-gate-015..016 · decision: none -- user: de-AI also means no ▋, no —— and, in social posts, no full-width punctuation (half-width, or none); replies and revised articles keep full-width, the Taiwan norm
 - 2026-11-06 · ~S-writing-gate-016 casual keeps 。: as a space it could not be told from the gap before Latin text or a figure ("可以用超過 256 位元組的密碼登入 OpenSSH 10.6p2 已經推出") (user: 其中有多處兩句子間沒有「符號」…; 保留「。」) · decision: none -- a refinement of the casual style the user asked for on 2026-11-03
 - 2026-11-06 · ~S-writing-gate-016 a half-width mark the model wrote gets the space after it too (user: 同時若中文只是","等類似的符合時，後面加個空白) · decision: none -- the casual style's own spacing rule, applied to marks that were already half width
+- 2026-11-06 · ~S-writing-gate-011 ~S-writing-gate-014 · decision: none -- live share run (vault particles): "要管的是 AI「默默改變做法」，不是創新本身" and "有人會說這樣綁手綁腳" passed the rule check; user: add them

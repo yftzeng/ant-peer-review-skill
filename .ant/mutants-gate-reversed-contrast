@@ -1,0 +1,13 @@
+# reversed contrast and the objection nobody raised (S-writing-gate-011, 014)
+@@ src/ant_peer_review/gate.py
+-                       r"(?<![不但就還还總总要或可於于凡倒算])是([^。！？\n，,]{1,40})[，,]\s*(?:而)?不是[^。！？\n]{1,40}|"
++                       r"(?<!不)是([^。！？\n，,]{1,40})[，,]\s*(?:而)?不是[^。！？\n]{1,40}|"
+@@ src/ant_peer_review/gate.py
+-                       r"\b(?:it's|it is) ([^.!?\n,]{1,60}), not [^.!?\n]{1,60}|"
++                       r"\bzzz (?:it's|it is) ([^.!?\n,]{1,60}), not [^.!?\n]{1,60}|"
+@@ src/ant_peer_review/gate.py
+-                  r"(?:也許|也许|或許|或许)?有人(?:可能)?會(?:說|覺得)|(?:也許|也许|或許|或许)?有人(?:可能)?会(?:说|觉得)|"
++                  r"|"
+@@ src/ant_peer_review/gate.py
+-                  r"\b(?:some|critics) (?:might|will|may) (?:say|argue)\b|\byou might (?:think|say)\b",
++                  r"\bzzz\b",

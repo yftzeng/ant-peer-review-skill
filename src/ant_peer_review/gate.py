@@ -61,7 +61,10 @@ STAGING = {
               r"一句话总结|廢話不多說|废话不多说|\blet's dive in\b|\bhere's the thing\b|"
               r"\bhere's what you need to know\b|\bhonestly\?|\bwithout further ado\b",
     "straw_man": r"我不是說|我不是说|這並不是說|这并不是说|不要誤會|不要误会|"
-                 r"\bI'm not saying\b|\bto be clear\b|\bdon't get me wrong\b",
+                 r"(?:也許|也许|或許|或许)?有人(?:可能)?會(?:說|覺得)|(?:也許|也许|或許|或许)?有人(?:可能)?会(?:说|觉得)|"
+                 r"你(?:可能|也許|或許)會(?:說|覺得|想)|你(?:可能|也许|或许)会(?:说|觉得|想)|"
+                 r"\bI'm not saying\b|\bto be clear\b|\bdon't get me wrong\b|"
+                 r"\b(?:some|critics) (?:might|will|may) (?:say|argue)\b|\byou might (?:think|say)\b",
     "chatbot_residue": r"希望(?:這|这)?(?:對|对)(?:你|您)有(?:所)?幫助|希望(?:這|这)?(?:對|对)(?:你|您)有(?:所)?帮助|"
                        r"\bI hope this helps\b|\bgreat question\b|\blet me know if\b",
     "metaphor": r"(?:學習|学习|成長|成长|轉型|转型)之?旅|北極星|北极星|飛輪|飞轮|"
@@ -76,6 +79,8 @@ EXPERIENCE = re.compile(r"我曾|我之前在|以前我|我們團隊|我们团�
                         r"\bI once\b|\bin my experience\b|\bmy team\b|\bwhen I was at\b|"
                         r"\bI've (?:worked|built|used|led)\b", re.I)
 CONTRAST = re.compile(r"不是[^。！？\n]{1,30}?[，,]\s*(?:而)?是([^。！？\n]{1,60})|"
+                      r"(?<![不但就還还總总要或可於于凡倒算])是([^。！？\n，,]{1,40})[，,]\s*(?:而)?不是[^。！？\n]{1,40}|"
+                      r"\b(?:it's|it is) ([^.!?\n,]{1,60}), not [^.!?\n]{1,60}|"
                       r"\bnot (?:just |only |merely )?[^.!?\n]{1,60}?, (?:but |it's )([^.!?\n]{1,80})",
                       re.I)
 CJK = "[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff01-\uff60]"  # incl. CJK punctuation

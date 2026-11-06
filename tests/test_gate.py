@@ -150,6 +150,11 @@ def test_hollow_contrast_only():
     assert "hollow_contrast" in codes(rule_check("這不是技巧，而是心態。"), "strong")
     assert "hollow_contrast" not in codes(rule_check("這不是加機器，而是把查詢從 3 秒降到 0.2 秒。"))
     assert "hollow_contrast" in codes(rule_check("It's not about tactics, it's about mindset."))
+    for text in ("所以我覺得要管的是 AI「默默改變做法」，不是創新本身。", "It's a habit, not a tool."):
+        assert "hollow_contrast" in codes(rule_check(text), "strong"), text
+    assert "hollow_contrast" not in codes(rule_check("瓶頸是 3 秒的查詢，不是機器。"))
+    for text in ("我還是會去，不是因為怕。", "但是很多人，不是每個人都懂。"):   # 還是 / 但是 are words
+        assert "hollow_contrast" not in codes(rule_check(text)), text
 
 
 # @S-writing-gate-012
@@ -185,7 +190,9 @@ def test_staging_tells_in_both_languages():
     cases = {"真正的問題是預算。": "deep_saying", "讓我們來看看細節。": "run_up",
              "我不是說這不好。": "straw_man", "希望這對你有幫助！": "chatbot_residue",
              "The real question is budget.": "deep_saying", "Here's the thing: it works.": "run_up",
-             "I'm not saying it's bad.": "straw_man", "I hope this helps.": "chatbot_residue"}
+             "I'm not saying it's bad.": "straw_man", "I hope this helps.": "chatbot_residue",
+             "有人會說這樣綁手綁腳。": "straw_man", "你可能會覺得這很麻煩。": "straw_man",
+             "Some might say it slows you down.": "straw_man"}
     for text, code in cases.items():
         assert code in codes(rule_check(text), "strong"), text
 
