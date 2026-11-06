@@ -227,6 +227,8 @@ Feature: share
     Then  the writing rules say to name the subject with the term the checked claims use in the output language, the original
           term once in parentheses, and to put the takeaway and the hook in the opening lines (before the fold), then the
           evidence in order of importance, background last and only what a reader needs (S-share-026)
+    And   the rules say the thesis and anything inferred from it are written as the person's view ("我認為"), never as a fact
+          about the work
   @S-share-026
   Scenario: a post on a platform with a fold opens with a headline and follows the inverted pyramid
     Given a share run for Facebook (fold 125) and X (no fold)
@@ -283,3 +285,4 @@ Feature: share
 - 2026-11-06 · ~S-share-017 · decision: none -- live rerun (vault particles): the analysis listed "vault（穹窿體）" and "cryo-EM（冷凍電子顯微鏡）", the post wrote "穹窿體（vault）" as S-share-024 asks, and failed missing_subject
 - 2026-11-06 · ~S-share-012 · decision: none -- two vault-particles reruns wrote "圖一攤開就看得出不對" and "結構圖可以直接檢查，所以很快就被發現", which the article does not say; judged in the same judge call (user: 按你建議)
 - 2026-11-06 · ~S-share-014 · decision: none -- the vault-particles analysis wrote the anchor "圖譜能直接檢查，所以很快被發現", which the article does not say, and two posts repeated it; user: 按你建議
+- 2026-11-06 · ~S-share-024 · decision: none -- vault-particles rerun wrote "配方是後面每一步的前提，錯了要很久才看得出來" as a fact; it came from the thesis, the person's view; user: 按你建議

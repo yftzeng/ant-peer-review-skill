@@ -1,0 +1,4 @@
+# rule dropped
+@@ src/ant_peer_review/share.py
+-     "written as the person's view (I think, 我認為), never as a fact about the work. Do not name
++     "written freely. Do not name
