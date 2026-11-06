@@ -58,7 +58,9 @@ STAGING = {
                    r"的背後[，,]?是|的背后[，,]?是|\bthe real question is\b|\bat its core\b|"
                    r"\bfundamentally\b|\bthe heart of the matter\b",
     "run_up": r"讓我們來看看|让我们来看看|說實話[？?]|说实话[？?]|重點來了|重点来了|一句話總結|"
-              r"一句话总结|廢話不多說|废话不多说|\blet's dive in\b|\bhere's the thing\b|"
+              r"一句话总结|廢話不多說|废话不多说|"
+              r"先(?:補|补|交代|說|说|講|讲|聊|介紹|介绍)(?:一下|一點|一点|點|点)?(?:背景|脈絡|脉络|前情)|"
+              r"\bsome background first\b|\bfirst, some (?:background|context)\b|\blet's dive in\b|\bhere's the thing\b|"
               r"\bhere's what you need to know\b|\bhonestly\?|\bwithout further ado\b",
     "straw_man": r"我不是說|我不是说|這並不是說|这并不是说|不要誤會|不要误会|"
                  r"(?:也許|也许|或許|或许)?有人(?:可能)?會(?:說|覺得)|(?:也許|也许|或許|或许)?有人(?:可能)?会(?:说|觉得)|"
@@ -71,6 +73,16 @@ STAGING = {
                 r"\bnorth star\b|\bflywheel\b",
 }
 STAGING_WEAK = {"metaphor"}
+# Chinese-only phrasing, weak alone; the first three are after Humanizer-zh's F group (MIT)
+ZH_PHRASING = {
+    "jinxing_verb": r"(?:進行|进行)了?(?:一[次番場场個个下])?(?:深入|全面|詳細|详细)?的?"
+                    r"(?:討論|讨论|分析|研究|調查|调查|評估|评估|測試|测试|檢查|检查|比較|比较|處理|处理|"
+                    r"優化|优化|改進|改进|說明|说明|審查|审查|整合|修改|探討|探讨|溝通|沟通|確認|确认|"
+                    r"驗證|验证|觀察|观察|調整|调整|培訓|培训|交流|監控|监控)",
+    "suizhe_opener": r"(?:隨著|随着)[^。！？\n]{1,20}的(?:不斷|不断|快速|迅速|持續|持续)?"
+                     r"(?:發展|发展|進步|进步|普及|興起|兴起|演進|演进)",
+    "stacked_de": r"的[^，。！？；：、「」\n]{1,8}的[^，。！？；：、「」\n]{1,8}的",
+}
 STOCK_OPENER = re.compile(r"^\s*(你是否曾經|你是否曾经|想像一下|想象一下|Have you ever wondered|"
                           r"Imagine a world)", re.I)
 STOCK_CLOSER = re.compile(r"(你怎麼看|你怎么看|你覺得呢|你觉得呢|What do you think|Thoughts)\s*[?？]"
@@ -150,6 +162,12 @@ def rule_check(text: str, *, platform: dict | None = None, take: str = "", allow
         m = re.search(rx, view, re.I)
         if m and m.group(0).lower() not in allowed:
             out.append(_issue(code, WEAK if code in STAGING_WEAK else STRONG, m.group(0)))
+    for code, rx in ZH_PHRASING.items():
+        m = re.search(rx, view)
+        if m:
+            out.append(_issue(code, WEAK, m.group(0)))
+    if punct != "casual" and view.count("；") >= 2:
+        out.append(_issue("semicolons", WEAK, str(view.count("；"))))
     for m in CONTRAST.finditer(view):
         second = next((g for g in m.groups() if g), "")
         if not _concrete(second):
@@ -351,7 +369,7 @@ EDIT_RULES = (
     "dropped facts; then write the final text. State points directly instead of patching "
     "phrases: no contrast that knocks down a claim nobody made, no closing line that repeats "
     "the point, no staged opener, no filler connector, no inflated significance, no triad "
-    "unless there are three real items, no dashes, no Markdown. Priority: accurate, clear, "
+    "unless there are three real items, no dashes, no Markdown, no clauses chained with semicolons. Priority: accurate, clear, "
     "specific, in the person's voice, then stylish. Keep the language and the punctuation "
     "conventions of the text (full-width punctuation in Chinese).")
 

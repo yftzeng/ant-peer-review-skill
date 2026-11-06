@@ -192,7 +192,9 @@ def test_staging_tells_in_both_languages():
              "The real question is budget.": "deep_saying", "Here's the thing: it works.": "run_up",
              "I'm not saying it's bad.": "straw_man", "I hope this helps.": "chatbot_residue",
              "有人會說這樣綁手綁腳。": "straw_man", "你可能會覺得這很麻煩。": "straw_man",
-             "Some might say it slows you down.": "straw_man"}
+             "Some might say it slows you down.": "straw_man",
+             "先補一點背景。穹窿體是顆粒。": "run_up", "先交代一下背景：這是預印本。": "run_up", "先說背景：這是預印本。": "run_up",
+             "Some background first: it is a preprint.": "run_up"}
     for text, code in cases.items():
         assert code in codes(rule_check(text), "strong"), text
 
@@ -230,3 +232,16 @@ def test_casual_punctuation():
     assert codes(rule_check("先看結果, 再談方法 真的嗎?", punct="casual"), "hard") == []
     assert "halfwidth_punctuation" in codes(rule_check("先看結果,再談方法。"), "hard")
     assert autofix("K8s 入門系列,先會 Docker。")[0] == "K8s 入門系列，先會 Docker。"
+
+
+# @S-writing-gate-017
+def test_chinese_phrasing_tells_are_weak():
+    cases = {"我們會進行深入的討論。": "jinxing_verb", "隨著人工智慧的快速發展，工作變了。": "suizhe_opener",
+             "公司的產品的設計的問題很多。": "stacked_de", "先試；再看。然後改；最後發。": "semicolons"}
+    for text, code in cases.items():
+        issues = rule_check(text)
+        assert code in codes(issues, "weak"), text
+        assert code not in codes(issues, "strong") + codes(issues, "hard"), text
+    for text in ("先試；再看。", "專案還在進行中。", "隨著時間過去，大家習慣了。", "隨著他發展出新方法，進度變快。", "我的書和你的筆都在桌上。"):
+        assert not {"jinxing_verb", "suizhe_opener", "stacked_de", "semicolons"} & set(codes(rule_check(text), "weak")), text
+    assert "semicolons" not in codes(rule_check("先試；再看。然後改；最後發。", punct="casual"), "weak")

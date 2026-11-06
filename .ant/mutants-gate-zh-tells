@@ -1,0 +1,28 @@
+# the announced-background opener
+@@ src/ant_peer_review/gate.py
+- r"先(?:補|补|交代|說|说|講|讲|聊|介紹|介绍)(?:一下|一點|一点|點|点)?(?:背景|脈絡|脉络|前情)|"
++ r"先(?:補|补|交代|說|说|講|讲|聊|介紹|介绍)(?:一下|一點|一点|點|点)(?:背景|脈絡|脉络|前情)|"
+# semicolons counted in casual
+@@ src/ant_peer_review/gate.py
+- if punct != "casual" and view.count("；") >= 2:
++ if view.count("；") >= 2:
+# one semicolon is enough
+@@ src/ant_peer_review/gate.py
+- if punct != "casual" and view.count("；") >= 2:
++ if punct != "casual" and view.count("；") >= 1:
+# Chinese phrasing becomes strong
+@@ src/ant_peer_review/gate.py
+-             out.append(_issue(code, WEAK, m.group(0)))
++             out.append(_issue(code, STRONG, m.group(0)))
+# stacked 的 needs only two
+@@ src/ant_peer_review/gate.py
+-     "stacked_de": r"的[^，。！？；：、「」\n]{1,8}的[^，。！？；：、「」\n]{1,8}的",
++     "stacked_de": r"的[^，。！？；：、「」\n]{1,8}的",
+# 進行 alone is a tell
+@@ src/ant_peer_review/gate.py
+-                     r"驗證|验证|觀察|观察|調整|调整|培訓|培训|交流|監控|监控)",
++                     r"驗證|验证|觀察|观察|調整|调整|培訓|培训|交流|監控|监控|中)",
+# 隨著 anything
+@@ src/ant_peer_review/gate.py
+-     "suizhe_opener": r"(?:隨著|随着)[^。！？\n]{1,20}的(?:不斷|不断|快速|迅速|持續|持续)?"
++     "suizhe_opener": r"(?:隨著|随着)[^。！？\n]{0,20}(?:不斷|不断|快速|迅速|持續|持续)?"

@@ -107,6 +107,7 @@ Feature: writing gate
     When  the rule check runs
     Then  they are strong tells "deep_saying", "run_up", "straw_man" and "chatbot_residue"
     And   an objection nobody raised is a "straw_man" too: "有人會說這樣綁手綁腳", "你可能會覺得", "Some might say"
+    And   an opener that announces background before giving it is a "run_up" too: "先補一點背景", "先交代一下背景", "先說背景", "Some background first"
 
   @S-writing-gate-015
   Scenario: block characters and dashes are removed from every text the tool writes
@@ -125,6 +126,13 @@ Feature: writing gate
     And   a half-width , ; : ! ? already in the text gets one space after it ("鎖定帳號,例如 root" becomes "鎖定帳號, 例如 root"), except inside a number ("1,000", "10:30"), in a URL, or before a space, a line end or a closing mark
     And   with "casual" a full-width mark other than 。 left in a text is a must-fix "fullwidth_punctuation" and half-width marks are not a tell;
           the style "full" (the default) keeps S-writing-gate-008 and 009 as they are
+
+  @S-writing-gate-017
+  Scenario: Chinese-only phrasing tells are weak
+    Given texts with "進行深入的討論", "隨著人工智慧的快速發展", "公司的產品的設計的問題" and a text with two "；"
+    When  the rule check runs with the punctuation style "full"
+    Then  they are weak tells "jinxing_verb", "suizhe_opener", "stacked_de" and "semicolons"; one "；", "進行中", "隨著時間過去", "隨著他發展出新方法" and "我的書和你的筆" are not
+    And   with "casual" the semicolons are not counted, since the fix-up turns them into commas
 ```
 
 ## Must NOT
@@ -141,3 +149,4 @@ Feature: writing gate
 - 2026-11-06 · ~S-writing-gate-016 casual keeps 。: as a space it could not be told from the gap before Latin text or a figure ("可以用超過 256 位元組的密碼登入 OpenSSH 10.6p2 已經推出") (user: 其中有多處兩句子間沒有「符號」…; 保留「。」) · decision: none -- a refinement of the casual style the user asked for on 2026-11-03
 - 2026-11-06 · ~S-writing-gate-016 a half-width mark the model wrote gets the space after it too (user: 同時若中文只是","等類似的符合時，後面加個空白) · decision: none -- the casual style's own spacing rule, applied to marks that were already half width
 - 2026-11-06 · ~S-writing-gate-011 ~S-writing-gate-014 · decision: none -- live share run (vault particles): "要管的是 AI「默默改變做法」，不是創新本身" and "有人會說這樣綁手綁腳" passed the rule check; user: add them
+- 2026-11-06 · ~S-writing-gate-014 +S-writing-gate-017 · decision: none -- user evaluated four de-AI tools on the vault-particles post: all cut the announced "先補一點背景"; Chinese checks for 進行+verb, the 隨著…發展 opener and stacked 的 borrowed from Humanizer-zh (MIT); semicolons chaining clauses are our own rule
