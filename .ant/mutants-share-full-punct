@@ -1,0 +1,7 @@
+# zh-TW default punctuation without a voice of the user's own (S-share-018)
+@@ src/ant_peer_review/share.py
+-     return "full" if lang == "zh-TW" else "casual"
++     return "casual"
+@@ src/ant_peer_review/share.py
+-     punct = {p: punct_of(voices[p]) if voices[p] and not borrowed[p] else default_punct(lang)
++     punct = {p: punct_of(voices[p]) if voices[p] and not borrowed[p] else "casual"

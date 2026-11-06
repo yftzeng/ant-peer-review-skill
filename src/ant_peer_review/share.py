@@ -275,6 +275,11 @@ def analysis_md(a: dict, t: T) -> str:
     return "\n".join(L)
 
 
+def default_punct(lang: str) -> str:
+    """S-share-018: without the user's own voice, zh-TW posts are full-width, others casual."""
+    return "full" if lang == "zh-TW" else "casual"
+
+
 def plan(intake: dict) -> list[tuple[str, str]]:
     """(platform, style) pairs in menu order."""
     share = intake.get("share") or {}
@@ -326,8 +331,8 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
             voices[p], borrowed[p] = voice_for(home, p)
     vetoed = [k for k, v in cons["red_lines"].items() if v["status"] == "confirmed"]
     unsupported = [c["text"] for c in read_ledger(run) if c["status"] == "unsupported"]
-    # S-share-018: the user's own voice decides; a borrowed or missing voice is casual.
-    punct = {p: punct_of(voices[p]) if voices[p] and not borrowed[p] else "casual"
+    # S-share-018: the user's own voice decides; without one, the language's default.
+    punct = {p: punct_of(voices[p]) if voices[p] and not borrowed[p] else default_punct(lang)
              for p in voices}
 
     def voice_text(p: str) -> str:

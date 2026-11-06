@@ -160,11 +160,12 @@ Feature: share
     And   the writing rules say: no original creators, companies or sites; open with the topic and the main subject
 
   @S-share-018
-  Scenario: share posts use the punctuation of the user's own posts, casual by default
-    Given a Threads voice learned from posts written with "，" and "。", and no Facebook voice
+  Scenario: share posts use the punctuation of the user's own posts; without one, full-width in zh-TW
+    Given a Threads voice learned from posts written with half-width marks, and no Facebook voice
     When  posts for Facebook and Threads are written in zh-TW
-    Then  the Facebook post is checked and fixed with the punctuation style "casual" and Threads with "full",
+    Then  the Facebook post is checked and fixed with the punctuation style "full" and Threads with "casual",
           and each post's writing brief states its punctuation
+    And   without a voice of the user's own, a post in zh-CN or en is "casual"
     And   a voice file learned from posts with half-width marks or none has the style "casual"; a voice file from before this
           change gets its style from its stored samples
   @S-share-019
@@ -233,3 +234,4 @@ Feature: share
 - 2026-11-03 · +S-share-018 · decision: none -- user: social posts without full-width punctuation; the voice already learns from the user's own posts, so it learns their punctuation too
 - 2026-11-06 · S-share-018 unchanged in steps: casual posts now keep 。 at a sentence end (S-writing-gate-016) · decision: none -- see writing-gate
 - 2026-11-06 · +S-share-019..024 · decision: none -- live distill run (vault particles): the analysis came back empty, so the post jumped to the take with no background and an English term; user: weigh four readers (public, beginner, expert, business) from the topic's stage, maturity and media spread, confirm the mix, then let each reader report only whether its goal was met, rule on the reports, de-AI before each review and at the end, at most two rounds
+- 2026-11-06 · ~S-share-018 · decision: none -- user: zh-TW Facebook posts read oddly with half-width marks; without a voice of the user's own, zh-TW posts use full-width punctuation (reverses the 2026-11-03 default for zh-TW only)
