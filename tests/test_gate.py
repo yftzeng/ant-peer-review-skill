@@ -162,6 +162,7 @@ def test_hollow_contrast_only():
     assert "hollow_contrast" not in codes(rule_check("不必背公式，要記的是 3 個數字。"))
     assert "hollow_contrast" in codes(rule_check("要看這一步出錯時多快會被發現，不是看點子聰不聰明。"), "strong")
     assert "hollow_contrast" not in codes(rule_check("要看 3 秒的查詢，不是看機器。"))
+    assert "hollow_contrast" in codes(rule_check("AI 能不能即興，要看錯了多快會被發現，不是點子多聰明"), "strong")
     for text in ("我還是會去，不是因為怕。", "但是很多人，不是每個人都懂。"):   # 還是 / 但是 are words
         assert "hollow_contrast" not in codes(rule_check(text)), text
 

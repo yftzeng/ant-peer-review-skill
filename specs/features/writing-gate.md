@@ -89,7 +89,8 @@ Feature: writing gate
     Then  the first is a strong tell "hollow_contrast" and the second is not flagged
     And   the reversed form counts too: "要管的是 AI「默默改變做法」，不是創新本身。" and "It's a habit, not a tool." are strong
     And   so does "不必 X，該 Y 的是 Z": "我覺得不必禁止它改做法，該禁止的是它沒先講就改。" is strong, "不必背公式，要記的是 3 個數字。" is not
-    And   so does "要看 X，不是看 Y": "要看這一步出錯時多快會被發現，不是看點子聰不聰明。" is strong, "要看 3 秒的查詢，不是看機器。" is not
+    And   so does "要看 X，不是看 Y", with or without the second 看: "要看這一步出錯時多快會被發現，不是看點子聰不聰明。" and
+          "要看錯了多快會被發現，不是點子多聰明" are strong, "要看 3 秒的查詢，不是看機器。" is not
           tells, "瓶頸是 3 秒的查詢，不是機器。" is not
 
   @S-writing-gate-012
@@ -191,3 +192,4 @@ Feature: writing gate
 - 2026-11-06 · ~S-writing-gate-011 ~S-writing-gate-014 · decision: none -- live share reruns (vault particles) passed with "不必禁止它改做法，該禁止的是…", "這是我看…的紀錄後想到的", "同一個專案裡剛好有三種結果。" and "幾個但書。"; user: 按你建議
 - 2026-11-06 · ~S-writing-gate-014 · decision: none -- vault-particles rerun: "…出現了三次，三次結局都不一樣。" and "最後兩點限制。" passed; user: 按你建議
 - 2026-11-06 · ~S-writing-gate-011 ~S-writing-gate-014 · decision: none -- vault-particles rerun: "同一個專案裡剛好有兩個對照。" and "要看這一步出錯時多快會被發現，不是看點子聰不聰明" passed; user: 按你建議
+- 2026-11-06 · ~S-writing-gate-011 · decision: none -- vault-particles rerun headline "AI 能不能即興，要看錯了多快會被發現，不是點子多聰明" passed; user: 按你建議
