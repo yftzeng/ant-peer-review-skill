@@ -351,8 +351,8 @@ def test_distilled_post_names_no_one_and_ends_with_source(tmp_path):
     checks = run.path("share-checks.md").read_text()
     assert "no_concrete_detail" not in checks and "no_attribution" not in checks
     judge = [c for c in b.calls if c["task"] == "judge"][0]
-    for check in ("platitude", "paraphrase", "ignores_review", "direction", "no_subject"):
-        assert check in judge["system"], check
+    for check in ("platitude", "paraphrase", "ignores_review", "direction", "no_subject", "unsupported_detail"):
+        assert f"Also answer {check} (" in judge["system"] or check in judge["system"].split(" Also answer")[0], check
     assert ANALYSIS["thesis"] in judge["prompt"]               # judged against the analysis
 
 

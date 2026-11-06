@@ -205,6 +205,8 @@ def test_staging_tells_in_both_languages():
              "先說清楚成果的範圍。這是預印本。": "run_up",
              "同一個專案裡剛好有三種結果。成功的那次很快。": "run_up", "幾個但書。這是預印本。": "run_up",
              "這是我看一個實驗室的紀錄後想到的。": "this_is_recap",
+             "AI 偏離標準做法的情況出現了三次，三次結局都不一樣。第一次成功。": "run_up",
+             "最後兩點限制。這是預印本。": "run_up",
              "「先照正常做法來」聽起來會壓掉 AI 的創意，可是這次加速來自偏離。": "straw_man"}
     for text, code in cases.items():
         assert code in codes(rule_check(text), "strong"), text

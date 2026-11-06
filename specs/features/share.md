@@ -112,6 +112,8 @@ Feature: share
           "paraphrase" (it restates the article's or the subject's own pitch), "ignores_review" (it leans on a claim the analysis drops
           or leaves out its main correction), "direction" (it does not take the analysis's direction) and "no_subject"
           (a reader of the post alone cannot tell what field and what thing it is about)
+    And   "unsupported_detail", strong: it fails when the post tells how something happened (how an error was found, how easy
+          it was to see, the order of events) in a way the analysis does not state
 
   @S-share-013
   Scenario: the angle and the source line from arguments
@@ -278,3 +280,4 @@ Feature: share
 - 2026-11-06 · ~S-share-023 · decision: none -- live reruns (vault particles) failed twice with "the share analysis came back empty": the CLI's safety classifier had stopped the call and a fallback model finished it; the run was refused but the message hid it. The fallback output is still not kept (user: 按你建議)
 - 2026-11-06 · +S-share-027 · decision: none -- live reruns (vault particles): the analysis call was stopped by the safety classifier in five of six tries, about 1 to 1.8 USD a deliver, while the writing call never was; user: 按你建議 (reuse the analysis, --fresh-analysis to redo it)
 - 2026-11-06 · ~S-share-017 · decision: none -- live rerun (vault particles): the analysis listed "vault（穹窿體）" and "cryo-EM（冷凍電子顯微鏡）", the post wrote "穹窿體（vault）" as S-share-024 asks, and failed missing_subject
+- 2026-11-06 · ~S-share-012 · decision: none -- two vault-particles reruns wrote "圖一攤開就看得出不對" and "結構圖可以直接檢查，所以很快就被發現", which the article does not say; judged in the same judge call (user: 按你建議)

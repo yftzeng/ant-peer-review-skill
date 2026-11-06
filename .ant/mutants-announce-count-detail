@@ -1,0 +1,12 @@
+# 限制 dropped
+@@ src/ant_peer_review/gate.py
+-               r"(?:但書|但书|重點|重点|結果|结果|教訓|教训|啟示|启示|觀察|观察|原因|做法|限制|提醒)[。：]|"
++               r"(?:但書|但书|重點|重点|結果|结果|教訓|教训|啟示|启示|觀察|观察|原因|做法)[。：]|"
+# 出現了三次 sentence dropped
+@@ src/ant_peer_review/gate.py
+-               r"(?:都不一樣|都不一样|都不同|各不相同)[。：]|"
++               r"(?!x)x|"
+# judge not asked
+@@ src/ant_peer_review/gate.py
+-     "unsupported_detail": (STRONG, "fail when the post tells how something happened (how an error was "
++     "unsupported_detailx": (STRONG, "fail when the post tells how something happened (how an error was "

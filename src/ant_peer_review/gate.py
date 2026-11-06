@@ -62,7 +62,9 @@ STAGING = {
               r"先(?:補|补|交代|說|说|講|讲|聊|介紹|介绍)(?:一下|一點|一点|點|点)?(?:背景|脈絡|脉络|前情)|"
               r"(?:^|[\n。！？])[ \t]*先(?:(?:說|说|講|讲)(?:清楚|明白)|釐清|厘清)[^。！？：\n]{0,12}[。：]|"
               r"(?:^|[\n。！？])[ \t]*[^。！？，\n]{0,14}(?:幾|几|兩|两|三|四|五)(?:個|个|種|种|點|点|件|項|项)"
-              r"(?:但書|但书|重點|重点|結果|结果|教訓|教训|啟示|启示|觀察|观察|原因|做法)[。：]|"
+              r"(?:但書|但书|重點|重点|結果|结果|教訓|教训|啟示|启示|觀察|观察|原因|做法|限制|提醒)[。：]|"
+              r"(?:出現|出现|發生|发生)了?(?:幾|几|兩|两|三|四|五)次[，,][^。！？\n]{0,12}"
+              r"(?:都不一樣|都不一样|都不同|各不相同)[。：]|"
               r"\bsome background first\b|\bfirst, some (?:background|context)\b|\blet's dive in\b|\bhere's the thing\b|"
               r"\bhere's what you need to know\b|\bhonestly\?|\bwithout further ado\b",
     "straw_man": r"我不是說|我不是说|這並不是說|这并不是说|不要誤會|不要误会|"
@@ -433,6 +435,9 @@ DISTILL_CHECKS = {
                                "or leaves out the analysis's main correction"),
     "direction": (STRONG, "fail when the post does not take the analysis's direction "
                           "(reinforce, oppose or middle)"),
+    "unsupported_detail": (STRONG, "fail when the post tells how something happened (how an error was "
+                                   "found, how easy it was to see, the order of events) in a way the "
+                                   "analysis does not state"),
     "no_subject": (STRONG, "fail when a reader who sees only the post cannot tell what field "
                            "and what thing it is about: the topic or the main subject is left out "
                            "or only hinted at"),
