@@ -1,0 +1,16 @@
+# quote anywhere, not at a start
+@@ src/ant_peer_review/gate.py
+- QUOTE_THEN_THIS = re.compile(r"(?:^|[\n。！？])[ \t]*(?:「
++ QUOTE_THEN_THIS = re.compile(r"(?:[ \t]*(?:「
+# weak instead of strong
+@@ src/ant_peer_review/gate.py
+-         out.append(_issue("quote_then_this", STRONG, m.group(0).strip()[:40]))
++         out.append(_issue("quote_then_this", WEAK, m.group(0).strip()[:40]))
+# no 就
+@@ src/ant_peer_review/gate.py
+-                              r"(?:這|这|那)(?:就|正|便)?是")
++                              r"(?:這|这|那)是")
+# a mark between the quote and 這是 no longer allowed
+@@ src/ant_peer_review/gate.py
+- 」\n]{1,120}」|“[^”\n]{1,120}”)[。！？，,]?[ \t]*"
++ 」\n]{1,120}」|“[^”\n]{1,120}”)[ \t]*"

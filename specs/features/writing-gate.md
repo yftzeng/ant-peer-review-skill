@@ -133,6 +133,15 @@ Feature: writing gate
     When  the rule check runs with the punctuation style "full"
     Then  they are weak tells "jinxing_verb", "suizhe_opener", "stacked_de" and "semicolons"; one "；", "進行中", "隨著時間過去", "隨著他發展出新方法" and "我的書和你的筆" are not
     And   with "casual" the semicolons are not counted, since the fix-up turns them into commas
+
+  @S-writing-gate-018
+  Scenario: a quote left hanging and then explained with "這是…" is a strong tell
+    Given "「除非行不通，否則先照正常做法來。」這是一個研究團隊用 Claude 解析結構時說的話。" or "「先照正常做法來」，這是研究團隊的原則。", at the start or after a sentence end
+    When  the rule check runs
+    Then  it is a strong tell "quote_then_this" (the English "This is what… / This is when…" read into Chinese)
+    And   "研究團隊借助 Claude 解析結構時，提出一個簡單原則：「除非行不通，否則先照正常做法來。」",
+          the title form "「除非行不通，否則先照正常做法」- 研究團隊引導 Claude 的核心原則" and "他說「好」，這是第一次" are not
+    And   the edit is told to say who said it and when first, then the quote
 ```
 
 ## Must NOT
@@ -150,3 +159,4 @@ Feature: writing gate
 - 2026-11-06 · ~S-writing-gate-016 a half-width mark the model wrote gets the space after it too (user: 同時若中文只是","等類似的符合時，後面加個空白) · decision: none -- the casual style's own spacing rule, applied to marks that were already half width
 - 2026-11-06 · ~S-writing-gate-011 ~S-writing-gate-014 · decision: none -- live share run (vault particles): "要管的是 AI「默默改變做法」，不是創新本身" and "有人會說這樣綁手綁腳" passed the rule check; user: add them
 - 2026-11-06 · ~S-writing-gate-014 +S-writing-gate-017 · decision: none -- user evaluated four de-AI tools on the vault-particles post: all cut the announced "先補一點背景"; Chinese checks for 進行+verb, the 隨著…發展 opener and stacked 的 borrowed from Humanizer-zh (MIT); semicolons chaining clauses are our own rule
+- 2026-11-06 · +S-writing-gate-018 · decision: none -- user: the vault-particles post opened "「除非行不通…」這是一個研究團隊…時" and passed; a hanging quote explained by 這是 reads as translated "This is when…"

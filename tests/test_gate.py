@@ -245,3 +245,17 @@ def test_chinese_phrasing_tells_are_weak():
     for text in ("先試；再看。", "專案還在進行中。", "隨著時間過去，大家習慣了。", "隨著他發展出新方法，進度變快。", "我的書和你的筆都在桌上。"):
         assert not {"jinxing_verb", "suizhe_opener", "stacked_de", "semicolons"} & set(codes(rule_check(text), "weak")), text
     assert "semicolons" not in codes(rule_check("先試；再看。然後改；最後發。", punct="casual"), "weak")
+
+
+# @S-writing-gate-018
+def test_quote_then_this_is_strong():
+    for text in ("「除非行不通，否則先照正常做法來。」這是一個研究團隊用 Claude 解析結構時說的話。",
+                 "背景如下。「先照正常做法來」這就是他們的原則。", "“先照正常做法来”这是团队说的话。",
+                 "「先照正常做法來」，這是研究團隊的原則。"):
+        assert "quote_then_this" in codes(rule_check(text), "strong"), text
+    for text in ("研究團隊借助 Claude 解析結構時，提出一個簡單原則：「除非行不通，否則先照正常做法來。」",
+                 "「除非行不通，否則先照正常做法」- 研究團隊引導 Claude 的核心原則",
+                 "他說「好」，這是第一次。", "他說「好」這是第一次。"):
+        assert "quote_then_this" not in codes(rule_check(text)), text
+    assert "who said it" in EDIT_RULES
+

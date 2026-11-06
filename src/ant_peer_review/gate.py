@@ -73,6 +73,9 @@ STAGING = {
                 r"\bnorth star\b|\bflywheel\b",
 }
 STAGING_WEAK = {"metaphor"}
+# 「…」這是…: a quote left hanging, then explained, as in "This is what / when ..."
+QUOTE_THEN_THIS = re.compile(r"(?:^|[\n。！？])[ \t]*(?:「[^」\n]{1,120}」|“[^”\n]{1,120}”)[。！？，,]?[ \t]*"
+                             r"(?:這|这|那)(?:就|正|便)?是")
 # Chinese-only phrasing, weak alone; the first three are after Humanizer-zh's F group (MIT)
 ZH_PHRASING = {
     "jinxing_verb": r"(?:進行|进行)了?(?:一[次番場场個个下])?(?:深入|全面|詳細|详细)?的?"
@@ -162,6 +165,9 @@ def rule_check(text: str, *, platform: dict | None = None, take: str = "", allow
         m = re.search(rx, view, re.I)
         if m and m.group(0).lower() not in allowed:
             out.append(_issue(code, WEAK if code in STAGING_WEAK else STRONG, m.group(0)))
+    m = QUOTE_THEN_THIS.search(text)
+    if m:
+        out.append(_issue("quote_then_this", STRONG, m.group(0).strip()[:40]))
     for code, rx in ZH_PHRASING.items():
         m = re.search(rx, view)
         if m:
@@ -369,7 +375,7 @@ EDIT_RULES = (
     "dropped facts; then write the final text. State points directly instead of patching "
     "phrases: no contrast that knocks down a claim nobody made, no closing line that repeats "
     "the point, no staged opener, no filler connector, no inflated significance, no triad "
-    "unless there are three real items, no dashes, no Markdown, no clauses chained with semicolons. Priority: accurate, clear, "
+    "unless there are three real items, no dashes, no Markdown, no clauses chained with semicolons, no quote left hanging and then explained with 'this is' (say who said it and when first, then the quote). Priority: accurate, clear, "
     "specific, in the person's voice, then stylish. Keep the language and the punctuation "
     "conventions of the text (full-width punctuation in Chinese).")
 
