@@ -60,10 +60,12 @@ STAGING = {
     "run_up": r"讓我們來看看|让我们来看看|說實話[？?]|说实话[？?]|重點來了|重点来了|一句話總結|"
               r"一句话总结|廢話不多說|废话不多说|"
               r"先(?:補|补|交代|說|说|講|讲|聊|介紹|介绍)(?:一下|一點|一点|點|点)?(?:背景|脈絡|脉络|前情)|"
+              r"(?:^|[\n。！？])[ \t]*先(?:(?:說|说|講|讲)(?:清楚|明白)|釐清|厘清)[^。！？：\n]{0,12}[。：]|"
               r"\bsome background first\b|\bfirst, some (?:background|context)\b|\blet's dive in\b|\bhere's the thing\b|"
               r"\bhere's what you need to know\b|\bhonestly\?|\bwithout further ado\b",
     "straw_man": r"我不是說|我不是说|這並不是說|这并不是说|不要誤會|不要误会|"
                  r"(?:也許|也许|或許|或许)?有人(?:可能)?會(?:說|覺得)|(?:也許|也许|或許|或许)?有人(?:可能)?会(?:说|觉得)|"
+                 r"(?:聽起來|听起来|乍聽之下|乍听之下|乍看之下)[^。！？\n]{1,24}[，,]\s*(?:可是|但是?|然而|不過|不过)|"
                  r"你(?:可能|也許|或許)會(?:說|覺得|想)|你(?:可能|也许|或许)会(?:说|觉得|想)|"
                  r"\bI'm not saying\b|\bto be clear\b|\bdon't get me wrong\b|"
                  r"\b(?:some|critics) (?:might|will|may) (?:say|argue)\b|\byou might (?:think|say)\b",
@@ -76,6 +78,10 @@ STAGING_WEAK = {"metaphor"}
 # 「…」這是…: a quote left hanging, then explained, as in "This is what / when ..."
 QUOTE_THEN_THIS = re.compile(r"(?:^|[\n。！？])[ \t]*(?:「[^」\n]{1,120}」|“[^”\n]{1,120}”)[。！？，,]?[ \t]*"
                              r"(?:這|这|那)(?:就|正|便)?是")
+# a claim wider than its cases; an error that acts by itself
+SWEEPING = re.compile(r"最[^，。！？；\n]{1,10}的[^，。！？；\n]{0,10}(?:都|全都|全部都|總是|总是)是")
+PERSONIFIED = re.compile(r"(?:悄悄|默默|靜靜|静静)地?(?:發生|发生|出錯|出错|犯錯|犯错|藏|累積|累积)|"
+                         r"(?:錯誤|错误|錯|错|問題|问题|一次|一個|一个)(?:更|比較|比较|很)(?:安靜|安静)")
 # Chinese-only phrasing, weak alone; the first three are after Humanizer-zh's F group (MIT)
 ZH_PHRASING = {
     "jinxing_verb": r"(?:進行|进行)了?(?:一[次番場场個个下])?(?:深入|全面|詳細|详细)?的?"
@@ -168,6 +174,10 @@ def rule_check(text: str, *, platform: dict | None = None, take: str = "", allow
     m = QUOTE_THEN_THIS.search(text)
     if m:
         out.append(_issue("quote_then_this", STRONG, m.group(0).strip()[:40]))
+    for code, rx, level in (("sweeping_claim", SWEEPING, STRONG), ("personified_error", PERSONIFIED, WEAK)):
+        m = rx.search(view)
+        if m:
+            out.append(_issue(code, level, m.group(0)))
     for code, rx in ZH_PHRASING.items():
         m = re.search(rx, view)
         if m:
@@ -375,7 +385,7 @@ EDIT_RULES = (
     "dropped facts; then write the final text. State points directly instead of patching "
     "phrases: no contrast that knocks down a claim nobody made, no closing line that repeats "
     "the point, no staged opener, no filler connector, no inflated significance, no triad "
-    "unless there are three real items, no dashes, no Markdown, no clauses chained with semicolons, no quote left hanging and then explained with 'this is' (say who said it and when first, then the quote). Priority: accurate, clear, "
+    "unless there are three real items, no dashes, no Markdown, no clauses chained with semicolons, no quote left hanging and then explained with 'this is' (say who said it and when first, then the quote). Claim no more than its cases show: two cases make no 'all'. Priority: accurate, clear, "
     "specific, in the person's voice, then stylish. Keep the language and the punctuation "
     "conventions of the text (full-width punctuation in Chinese).")
 

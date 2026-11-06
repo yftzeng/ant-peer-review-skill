@@ -1,0 +1,24 @@
+# an announcement anywhere, not at a sentence start
+@@ src/ant_peer_review/gate.py
+-               r"(?:^|[\n。！？])[ \t]*先(?:(?:說|说|講|讲)(?:清楚|明白)|釐清|厘清)[^。！？：\n]{0,12}[。：]|"
++               r"先(?:(?:說|说|講|讲)(?:清楚|明白)?|釐清|厘清)[^。！？：\n]{0,12}[。：，]|"
+# straw man without the turn
+@@ src/ant_peer_review/gate.py
+-                  r"(?:聽起來|听起来|乍聽之下|乍听之下|乍看之下)[^。！？\n]{1,24}[，,]\s*(?:可是|但是?|然而|不過|不过)|"
++                  r"(?:聽起來|听起来|乍聽之下|乍听之下|乍看之下)|"
+# superlative alone is sweeping
+@@ src/ant_peer_review/gate.py
+- SWEEPING = re.compile(r"最[^，。！？；\n]{1,10}的[^，。！？；\n]{0,10}(?:都|全都|全部都|總是|总是)是")
++ SWEEPING = re.compile(r"最[^，。！？；\n]{1,10}的")
+# 悄悄 with any verb
+@@ src/ant_peer_review/gate.py
+- PERSONIFIED = re.compile(r"(?:悄悄|默默|靜靜|静静)地?(?:發生|发生|出錯|出错|犯錯|犯错|藏|累積|累积)|"
++ PERSONIFIED = re.compile(r"(?:悄悄|默默|靜靜|静静)地?|"
+# 安靜 without the subject
+@@ src/ant_peer_review/gate.py
+-                          r"(?:錯誤|错误|錯|错|問題|问题|一次|一個|一个)(?:更|比較|比较|很)(?:安靜|安静)")
++                          r"(?:錯誤|错误|錯|错|問題|问题|一個|一个)(?:更|比較|比较|很)(?:安靜|安静)")
+# levels swapped
+@@ src/ant_peer_review/gate.py
+-     for code, rx, level in (("sweeping_claim", SWEEPING, STRONG), ("personified_error", PERSONIFIED, WEAK)):
++     for code, rx, level in (("sweeping_claim", SWEEPING, WEAK), ("personified_error", PERSONIFIED, STRONG)):

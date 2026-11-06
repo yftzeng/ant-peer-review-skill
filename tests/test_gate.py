@@ -194,7 +194,9 @@ def test_staging_tells_in_both_languages():
              "有人會說這樣綁手綁腳。": "straw_man", "你可能會覺得這很麻煩。": "straw_man",
              "Some might say it slows you down.": "straw_man",
              "先補一點背景。穹窿體是顆粒。": "run_up", "先交代一下背景：這是預印本。": "run_up", "先說背景：這是預印本。": "run_up",
-             "Some background first: it is a preprint.": "run_up"}
+             "Some background first: it is a preprint.": "run_up",
+             "先說清楚成果的範圍。這是預印本。": "run_up",
+             "「先照正常做法來」聽起來會壓掉 AI 的創意，可是這次加速來自偏離。": "straw_man"}
     for text, code in cases.items():
         assert code in codes(rule_check(text), "strong"), text
 
@@ -258,4 +260,17 @@ def test_quote_then_this_is_strong():
                  "他說「好」，這是第一次。", "他說「好」這是第一次。"):
         assert "quote_then_this" not in codes(rule_check(text)), text
     assert "who said it" in EDIT_RULES
+
+
+# @S-writing-gate-019
+def test_sweeping_claim_and_personified_error():
+    issues = rule_check("代價最高的錯誤都是悄悄發生的。")
+    assert "sweeping_claim" in codes(issues, "strong")
+    assert "personified_error" in codes(issues, "weak")
+    assert "personified_error" in codes(rule_check("還有一次更安靜：添加劑擋住了 DNA。"), "weak")
+    for text in ("最高的山在亞洲。", "他悄悄改掉錯誤。", "問題很安全。", "先說他的看法，再看數據。",
+                 "這首歌聽起來不錯。"):
+        got = set(codes(rule_check(text)))
+        assert not {"sweeping_claim", "personified_error", "run_up", "straw_man"} & got, text
+    assert "no more than its cases show" in EDIT_RULES
 

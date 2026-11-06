@@ -107,7 +107,8 @@ Feature: writing gate
     When  the rule check runs
     Then  they are strong tells "deep_saying", "run_up", "straw_man" and "chatbot_residue"
     And   an objection nobody raised is a "straw_man" too: "有人會說這樣綁手綁腳", "你可能會覺得", "Some might say"
-    And   an opener that announces background before giving it is a "run_up" too: "先補一點背景", "先交代一下背景", "先說背景", "Some background first"
+    And   an opener that announces background before giving it is a "run_up" too: "先補一點背景", "先交代一下背景", "先說背景", "Some background first", and a sentence that only announces what comes, "先說清楚成果的範圍。"
+    And   setting up how something sounds only to knock it down is a "straw_man": "「先照正常做法來」聽起來會壓掉 AI 的創意，可是…"
 
   @S-writing-gate-015
   Scenario: block characters and dashes are removed from every text the tool writes
@@ -142,6 +143,14 @@ Feature: writing gate
     And   "研究團隊借助 Claude 解析結構時，提出一個簡單原則：「除非行不通，否則先照正常做法來。」",
           the title form "「除非行不通，否則先照正常做法」- 研究團隊引導 Claude 的核心原則" and "他說「好」，這是第一次" are not
     And   the edit is told to say who said it and when first, then the quote
+
+  @S-writing-gate-019
+  Scenario: a sweeping claim is strong, an error that acts by itself is weak
+    Given "代價最高的錯誤都是悄悄發生的。" and "還有一次更安靜：添加劑擋住了 DNA。"
+    When  the rule check runs
+    Then  "最…的…都是" is a strong tell "sweeping_claim", and "悄悄發生" and "一次更安靜" are weak tells "personified_error"
+    And   "最高的山在亞洲", "他悄悄改掉錯誤" (someone does it), "問題很安全" and "這首歌聽起來不錯" (no turn) are not
+    And   the edit is told to claim no more than its cases show
 ```
 
 ## Must NOT
@@ -160,3 +169,4 @@ Feature: writing gate
 - 2026-11-06 · ~S-writing-gate-011 ~S-writing-gate-014 · decision: none -- live share run (vault particles): "要管的是 AI「默默改變做法」，不是創新本身" and "有人會說這樣綁手綁腳" passed the rule check; user: add them
 - 2026-11-06 · ~S-writing-gate-014 +S-writing-gate-017 · decision: none -- user evaluated four de-AI tools on the vault-particles post: all cut the announced "先補一點背景"; Chinese checks for 進行+verb, the 隨著…發展 opener and stacked 的 borrowed from Humanizer-zh (MIT); semicolons chaining clauses are our own rule
 - 2026-11-06 · +S-writing-gate-018 · decision: none -- user: the vault-particles post opened "「除非行不通…」這是一個研究團隊…時" and passed; a hanging quote explained by 這是 reads as translated "This is when…"
+- 2026-11-06 · ~S-writing-gate-014 +S-writing-gate-019 · decision: none -- live share rerun (vault particles): "先說清楚成果的範圍。", "代價最高的錯誤都是悄悄發生的" and "聽起來會壓掉 AI 的創意，可是" passed; user: add them. Not taken: an intensifier stronger than its basis ("遠大於"), since the source said "far outweighed" and a regex against the analysis would have flagged a faithful line
