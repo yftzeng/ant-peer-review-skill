@@ -175,7 +175,8 @@ def test_voice_created_inside_the_intake(env):
                "1",                                          # create its voice now
                "一篇。", "---", "兩篇。", "---", "三篇。", "/done", "扎實", "賦能",
                "", "",                                       # stance, own take
-               "", ""]                                       # Threads styles, fact sources
+               "", "",                                       # Threads styles, fact sources
+               ""]                                           # use the proposed reader mix
     io = ScriptedIO(answers)
     cli.main([], io=io, store=env)
     v = load_voice(env.home, "threads")
@@ -188,7 +189,7 @@ def test_voice_created_inside_the_intake(env):
     io = ScriptedIO(["3", "Another article, 2026.", "/done", "", "", "1", "", "", "",  # Threads ticked now; Facebook off
                      "6", "",                                # tick "rebuild this voice"
                      "新的一篇。", "/done", "", "",
-                     "", ""])                                # styles again, fact sources
+                     "", "", ""])                            # styles again, fact sources, reader mix
     cli.main([], io=io, store=env)
     assert "rebuild" in io.text.lower()
     assert load_voice(env.home, "threads")["posts"] == 1
@@ -198,11 +199,11 @@ def test_voice_created_inside_the_intake(env):
 def test_neutral_never_ask_is_remembered(env, tmp_path):
     save_voice(env.home, voice("threads", question=3))
     io = ScriptedIO(["3", "Article text, 2025.", "/done", "", "", "1 2 4", "",  # X only (Facebook, Threads were ticked)
-                     "4", "", "", "", ""])                          # never ask; stance, take, style, facts
+                     "4", "", "", "", "", ""])                      # never ask; stance, take, style, facts, readers
     cli.main([], io=io, store=env)
     run = list_runs(env.runs_dir)[-1]
     assert read_json(run.path("00-intake.json"))["share"]["voices"] == {"x": "neutral"}
-    io = ScriptedIO(["3", "Article text, 2026.", "/done", "", "", "1 2 4", "", "", "", "", ""])
+    io = ScriptedIO(["3", "Article text, 2026.", "/done", "", "", "1 2 4", "", "", "", "", "", ""])
     cli.main([], io=io, store=env)
     assert "X/Twitter has no voice of yours" not in io.text and "Post styles for X" in io.text
 

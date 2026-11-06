@@ -69,6 +69,19 @@ class FakeBackend(Backend):
                 "why": "fake", "thesis": f"[fake:{model}] thesis", "anchors": ["fake anchor"],
                 "subject": {"topic": "", "terms": []}, "origin": []}
 
+    def _readers_mix(self, model, ids, paras, bias, prompt):
+        return {"weights": {"public": 25, "beginner": 30, "expert": 30, "business": 15},
+                "why": {p: f"[fake:{model}] {p}" for p in ("public", "beginner", "expert", "business")},
+                "basis": {"stage": "fake", "maturity": "fake", "media": "fake"}}
+
+    def _reader(self, model, ids, paras, bias, prompt):
+        return {"reports": [{"key": k, "verdict": "met", "hook": "", "peak": "", "stuck": "",
+                             "takeaway": f"[fake:{model}]", "would": "", "would_not": "",
+                             "reason": "fake"} for k in re.findall(r"^Post (\S+):$", prompt, re.M)]}
+
+    def _reader_revise(self, model, ids, paras, bias, prompt):
+        return {"posts": []}
+
     def _share_rewrite(self, model, ids, paras, bias, prompt):
         return {"posts": []}         # keep the texts; the gate marks what still fails
 

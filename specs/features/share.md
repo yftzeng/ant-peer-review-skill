@@ -167,6 +167,52 @@ Feature: share
           and each post's writing brief states its punctuation
     And   a voice file learned from posts with half-width marks or none has the style "casual"; a voice file from before this
           change gets its style from its stored samples
+  @S-share-019
+  Scenario: the reader mix is proposed from the topic's stage and confirmed before the posts are written
+    Given a share run whose SC1 says "tipping_point" with status "unsupported"
+    When  decide runs interactively
+    Then  one model call proposes weights for public, beginner, expert and business that sum to 100, a reason for each,
+          and the basis (adoption stage and whether it was checked, technical maturity, media spread)
+    And   the user confirms them or types "public=25,beginner=30,expert=30,business=15"; share-readers.json holds the weights,
+          the reasons and who set them
+    And   with --yes, or deliver alone, the proposal is used unless --readers is given; weights that do not sum to 100 or
+          name an unknown reader are a usage error; a failed call gives 25 each and says so
+
+  @S-share-020
+  Scenario: each reader reports whether its goal was met, not how to edit
+    Given posts that passed the writing gate and the weights public 25, beginner 30, expert 30, business 15
+    When  the readers read them
+    Then  four calls run in parallel, each seeing only the posts, its own persona, goal and weight
+    And   each returns per post a verdict met, partly or not_met with its hook, peak, stuck point, takeaway, the goal actions it
+          would and would not take, and the reason, quoting the post; its schema has no field for edits, facts or tone
+
+  @S-share-021
+  Scenario: the writer rules on the reader reports, and the revision passes the gate before readers see it
+    Given round-1 reports where the expert says met and the others partly
+    When  the writer revises
+    Then  one call rules on every reader point (accept, reject, partly, with a reason) and rewrites the posts, the rewritten
+          posts pass the writing gate, and the readers read them again
+    And   after the second round the last revision passes the gate and is final; when every reader says met the loop stops
+    And   share-readers.md lists the weights and reasons, each round's verdict per reader and post, and the rulings
+
+  @S-share-022
+  Scenario: a first-person experience the take does not state fails, even when there is a take
+    Given the take "focus on the sentence about normal things"
+    When  a post says "我現在給 AI 代理的指示會多加這段"
+    Then  the judge check invented_experience fails it as must-fix, quoting those words, and the rewrite removes it
+
+  @S-share-023
+  Scenario: the share analysis leaves out the S-curve check and is never empty
+    Given a ledger with SC1 "…Suggested evidence search: … 2026" marked unsupported
+    When  the share analysis is written
+    Then  SC1 is not a claim row and 2026 is not a number the post must avoid
+    And   an analysis with no purpose and no thesis is asked once more, and still empty it raises a backend error
+
+  @S-share-024
+  Scenario: a distilled post names its subject in the output language
+    When  a distilled post is written in zh-TW about "vault particles", which the checked claims call "穹窿體"
+    Then  the writing rules say to name the subject with the term the checked claims use in the output language, the original
+          term once in parentheses, and to give the background a reader needs before the take
 ```
 
 ## Must NOT
@@ -186,3 +232,4 @@ Feature: share
 - 2026-11-03 · ~S-share-011 ~S-share-012 ~S-share-014 +S-share-017 · decision: none -- live distill run (weight-space programming): the post named none of GPT-6 Astra, Qwen3.5-0.8B, MATH-500, because every product, benchmark and even Python was banned as a name; user: leave out the original creators, companies and sites; focus on the topic, the main subject and related people
 - 2026-11-03 · +S-share-018 · decision: none -- user: social posts without full-width punctuation; the voice already learns from the user's own posts, so it learns their punctuation too
 - 2026-11-06 · S-share-018 unchanged in steps: casual posts now keep 。 at a sentence end (S-writing-gate-016) · decision: none -- see writing-gate
+- 2026-11-06 · +S-share-019..024 · decision: none -- live distill run (vault particles): the analysis came back empty, so the post jumped to the take with no background and an English term; user: weigh four readers (public, beginner, expert, business) from the topic's stage, maturity and media spread, confirm the mix, then let each reader report only whether its goal was met, rule on the reports, de-AI before each review and at the end, at most two rounds

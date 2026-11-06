@@ -62,7 +62,7 @@ Do not soften or upgrade the report's judgments. Quote the anchors (e.g. `D1.P03
 
 - **Red lines that need a ruling:** ask the user to confirm or dismiss each one. Show both sides first: the supporters' comments and the dissent evidence.
 - **The final version:** show `07-revision/A.diff` (line edit) and `07-revision/B.md` (developmental edit, with `rereview.json` verdicts). Then ask which one to adopt: A, B or manual.
-- Then run: `ant-peer-review decide <run> --yes --choice A|B|manual [--rule <red_line>=confirmed|dismissed] [--file <path>]`. A share run has no plan to adopt: run `ant-peer-review decide <run> --yes` (no `--choice`) and it writes the posts.
+- Then run: `ant-peer-review decide <run> --yes --choice A|B|manual [--rule <red_line>=confirmed|dismissed] [--file <path>]`. A share run has no plan to adopt: run `ant-peer-review decide <run> --yes` (no `--choice`) and it writes the posts. Before that, ask the user with AskUserQuestion who the posts are for: four readers (public, beginner, expert, business), weighted from the topic's adoption stage, technical maturity and media spread. Propose the weights and why, and pass what they agree to as `--readers public=25,beginner=30,expert=30,business=15` (whole numbers, sum 100). Without `--readers`, the CLI's own proposal is used. Each reader then reports whether its goal was met, the writer rules on the reports and rewrites, at most two rounds; `readers.md` in the run shows the mix, every round and the rulings.
 
 ## 5. Other commands
 

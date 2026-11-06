@@ -97,11 +97,15 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--file", help="your own final file for --choice manual")
     d.add_argument("--reply", help="reply styles to write: all (default), none, or a comma list of "
                                    "appreciative,empathetic,pragmatic,socratic,critical")
+    readers_help = ("share runs: reader weights, e.g. public=25,beginner=30,expert=30,business=15 "
+                    "(default: proposed from the topic's stage; asked unless --yes)")
+    d.add_argument("--readers", help=readers_help)
 
     dl = sub.add_parser("deliver", parents=[common],
                         help="write review.md and the replies again for a decided run")
     dl.add_argument("run")
     dl.add_argument("--reply", help="as for decide (default all)")
+    dl.add_argument("--readers", help=readers_help)
 
     c = sub.add_parser("config", parents=[common], help="change saved settings")
     c.add_argument("what", choices=["models", "backend", "lang", "show"])
@@ -500,7 +504,7 @@ def cmd_decide(args, io, store, cfg) -> int:
         run_decision(None if args.yes else io, run, store, models=ctx.models, lang=ctx.lang,
                      thresholds=cfg.grade_thresholds, min_repeats=cfg.style_guide_min_repeats,
                      choice=args.choice, rulings=rulings, manual_path=args.file,
-                     backend=ctx.backend, reply_styles=styles)
+                     backend=ctx.backend, reply_styles=styles, readers_spec=args.readers)
     except ValueError as e:
         io.say(f"error: {e}")
         return EXIT_USAGE
@@ -539,6 +543,9 @@ def cmd_deliver(args, io, store, cfg) -> int:
         return EXIT_USAGE
     try:
         styles = parse_styles(args.reply)
+        if args.readers:
+            from .readers import ensure_mix
+            ensure_mix(run, ctx.backend, ctx.models, ctx.lang, spec=args.readers)
     except ValueError as e:
         io.say(f"error: {e}")
         return EXIT_USAGE

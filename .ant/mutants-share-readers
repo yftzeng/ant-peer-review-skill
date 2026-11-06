@@ -1,0 +1,31 @@
+# reader mix and reader review loop (S-share-019..024)
+@@ src/ant_peer_review/readers.py
+-         if not todo:
++         if False:
+@@ src/ant_peer_review/readers.py
+- MAX_ROUNDS = 2
++ MAX_ROUNDS = 3
+@@ src/ant_peer_review/readers.py
+-         cur.update(gate(new))
++         cur.update({k: dict(cur[k], text=v) for k, v in new.items()})
+@@ src/ant_peer_review/readers.py
+-     if set(out) != set(PERSONAS) or sum(out.values()) != 100:
++     if set(out) != set(PERSONAS):
+@@ src/ant_peer_review/readers.py
+-             mix = confirm_mix(io, T(lang), mix)
++             pass
+@@ src/ant_peer_review/readers.py
+-         prompt = (f"Reader: {p} (weight {mix['weights'][p]}%)\nWho you are: {GOALS[p]}\n\n{body}")
++         prompt = (f"Reader: {p} (weight {mix['weights'][p]}%)\nWho you are: {GOALS}\n\n{body}")
+@@ src/ant_peer_review/share.py
+-     extra = dict(EXPERIENCE_CHECK, **(DISTILL_CHECKS if distill else {}))
++     extra = dict(**(DISTILL_CHECKS if distill else {}))
+@@ src/ant_peer_review/share.py
+-     led = [c for c in read_ledger(run) if c.get("type") != "s_curve_stage"]   # S-share-023
++     led = read_ledger(run)   # S-share-023
+@@ src/ant_peer_review/share.py
+-     for _ in range(2):            # S-share-023: an empty analysis is asked once more
++     for _ in range(1):            # S-share-023: an empty analysis is asked once more
+@@ src/ant_peer_review/decision.py
+-             ensure_mix(run, backend, models, lang, io=io, spec=readers_spec)
++             pass

@@ -202,7 +202,8 @@ def propose_style_rules(io: IO, t: T, store: Store, run: Run, brand: str,
 def run_decision(io: IO | None, run: Run, store: Store, *, models: list[str], lang: str,
                  thresholds: dict[str, float], min_repeats: int, choice: str | None = None,
                  rulings: dict[str, str] | None = None, manual_path: str | None = None,
-                 backend=None, reply_styles: list[str] | None = None) -> dict:
+                 backend=None, reply_styles: list[str] | None = None,
+                 readers_spec: str | None = None) -> dict:
     """Interactive when io is given and an argument is missing; otherwise from arguments.
     With a backend, review.md and the replies are written after the plan is adopted;
     reply_styles None means: ask (interactive audit) or all styles."""
@@ -223,6 +224,9 @@ def run_decision(io: IO | None, run: Run, store: Store, *, models: list[str], la
         write_report(run, cons, lang=lang,
                      changelog=[f"ruling {k}: {v}" for k, v in rulings.items()])
     if intake.get("purpose") == "share":   # nothing to adopt: the posts are the output
+        if backend is not None or readers_spec:   # S-share-019: who the posts are for, first
+            from .readers import ensure_mix
+            ensure_mix(run, backend, models, lang, io=io, spec=readers_spec)
         dec = record_decision(run, choice="share", rulings=rulings, final_path=None, brand=brand)
         if backend is not None:
             from .deliver import deliver

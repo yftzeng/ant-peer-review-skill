@@ -12,7 +12,8 @@ from pathlib import Path
 from . import outlang, prompts
 from .backends.base import Backend, BackendError
 from .factcheck import read_ledger
-from .gate import (DISTILL_CHECKS, EDIT_RULES, autofix, checks_md, judge, judge_model, rule_check,
+from . import readers
+from .gate import (DISTILL_CHECKS, EDIT_RULES, HARD, autofix, checks_md, judge, judge_model, rule_check,
                    run_gate, with_header)
 from .i18n import T
 from .jsonio import read_json, write_json, write_text_atomic
@@ -36,7 +37,9 @@ DISTILL_RULES = (
     "oppose or middle) and apply each claim's action: never rely on a claim it drops or avoids, "
     "and carry its main correction. Open with the topic and the main subject, named as the "
     "analysis names them, so a reader who never saw the article knows what this is about; "
-    "related people and products may be named. Do not name the original creators, companies "
+    "related people and products may be named. Name the subject with the term the checked claims use "
+    "in the output language, the original term once in parentheses, and give the background a reader "
+    "needs before the take. Do not name the original creators, companies "
     "or sites (the analysis lists them as origin), nor the article's author. No self-evident truths: "
     "say something a reasonable expert could dispute. Do not mention the article's title or "
     "link: a source line is added after the post.")
@@ -166,7 +169,7 @@ def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: s
     """S-share-014: purpose, claim actions, direction, thesis, anchors, names; one call.
     Writes share-analysis.md (and .json). Raises BackendError when the call fails."""
     from .deliver import share_digest
-    led = read_ledger(run)
+    led = [c for c in read_ledger(run) if c.get("type") != "s_curve_stage"]   # S-share-023
     article, refs = documents(run)
     checked = [{"id": c["id"], "claim": c["text"], "status": c["status"],
                 "reason": c.get("reason", "")[:300]} for c in led]
@@ -177,10 +180,15 @@ def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: s
               f"Article excerpt:\n{prompts.untrusted(article[:8000])}\n\n"
               "References (may be the subject's own description, not neutral evidence):\n"
               f"{prompts.untrusted(refs[:6000]) if refs.strip() else '(none)'}")
-    res = backend.run(writer, task="share_analysis", schema=ANALYSIS_SCHEMA, effort="high",
-                      timeout=900, prompt=prompt,
-                      system=ANALYSIS_SYSTEM.format(language=outlang.guide(lang)))
-    d = res.data or {}
+    for _ in range(2):            # S-share-023: an empty analysis is asked once more
+        res = backend.run(writer, task="share_analysis", schema=ANALYSIS_SCHEMA, effort="high",
+                          timeout=900, prompt=prompt,
+                          system=ANALYSIS_SYSTEM.format(language=outlang.guide(lang)))
+        d = res.data or {}
+        if str(d.get("purpose", "")).strip() or str(d.get("thesis", "")).strip():
+            break
+    else:
+        raise BackendError("the share analysis came back empty")
     claims = _claim_rows(d.get("claims") or [], led)
     a = {"purpose": str(d.get("purpose", "")).strip(), "claims": claims,
          "direction": d.get("direction") if d.get("direction") in DIRECTIONS else "middle",
@@ -194,6 +202,13 @@ def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: s
     write_json(run.path("share-analysis.json"), a)
     write_text_atomic(run.path("share-analysis.md"), analysis_md(a, t))
     return a
+
+
+# S-share-022: a first-person experience the take does not state, take or no take.
+EXPERIENCE_CHECK = {"invented_experience": (
+    HARD, "fail when the text states an experience, habit or plan of the author in the first "
+          "person (I use, I will, my team, 我用, 我會, 我現在, 我自己) that the person's own take in "
+          "the context does not state; an opinion (I think) passes")}
 
 
 RANK = ["unsupported", "partly", "cannot_verify", "supported"]   # the worst status a row covers wins
@@ -277,9 +292,10 @@ def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T
     share = intake["share"]
     analysis = analyse_article(run, backend, models[0], cons, share.get("take", ""), lang, t) \
         if share.get("angle") == "distill" else None
+    mix = readers.ensure_mix(run, backend, models, lang)
     written, failed, shown, notes = [], {}, {}, []
     for L in langs:
-        w, f, r, notes = _shares_in(run, backend, models, cons, t, home, L, langs, analysis)
+        w, f, r, notes = _shares_in(run, backend, models, cons, t, home, L, langs, analysis, mix)
         written += w
         failed.update(f)
         shown.update(r)
@@ -290,7 +306,8 @@ def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T
 
 
 def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
-               home: Path | None, lang: str, langs: list[str], analysis: dict | None = None):
+               home: Path | None, lang: str, langs: list[str], analysis: dict | None = None,
+               mix: dict | None = None):
     from .deliver import share_digest
     intake = read_json(run.path("00-intake.json"))
     share = intake["share"]
@@ -418,14 +435,26 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
                 if x.get("key") in failed}
 
     voice_all = "\n".join(f"{p}: {voice_text(p)}" for p in voices)
-    results = run_gate(texts, rewrite, check=check, fix=fix,
-                       sources=f"{source}\n{take}\n{json.dumps(info, ensure_ascii=False)}\n"
-                               f"{json.dumps(data, ensure_ascii=False)}",
-                       judge_fn=lambda batch: judge(backend, judge_model(models, writer), batch,
-                                                    voice=voice_all,
-                                                    extra=DISTILL_CHECKS if distill else None,
-                                                    context=json.dumps(analysis, ensure_ascii=False)
-                                                    if distill else ""))
+    extra = dict(EXPERIENCE_CHECK, **(DISTILL_CHECKS if distill else {}))
+    context = (f"The person's own take: {take or '(none)'}"
+               + (f"\n{json.dumps(analysis, ensure_ascii=False)}" if distill else ""))
+
+    def gate(batch: dict[str, str]) -> dict[str, dict]:
+        return run_gate(batch, rewrite, check=check, fix=fix,
+                        sources=f"{source}\n{take}\n{json.dumps(info, ensure_ascii=False)}\n"
+                                f"{json.dumps(data, ensure_ascii=False)}",
+                        judge_fn=lambda b: judge(backend, judge_model(models, writer), b,
+                                                 voice=voice_all, extra=extra, context=context))
+
+    results = gate(texts)
+    mix = mix or readers.ensure_mix(run, backend, models, lang)
+    reader_model = judge_model(models, writer)
+    results, rounds = readers.review_loop(   # S-share-020..021
+        results, gate,
+        read=lambda batch: readers.read_posts(backend, reader_model, batch, mix, lang),
+        rewrite=lambda todo, reps: readers.revise(backend, writer, system, prompt, todo, reps, mix))
+    write_text_atomic(run.path(outlang.file_name("readers.md", lang, langs)),
+                      readers.readers_md(t, mix, rounds))
     lines = ", ".join(t("redline." + k) for k in vetoed)
     if vetoed and distill and analysis["direction"] in ("oppose", "middle"):
         veto_head = f"> ⚠ {t('share.corrects', lines=lines)}\n\n"    # S-share-016
