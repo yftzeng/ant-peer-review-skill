@@ -122,6 +122,17 @@ def draft_figures(run: Run) -> list[str]:
                               if x not in have))
 
 
+def draft_clickbait(run: Run) -> str:
+    """S-drafting-005: the latest draft's title when it baits instead of stating the core fact."""
+    from .gate import CLICKBAIT
+    drafts = sorted(run.path("01-sources").glob("draft.v*.md"),
+                    key=lambda p: int(re.sub(r"\D", "", p.stem) or 0))
+    if not drafts:
+        return ""
+    title = drafts[-1].read_text(encoding="utf-8").split("\n", 1)[0].lstrip("# ").strip()
+    return title if CLICKBAIT.search(title) else ""
+
+
 def checks(run: Run, cons: dict, t: T, thresholds: dict) -> list[str]:
     from .review import load_records
     from .rubric import display_name

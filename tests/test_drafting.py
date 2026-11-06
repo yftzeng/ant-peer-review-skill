@@ -102,3 +102,22 @@ def test_figures_not_in_materials(tmp_path):
     write_json(run2.path("00-intake.json"), dict(intake, purpose="audit"))
     rows = checks(run2, read_json(run2.path("05-consensus.json")), t, {"good": 3.5, "revise": 2.5})
     assert not [r for r in rows if t("review.figures") in r]  # an audit has no such row
+
+
+# @S-drafting-005
+def test_draft_inverted_pyramid_and_clickbait_title(tmp_path):
+    from ant_peer_review import prompts
+    sys_ = prompts.draft_system("en")
+    assert "inverted pyramid" in sys_ and "clickbait" in sys_
+    assert "stronger headlines" not in prompts.revise_b_system("en")
+    assert "core fact" in prompts.revise_b_system("en")
+    bait = {"title": "震驚！你絕對想不到的營收", "paragraphs": ["Revenue was 12 million in 2025."]}
+    good = {"title": "Revenue was 12 million in 2025", "paragraphs": ["Revenue was 12 million in 2025."]}
+    run, b, _ = pipeline(tmp_path / "a", 90, material="Revenue was 12 million in 2025.",
+                         draft=[bait, good])
+    drafts = [c for c in b.calls if c["task"] == "draft"]
+    assert len(drafts) == 2 and "震驚！你絕對想不到的營收" in drafts[1]["prompt"]
+    run2, b2, _ = pipeline(tmp_path / "b", 90, material="Revenue was 12 million in 2025.",
+                           draft=[good])
+    assert len([c for c in b2.calls if c["task"] == "draft"]) == 1
+

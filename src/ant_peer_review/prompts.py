@@ -206,7 +206,7 @@ def revise_a_system(lang: str) -> str:
 
 def revise_b_system(lang: str) -> str:
     return ("You are a developmental editor. Rewrite the paragraphs that carry structural "
-            "problems, propose stronger headlines, and strengthen weak evidence without "
+            "problems, propose a headline that states the core fact (no clickbait), and strengthen weak evidence without "
             "inventing facts (mark any needed source as [source needed]). Each rewritten "
             "paragraph lists the issue ids it addresses. Use paragraph ids such as D1.P03 (a "
             "sentence id such as D1.P03.S2 replaces only that sentence); to add a new paragraph "
@@ -235,12 +235,20 @@ Revised piece:
 """
 
 
+# The structure of every post and draft (S-share-026, S-drafting-005).
+PYRAMID = ("Structure: inverted pyramid. The headline or title states the single most important fact "
+           "or point, precisely and briefly, as a statement. The lede, the first one or two sentences, "
+           "gives who, what and why it matters. Then the details in order of importance; background "
+           "last. No clickbait: never withhold the core fact to make a reader click, never tease, "
+           "never promise more than the text delivers.")
+
+
 def draft_system(lang: str) -> str:
     """lang: the first output language; the title and paragraphs are written in it."""
     from .outlang import guide
     return ("You are a writer drafting an article from the materials given. Use only facts from "
             "the materials; mark anything else as [source needed]. Write for the audience card. "
-            "Return a title and paragraphs.\n\n"
+            "Return a title and paragraphs. " + PYRAMID + "\n\n"
             + SHARED_RULES.format(lang_name=guide(lang)))
 
 

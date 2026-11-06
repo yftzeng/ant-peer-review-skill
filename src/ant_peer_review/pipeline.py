@@ -273,9 +273,10 @@ def ph_recheck(run: Run, ctx: Ctx) -> None:
 def ph_report(run: Run, ctx: Ctx) -> None:
     cons = read_json(run.path("05-consensus.json"))
     intake = read_json(run.path("00-intake.json"))
-    from .deliver import draft_figures
+    from .deliver import draft_clickbait, draft_figures
     new = draft_figures(run) if intake["purpose"] == "drafting" else []
-    if intake["purpose"] == "drafting" and (cons["grade"] not in ("excellent", "good") or new) \
+    bait = draft_clickbait(run) if intake["purpose"] == "drafting" else ""
+    if intake["purpose"] == "drafting" and (cons["grade"] not in ("excellent", "good") or new or bait) \
             and _draft_round(run) < MAX_DRAFT_ROUNDS \
             and not any(v["status"] == "confirmed" for v in cons["red_lines"].values()):
         feedback = "\n".join(f"- [{f['anchor']}] {f['observation']} -> {f['action']}"
@@ -284,6 +285,9 @@ def ph_report(run: Run, ctx: Ctx) -> None:
             feedback += ("\n" if feedback else "") + ("- Figures the materials do not hold: "
                                                        + ", ".join(new) + ". Use only the "
                                                        "materials' figures, or leave them out.")
+        if bait:  # S-drafting-005
+            feedback += ("\n" if feedback else "") + (f"- The title baits a click: {bait}. State the "
+                                                       "single most important fact instead.")
         ctx.say(ctx.t("draft.again", round=_draft_round(run) + 1))
         ensure_draft(run, ctx, feedback=feedback or "Improve overall quality.")
         for name in ("03-reviews", "04-debate"):

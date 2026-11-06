@@ -1,0 +1,28 @@
+# headline checked on every platform
+@@ src/ant_peer_review/share.py
+-         if c["fold"] and len(text) > c["fold"] and units(first) > HEADLINE_MAX:    # S-share-026
++         if len(text) > (c["fold"] or 0) and units(first) > HEADLINE_MAX:    # S-share-026
+# headline checked on short posts too
+@@ src/ant_peer_review/share.py
+-         if c["fold"] and len(text) > c["fold"] and units(first) > HEADLINE_MAX:    # S-share-026
++         if c["fold"] and units(first) > HEADLINE_MAX:    # S-share-026
+# pyramid not given to the share writer
+@@ src/ant_peer_review/share.py
+-     system = f"{system}\n\n{prompts.PYRAMID}"
++     system = f"{system}"
+# clickbait anywhere in the text
+@@ src/ant_peer_review/gate.py
+-     if CLICKBAIT.search(head):
++     if CLICKBAIT.search(view):
+# clickbait judged weak
+@@ src/ant_peer_review/gate.py
+-                 "over_enthusiasm": WEAK, "hook": WEAK, "lecturing": WEAK, "clickbait": STRONG}
++                 "over_enthusiasm": WEAK, "hook": WEAK, "lecturing": WEAK, "clickbait": WEAK}
+# draft title not checked
+@@ src/ant_peer_review/pipeline.py
+-     bait = draft_clickbait(run) if intake["purpose"] == "drafting" else ""
++     bait = ""
+# draft system without the pyramid
+@@ src/ant_peer_review/prompts.py
+-             "Return a title and paragraphs. " + PYRAMID + "\n\n"
++             "Return a title and paragraphs.\n\n"

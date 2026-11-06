@@ -31,6 +31,16 @@ Feature: drafting
     When  the draft is reviewed
     Then  it is rewritten once even with a good grade, and the rewrite prompt names "15" as a figure the materials do not hold
     And   review.md's check table has the row "figures not in the materials", failing with "15" while a draft still has one and passing once every figure appears in the materials; an audit run has no such row
+
+  @S-drafting-005
+  Scenario: a draft follows the inverted pyramid, and a clickbait title is rewritten
+    Given purpose "drafting"
+    When  the draft is written
+    Then  the writing rules say: inverted pyramid, the title states the single most important fact precisely and briefly,
+          the lede gives who, what and why it matters, then details by importance, background last; no clickbait;
+          the developmental editor proposes a headline that states the core fact, not a "stronger" one
+    And   a first draft titled "震驚！你絕對想不到的營收" is rewritten once even with a good grade, the rewrite prompt naming the
+          clickbait title
 ```
 
 ## Must NOT
@@ -39,3 +49,4 @@ Feature: drafting
 ## Revisions
 - 2026-10-22 · +S-drafting-001..003 +N-drafting-001 · decision: none -- follows docs/DESIGN.md §3 Drafting mode
 - 2026-10-26 · +S-drafting-004 · decision: none -- user: 開工 (port from ant-pr-review: a draft may not carry a figure the materials do not hold, checked in code instead of the prompt alone)
+- 2026-11-06 · +S-drafting-005 · decision: none -- user: 發文結構應該遵循倒金字塔結構；標題/導言精準並簡約點出最核心的事實或敘事，禁用誘餌式標題

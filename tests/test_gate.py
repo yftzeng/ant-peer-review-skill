@@ -283,3 +283,16 @@ def test_sweeping_claim_and_personified_error():
         assert not {"sweeping_claim", "personified_error", "run_up", "straw_man"} & got, text
     assert "no more than its cases show" in EDIT_RULES
 
+
+# @S-writing-gate-020
+def test_clickbait_headline_is_strong():
+    for text in ("震驚！研究團隊竟然這樣用 AI\n\n內文。", "You won't believe what Claude found\n\nBody."):
+        assert "clickbait" in codes(rule_check(text), "strong"), text
+    for text in ("研究團隊讓 Claude 先講再改\n\n後來大家都很震驚。", "他說「你絕對想不到」，然後走了。"):
+        assert "clickbait" not in codes(rule_check(text)), text
+    assert "clickbait" in JUDGE_SYSTEM
+    b = ScriptBackend({("*", "judge"): {"verdicts": [{"key": "a", "checks": [
+        {"name": "clickbait", "pass": False, "evidence": "研究團隊"}]}]}})
+    got = judge(b, "sonnet", {"a": "研究團隊讓 Claude 先講再改。"}, voice="")
+    assert [(i["code"], i["level"]) for i in got["a"]] == [("judge:clickbait", "strong")]
+

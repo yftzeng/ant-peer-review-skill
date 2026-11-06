@@ -155,6 +155,14 @@ Feature: writing gate
     Then  "最…的…都是" is a strong tell "sweeping_claim", and "悄悄發生" and "一次更安靜" are weak tells "personified_error"
     And   "最高的山在亞洲", "他悄悄改掉錯誤" (someone does it), "問題很安全" and "這首歌聽起來不錯" (no turn) are not
     And   the edit is told to claim no more than its cases show
+
+  @S-writing-gate-020
+  Scenario: a clickbait headline is a strong tell
+    Given a text whose first line is "震驚！研究團隊竟然這樣用 AI" or "You won't believe what Claude found"
+    When  the rule check runs
+    Then  it is a strong tell "clickbait"; the same words in a later line, or inside quotes in the first line, are not
+    And   the judge checks "clickbait" too, a strong tell: it fails when the headline or first line withholds the core fact
+          to make a reader click, teases, or promises more than the text delivers
 ```
 
 ## Must NOT
@@ -175,3 +183,4 @@ Feature: writing gate
 - 2026-11-06 · +S-writing-gate-018 · decision: none -- user: the vault-particles post opened "「除非行不通…」這是一個研究團隊…時" and passed; a hanging quote explained by 這是 reads as translated "This is when…"
 - 2026-11-06 · ~S-writing-gate-014 +S-writing-gate-019 · decision: none -- live share rerun (vault particles): "先說清楚成果的範圍。", "代價最高的錯誤都是悄悄發生的" and "聽起來會壓掉 AI 的創意，可是" passed; user: add them. Not taken: an intensifier stronger than its basis ("遠大於"), since the source said "far outweighed" and a regex against the analysis would have flagged a faithful line
 - 2026-11-06 · ~S-writing-gate-006 ~S-writing-gate-018 · decision: none -- user tried eight de-AI tools on the vault-particles post: none rewrote the hanging-quote opening the way asked, two only dropped the 這是 ("這句話是…說的", "…說了這句話"); user also found the newest post more machine-like for its closing run of orders; user: do it
+- 2026-11-06 · +S-writing-gate-020 · decision: none -- user: headlines state the core fact; clickbait is banned

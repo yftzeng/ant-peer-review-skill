@@ -218,8 +218,18 @@ Feature: share
   Scenario: a distilled post names its subject in the output language
     When  a distilled post is written in zh-TW about "vault particles", which the checked claims call "穹窿體"
     Then  the writing rules say to name the subject with the term the checked claims use in the output language, the original
-          term once in parentheses, and to put the takeaway and the hook in the opening lines (before the fold), then only the
-          background a reader needs to follow it, then the evidence
+          term once in parentheses, and to put the takeaway and the hook in the opening lines (before the fold), then the
+          evidence in order of importance, background last and only what a reader needs (S-share-026)
+  @S-share-026
+  Scenario: a post on a platform with a fold opens with a headline and follows the inverted pyramid
+    Given a share run for Facebook (fold 125) and X (no fold)
+    When  the posts are written
+    Then  the writing rules say: inverted pyramid, the headline states the single most important fact or point precisely and
+          briefly as a statement, then a lede with who, what and why it matters, then details by importance, background last;
+          no clickbait
+    And   a Facebook post longer than its fold whose first line runs past 40 units (one CJK character or one word each) is a
+          must-fix "no_headline" and is rewritten; a post that fits before the fold, and an X post, are not checked for one
+
   @S-share-025
   Scenario: a writer that returns no post is asked once more, then fails out loud
     Given a share run whose writing call returns no post for any key, or a refusal
@@ -251,3 +261,4 @@ Feature: share
 - 2026-11-06 · ~S-share-021 ~S-share-024 · decision: none -- live rerun (vault particles): "background before the take" pushed the point to the last two paragraphs (beginner: only the end was usable) and the writer answered "too many terms" by explaining each one; user agreed: point first, then needed background, then evidence
 - 2026-11-06 · +S-share-025 · decision: none -- live rerun (vault particles): the writing call came back with no post and deliver printed "分享文：—" as if it had worked, leaving the old file in place
 - 2026-11-06 · ~S-share-017 · decision: none -- live rerun (vault particles): the fix-up wrote 電鏡 as 電子顯微鏡 (S-output-language-003), then the subject check looked for the analysis's "冷凍電鏡（cryo-EM）" and failed the post
+- 2026-11-06 · ~S-share-024 +S-share-026 · decision: none -- user: share posts had no proper headline; posts follow the inverted pyramid, the headline and lede state the core fact precisely and briefly, no clickbait

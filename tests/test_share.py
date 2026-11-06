@@ -1,6 +1,7 @@
 import pytest
 
 import ant_peer_review.cli as cli
+from ant_peer_review.analysis import units
 from ant_peer_review.decision import run_decision
 from ant_peer_review.jsonio import append_jsonl, read_json, write_json
 from ant_peer_review.refresh import compute_consensus
@@ -542,3 +543,34 @@ def test_share_posts_use_the_users_punctuation(tmp_path):
     assert punct_style(["隨手寫寫 沒有標點", "今天讀到好文, 推薦!"]) == "casual"
     assert punct_of(dict(voice("x"), samples=full)) == "full"        # a voice file from before
     assert punct_of(None) == "casual"
+
+
+# @S-share-026
+def test_folded_post_opens_with_a_headline(tmp_path):
+    run, store = share_run(tmp_path, ["facebook", "x"], {"facebook": ["insight"], "x": ["insight"]})
+    body = ("研究團隊讓 Claude 參與解析穹窿體結構的每一步，處理冷凍電子顯微鏡資料時，它跳過一個標準步驟，"
+            "算出來的結構混進了鏡像，團隊因此要它先照正常做法來，這件事也讓我重新想了一遍 AI 代理該怎麼放手。"
+            "另一次它提議把打破的細胞直接倒進管柱，研究員猶豫過才同意，純化從約三天縮到約九十分鐘。")
+    assert len(body) > 125
+    headed = "AI 代理想偏離標準步驟要先講\n\n" + body
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share"): posts(facebook_insight=body, x_insight=body),
+                       ("*", "share_rewrite"): posts(facebook_insight=headed)})
+    decide(run, store, b)
+    sys_ = next(c for c in b.calls if c["task"] == "share")["system"]
+    assert "inverted pyramid" in sys_ and "clickbait" in sys_
+    ask = next(c for c in b.calls if c["task"] == "share_rewrite")["prompt"]
+    reasons = {ln.split(": fix ", 1)[0][6:]: ln for ln in ask.splitlines() if ln.startswith("- key ")}
+    assert "no_headline" in reasons["facebook-insight"]
+    assert "no_headline" not in reasons.get("x-insight", "")
+    fb = run.path("share-facebook-insight.md").read_text()
+    assert "AI 代理想偏離標準步驟要先講\n\n" in fb and "no_headline" not in fb
+    short = body[:100]                     # fits before the fold: needs no headline
+    assert units(short) > 40 and len(short) <= 125
+    run2, store2 = share_run(tmp_path / "b", ["facebook"], {"facebook": ["insight"]})
+    b2 = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                        ("*", "share"): posts(facebook_insight=short)})
+    decide(run2, store2, b2)
+    asks = [c["prompt"] for c in b2.calls if c["task"] == "share_rewrite"]
+    assert not any("no_headline" in a for a in asks)
+
