@@ -65,6 +65,7 @@ def test_taiwan_usage():
     assert "軟件 → 軟體" in changes and "視頻 → 影片" in changes
     fixed_em, changes_em = autofix("用冷凍電鏡（cryo-EM）拍了影像。", lang="zh-TW")
     assert "冷凍電子顯微鏡（cryo-EM）" in fixed_em and "電鏡 → 電子顯微鏡" in changes_em
+    assert autofix("團隊自己的復盤說", lang="zh-TW")[0] == "團隊自己的檢討說"
     assert "「軟件」" in fixed and "https://ex.example/軟件" in fixed
     found = codes(rule_check(fixed, lang="zh-TW"))
     assert ("locale_term", WEAK, "項目 → 專案") in found

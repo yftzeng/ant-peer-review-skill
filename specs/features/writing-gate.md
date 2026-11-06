@@ -88,6 +88,7 @@ Feature: writing gate
     When  the rule check runs
     Then  the first is a strong tell "hollow_contrast" and the second is not flagged
     And   the reversed form counts too: "要管的是 AI「默默改變做法」，不是創新本身。" and "It's a habit, not a tool." are strong
+    And   so does "不必 X，該 Y 的是 Z": "我覺得不必禁止它改做法，該禁止的是它沒先講就改。" is strong, "不必背公式，要記的是 3 個數字。" is not
           tells, "瓶頸是 3 秒的查詢，不是機器。" is not
 
   @S-writing-gate-012
@@ -109,7 +110,8 @@ Feature: writing gate
     When  the rule check runs
     Then  they are strong tells "deep_saying", "run_up", "straw_man" and "chatbot_residue"
     And   an objection nobody raised is a "straw_man" too: "有人會說這樣綁手綁腳", "你可能會覺得", "Some might say"
-    And   an opener that announces background before giving it is a "run_up" too: "先補一點背景", "先交代一下背景", "先說背景", "Some background first", and a sentence that only announces what comes, "先說清楚成果的範圍。"
+    And   an opener that announces background before giving it is a "run_up" too: "先補一點背景", "先交代一下背景", "先說背景", "Some background first", and a sentence that only announces what comes, "先說清楚成果的範圍。", "同一個專案裡剛好有三種結果。" or "幾個但書。" (a count is needed: "我喜歡這種做法。" is not)
+    And   a sentence that says where the thought came from is a strong tell "this_is_recap": "這是我看一個實驗室的紀錄後想到的。"
     And   setting up how something sounds only to knock it down is a "straw_man": "「先照正常做法來」聽起來會壓掉 AI 的創意，可是…"
 
   @S-writing-gate-015
@@ -184,3 +186,4 @@ Feature: writing gate
 - 2026-11-06 · ~S-writing-gate-014 +S-writing-gate-019 · decision: none -- live share rerun (vault particles): "先說清楚成果的範圍。", "代價最高的錯誤都是悄悄發生的" and "聽起來會壓掉 AI 的創意，可是" passed; user: add them. Not taken: an intensifier stronger than its basis ("遠大於"), since the source said "far outweighed" and a regex against the analysis would have flagged a faithful line
 - 2026-11-06 · ~S-writing-gate-006 ~S-writing-gate-018 · decision: none -- user tried eight de-AI tools on the vault-particles post: none rewrote the hanging-quote opening the way asked, two only dropped the 這是 ("這句話是…說的", "…說了這句話"); user also found the newest post more machine-like for its closing run of orders; user: do it
 - 2026-11-06 · +S-writing-gate-020 · decision: none -- user: headlines state the core fact; clickbait is banned
+- 2026-11-06 · ~S-writing-gate-011 ~S-writing-gate-014 · decision: none -- live share reruns (vault particles) passed with "不必禁止它改做法，該禁止的是…", "這是我看…的紀錄後想到的", "同一個專案裡剛好有三種結果。" and "幾個但書。"; user: 按你建議

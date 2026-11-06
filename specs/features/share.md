@@ -213,6 +213,8 @@ Feature: share
     When  the share analysis is written
     Then  SC1 is not a claim row and 2026 is not a number the post must avoid
     And   an analysis with no purpose and no thesis is asked once more, and still empty it raises a backend error
+    And   when that reply was refused the error says so and why: claude-cli marks a reply with safety stops as refused,
+          "stopped by the safety classifier", and keeps none of its output, even when a fallback model finished it
 
   @S-share-024
   Scenario: a distilled post names its subject in the output language
@@ -263,3 +265,4 @@ Feature: share
 - 2026-11-06 · ~S-share-017 · decision: none -- live rerun (vault particles): the fix-up wrote 電鏡 as 電子顯微鏡 (S-output-language-003), then the subject check looked for the analysis's "冷凍電鏡（cryo-EM）" and failed the post
 - 2026-11-06 · ~S-share-024 +S-share-026 · decision: none -- user: share posts had no proper headline; posts follow the inverted pyramid, the headline and lede state the core fact precisely and briefly, no clickbait
 - 2026-11-06 · ~S-share-024 · decision: none -- the order "evidence by importance, background last" was in the spec but not yet in the writing rules (1867037)
+- 2026-11-06 · ~S-share-023 · decision: none -- live reruns (vault particles) failed twice with "the share analysis came back empty": the CLI's safety classifier had stopped the call and a fallback model finished it; the run was refused but the message hid it. The fallback output is still not kept (user: 按你建議)

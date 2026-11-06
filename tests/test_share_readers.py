@@ -207,6 +207,26 @@ def test_an_empty_analysis_is_asked_again_then_fails(tmp_path):
     assert not list(run.root.glob("share-x-*.md"))
 
 
+# @S-share-023
+def test_a_refused_analysis_says_why(tmp_path):
+    import json as _json
+    from ant_peer_review.backends.base import BackendError, Result
+    from ant_peer_review.backends.claude_cli import parse_output
+    from ant_peer_review.i18n import T
+    from ant_peer_review.share import analyse_article
+    final = {"type": "result", "stop_reason": "tool_use", "safety_stops": 2, "is_error": False,
+             "result": '{"purpose":"half"}', "structured_output": dict(ANALYSIS)}
+    res = parse_output(_json.dumps(final), streamed=False)
+    assert res.refused and res.data is None and "safety classifier" in res.refusal_detail
+    assert not parse_output(_json.dumps(dict(final, safety_stops=0)), streamed=False).refused
+    run, store = distill_run(tmp_path)
+    decide(run, store, ScriptBackend(handlers(share_analysis=ANALYSIS, share=posts(x_insight="流程越短，出錯越少。"))))
+    refused = Result(model="", model_id="", data=None, refused=True, refusal_detail=res.refusal_detail)
+    with pytest.raises(BackendError, match="refused: stopped by the safety classifier"):
+        analyse_article(run, ScriptBackend({("*", "share_analysis"): refused}), "opus",
+                        read_json(run.path("05-consensus.json")), "", "zh-TW", T("zh-TW"))
+
+
 # @S-share-024
 def test_a_distilled_post_names_its_subject_in_the_output_language():
     assert "term the checked claims use" in DISTILL_RULES

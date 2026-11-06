@@ -158,6 +158,8 @@ def test_hollow_contrast_only():
     for text in ("所以我覺得要管的是 AI「默默改變做法」，不是創新本身。", "It's a habit, not a tool."):
         assert "hollow_contrast" in codes(rule_check(text), "strong"), text
     assert "hollow_contrast" not in codes(rule_check("瓶頸是 3 秒的查詢，不是機器。"))
+    assert "hollow_contrast" in codes(rule_check("我覺得不必禁止它改做法，該禁止的是它沒先講就改。"), "strong")
+    assert "hollow_contrast" not in codes(rule_check("不必背公式，要記的是 3 個數字。"))
     for text in ("我還是會去，不是因為怕。", "但是很多人，不是每個人都懂。"):   # 還是 / 但是 are words
         assert "hollow_contrast" not in codes(rule_check(text)), text
 
@@ -201,6 +203,8 @@ def test_staging_tells_in_both_languages():
              "先補一點背景。穹窿體是顆粒。": "run_up", "先交代一下背景：這是預印本。": "run_up", "先說背景：這是預印本。": "run_up",
              "Some background first: it is a preprint.": "run_up",
              "先說清楚成果的範圍。這是預印本。": "run_up",
+             "同一個專案裡剛好有三種結果。成功的那次很快。": "run_up", "幾個但書。這是預印本。": "run_up",
+             "這是我看一個實驗室的紀錄後想到的。": "this_is_recap",
              "「先照正常做法來」聽起來會壓掉 AI 的創意，可是這次加速來自偏離。": "straw_man"}
     for text, code in cases.items():
         assert code in codes(rule_check(text), "strong"), text
@@ -277,7 +281,7 @@ def test_sweeping_claim_and_personified_error():
     assert "sweeping_claim" in codes(issues, "strong")
     assert "personified_error" in codes(issues, "weak")
     assert "personified_error" in codes(rule_check("還有一次更安靜：添加劑擋住了 DNA。"), "weak")
-    for text in ("最高的山在亞洲。", "他悄悄改掉錯誤。", "問題很安全。", "先說他的看法，再看數據。",
+    for text in ("最高的山在亞洲。", "他悄悄改掉錯誤。", "問題很安全。", "先說他的看法，再看數據。", "我喜歡這種做法。",
                  "這首歌聽起來不錯。"):
         got = set(codes(rule_check(text)))
         assert not {"sweeping_claim", "personified_error", "run_up", "straw_man"} & got, text

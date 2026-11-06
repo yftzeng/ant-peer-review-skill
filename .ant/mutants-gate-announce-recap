@@ -1,0 +1,24 @@
+# 不必 contrast removed
+@@ src/ant_peer_review/gate.py
+-                       r"不(?:必|用|需要)[^。！？\n，,]{1,30}[，,]\s*(?:該|该|要|需要)[^。！？\n，,]{0,10}的是([^。！？\n]{1,60})",
++                       r"(?!x)x",
+# announce list without the count
+@@ src/ant_peer_review/gate.py
+-               r"(?:^|[\n。！？])[ \t]*[^。！？，\n]{0,14}(?:幾|几|兩|两|三|四|五)(?:個|个|種|种|點|点|件|項|项)"
++               r"(?:^|[\n。！？])[ \t]*[^。！？，\n]{0,14}(?:個|个|種|种|點|点|件|項|项)"
+# recap without the source verb
+@@ src/ant_peer_review/gate.py
+-     "this_is_recap": r"(?:這|这)是我(?:在)?(?:看|讀|读|看到|讀到|读到|看完|讀完|读完)[^。！？\n]{1,60}"
++     "this_is_recap": r"(?:這|这)是我(?:在)?(?:聽|听)[^。！？\n]{1,60}"
+# 復盤 not replaced
+@@ src/ant_peer_review/outlang.py
+-     "激活": "啟用", "電鏡": "電子顯微鏡", "復盤": "檢討",
++     "激活": "啟用", "電鏡": "電子顯微鏡",
+# safety detail hidden
+@@ src/ant_peer_review/backends/claude_cli.py
+-                                   f"stopped by the safety classifier ({final['safety_stops']})"
++                                   str(final.get("result", ""))[:300]
+# refusal not named in the error
+@@ src/ant_peer_review/share.py
+-                            + (f" (refused: {res.refusal_detail})" if res.refused else ""))
++                            + "")

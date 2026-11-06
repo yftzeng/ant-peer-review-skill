@@ -194,7 +194,8 @@ def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: s
         if str(d.get("purpose", "")).strip() or str(d.get("thesis", "")).strip():
             break
     else:
-        raise BackendError("the share analysis came back empty")
+        raise BackendError("the share analysis came back empty"   # S-share-023: say why
+                           + (f" (refused: {res.refusal_detail})" if res.refused else ""))
     claims = _claim_rows(d.get("claims") or [], led)
     a = {"purpose": str(d.get("purpose", "")).strip(), "claims": claims,
          "direction": d.get("direction") if d.get("direction") in DIRECTIONS else "middle",

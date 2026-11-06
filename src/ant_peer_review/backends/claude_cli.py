@@ -122,7 +122,9 @@ def parse_output(stdout: str, *, streamed: bool) -> Result | None:
     if final.get("is_error") and not refused:
         return None
     return Result(model="", model_id="", data=None if refused else data, refused=refused,
-                  refusal_detail=str(final.get("result", ""))[:300] if refused else "",
+                  refusal_detail=("" if not refused else
+                                  f"stopped by the safety classifier ({final['safety_stops']})"
+                                  if final.get("safety_stops") else str(final.get("result", ""))[:300]),
                   cost_usd=final.get("total_cost_usd"), tool_calls=calls,
                   tool_results=results, raw=final)
 

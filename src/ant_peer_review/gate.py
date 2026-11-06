@@ -61,6 +61,8 @@ STAGING = {
               r"一句话总结|廢話不多說|废话不多说|"
               r"先(?:補|补|交代|說|说|講|讲|聊|介紹|介绍)(?:一下|一點|一点|點|点)?(?:背景|脈絡|脉络|前情)|"
               r"(?:^|[\n。！？])[ \t]*先(?:(?:說|说|講|讲)(?:清楚|明白)|釐清|厘清)[^。！？：\n]{0,12}[。：]|"
+              r"(?:^|[\n。！？])[ \t]*[^。！？，\n]{0,14}(?:幾|几|兩|两|三|四|五)(?:個|个|種|种|點|点|件|項|项)"
+              r"(?:但書|但书|重點|重点|結果|结果|教訓|教训|啟示|启示|觀察|观察|原因|做法)[。：]|"
               r"\bsome background first\b|\bfirst, some (?:background|context)\b|\blet's dive in\b|\bhere's the thing\b|"
               r"\bhere's what you need to know\b|\bhonestly\?|\bwithout further ado\b",
     "straw_man": r"我不是說|我不是说|這並不是說|这并不是说|不要誤會|不要误会|"
@@ -69,6 +71,8 @@ STAGING = {
                  r"你(?:可能|也許|或許)會(?:說|覺得|想)|你(?:可能|也许|或许)会(?:说|觉得|想)|"
                  r"\bI'm not saying\b|\bto be clear\b|\bdon't get me wrong\b|"
                  r"\b(?:some|critics) (?:might|will|may) (?:say|argue)\b|\byou might (?:think|say)\b",
+    "this_is_recap": r"(?:這|这)是我(?:在)?(?:看|讀|读|看到|讀到|读到|看完|讀完|读完)[^。！？\n]{1,60}"
+                     r"(?:後|后|之後|之后|時|时)(?:想到|想起|的感想|的心得|的體會|的体会)",
     "chatbot_residue": r"希望(?:這|这)?(?:對|对)(?:你|您)有(?:所)?幫助|希望(?:這|这)?(?:對|对)(?:你|您)有(?:所)?帮助|"
                        r"\bI hope this helps\b|\bgreat question\b|\blet me know if\b",
     "metaphor": r"(?:學習|学习|成長|成长|轉型|转型)之?旅|北極星|北极星|飛輪|飞轮|"
@@ -108,7 +112,8 @@ EXPERIENCE = re.compile(r"我曾|我之前在|以前我|我們團隊|我们团�
 CONTRAST = re.compile(r"不是[^。！？\n]{1,30}?[，,]\s*(?:而)?是([^。！？\n]{1,60})|"
                       r"(?<![不但就還还總总要或可於于凡倒算])是([^。！？\n，,]{1,40})[，,]\s*(?:而)?不是[^。！？\n]{1,40}|"
                       r"\b(?:it's|it is) ([^.!?\n,]{1,60}), not [^.!?\n]{1,60}|"
-                      r"\bnot (?:just |only |merely )?[^.!?\n]{1,60}?, (?:but |it's )([^.!?\n]{1,80})",
+                      r"\bnot (?:just |only |merely )?[^.!?\n]{1,60}?, (?:but |it's )([^.!?\n]{1,80})|"
+                      r"不(?:必|用|需要)[^。！？\n，,]{1,30}[，,]\s*(?:該|该|要|需要)[^。！？\n，,]{0,10}的是([^。！？\n]{1,60})",
                       re.I)
 CJK = "[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff01-\uff60]"  # incl. CJK punctuation
 HAN = "[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]"
