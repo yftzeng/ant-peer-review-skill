@@ -1,0 +1,13 @@
+# point first; drop terms before explaining; 質量 as mass (S-share-021, S-share-024, S-output-language-003)
+@@ src/ant_peer_review/outlang.py
+-         if any(not _right_sense(view, src, m.start()) for m in re.finditer(re.escape(src), view)):
++         if src in view:
+@@ src/ant_peer_review/outlang.py
+-     return bool(rx and rx.search(view[max(0, at - FLAG_WINDOW):at + len(term) + FLAG_WINDOW]))
++     return bool(rx and rx.search(view))
+@@ src/ant_peer_review/share.py
+-     "opening lines, before the fold; then only the background a reader needs to follow it; then the "
++     "body; then only the background a reader needs to follow it; then the "
+@@ src/ant_peer_review/readers.py
+-     "and repetition, never background a reader needs. A point a reader finds late moves up; when a "
++     "and repetition, never background a reader needs. When a "

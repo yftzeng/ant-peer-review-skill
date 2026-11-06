@@ -195,7 +195,8 @@ Feature: share
     Then  one call rules on every reader point (accept, reject, partly, with a reason) and rewrites the posts, the rewritten
           posts pass the writing gate, and the readers read them again
     And   the readers read each post with the source line it will carry; the writer's rules say length is no defect:
-          cut only filler and repetition, never background a reader needs
+          cut only filler and repetition, never background a reader needs; a point a reader finds late moves up, and when a
+          reader finds too many terms, the terms the point does not need are dropped before any is explained
     And   after the second round the last revision passes the gate and is final; when every reader says met the loop stops
     And   share-readers.md lists the weights and reasons, each round's verdict per reader and post, and the rulings
 
@@ -216,7 +217,8 @@ Feature: share
   Scenario: a distilled post names its subject in the output language
     When  a distilled post is written in zh-TW about "vault particles", which the checked claims call "穹窿體"
     Then  the writing rules say to name the subject with the term the checked claims use in the output language, the original
-          term once in parentheses, and to give the background a reader needs before the take
+          term once in parentheses, and to put the takeaway and the hook in the opening lines (before the fold), then only the
+          background a reader needs to follow it, then the evidence
 ```
 
 ## Must NOT
@@ -239,3 +241,4 @@ Feature: share
 - 2026-11-06 · +S-share-019..024 · decision: none -- live distill run (vault particles): the analysis came back empty, so the post jumped to the take with no background and an English term; user: weigh four readers (public, beginner, expert, business) from the topic's stage, maturity and media spread, confirm the mix, then let each reader report only whether its goal was met, rule on the reports, de-AI before each review and at the end, at most two rounds
 - 2026-11-06 · ~S-share-018 · decision: none -- user: zh-TW Facebook posts read oddly with half-width marks; without a voice of the user's own, zh-TW posts use full-width punctuation (reverses the 2026-11-03 default for zh-TW only)
 - 2026-11-06 · ~S-share-010 ~S-share-013 ~S-share-019 ~S-share-021 · decision: none -- live rerun (vault particles): readers outside the field could not tell what the post was about; user: give them the original article as a reference point, so a distilled post ends with the source line by default (reverses 2026-11-03); no length limit, only no AI tone or filler
+- 2026-11-06 · ~S-share-021 ~S-share-024 · decision: none -- live rerun (vault particles): "background before the take" pushed the point to the last two paragraphs (beginner: only the end was usable) and the writer answered "too many terms" by explaining each one; user agreed: point first, then needed background, then evidence

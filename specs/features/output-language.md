@@ -31,6 +31,8 @@ Feature: output language
     Then  the fix-up writes "這個軟體的影片" and lists "軟件 → 軟體" and "視頻 → 影片" as changes
     And   "項目" is a weak tell "locale_term" suggesting 專案 (it can also mean "item"), "们" is a must-fix "script_mismatch",
           and a quoted 「軟件」 or a URL is left as written
+    And   "質量" is flagged (suggesting 品質) only when no mass context is near it: "質量約為核糖體的三倍" and "9.5 兆道爾頓的質量"
+          pass, "這家店的質量很好" is flagged
 
   @S-output-language-004
   Scenario: mainland usage and US spelling are checked the same way
@@ -69,3 +71,4 @@ Feature: output language
 ## Revisions
 - 2026-11-02 · created · decision: none -- intake asks the audience, writing-gate checks tells and decision adopts a plan; none says which language and regional usage the delivered text is in, and the user wants that chosen per run, several at once, with Taiwan and US usage checked
 - 2026-11-02 · +S-output-language-001..007 +N-output-language-001 · decision: none -- user: a step in the interactive flow for the final output languages (English / 繁體中文 / 簡體中文, multi-select, default the --lang language), with Taiwan usage for 繁體中文 and US English for English
+- 2026-11-06 · ~S-output-language-003 · decision: none -- live share run: "穹窿體的質量約為核糖體的三倍" was flagged 質量 → 品質; in Taiwan 質量 is the word for mass, so a mass context is not flagged

@@ -72,6 +72,11 @@ def test_taiwan_usage():
     assert "視頻大全" in title_kept
     assert ("locale_term", STRONG, "軟件 → 軟體") in codes(rule_check("這個軟件", lang="zh-TW"))
     assert not rule_check("這個軟體", lang="zh-TW")
+    for mass in ("穹窿體的質量約為核糖體的三倍。", "總共約 9.5 兆道爾頓的質量。"):
+        assert not any(c == "locale_term" for c, _, _ in codes(rule_check(mass, lang="zh-TW"))), mass
+    assert ("locale_term", WEAK, "質量 → 品質") in codes(rule_check("這家店的質量很好。", lang="zh-TW"))
+    far = "這家店的質量很好，服務也不錯，價格只有一半，回購率高了三倍。"   # a number far away is no mass
+    assert ("locale_term", WEAK, "質量 → 品質") in codes(rule_check(far, lang="zh-TW"))
 
 
 # @S-output-language-004

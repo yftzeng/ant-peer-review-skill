@@ -49,6 +49,9 @@ TW_FLAG = {
     "運行": "執行", "通過": "透過", "程序": "程式", "對象": "物件", "函數": "函式",
     "數據": "資料", "調用": "呼叫", "接口": "介面", "登錄": "登入",
 }
+# A flagged term that is right in this sense: 質量 is Taiwan's word for mass.
+FLAG_UNLESS = {"質量": re.compile(r"[\d倍克噸頓]|公斤|道爾頓|核糖體|分子|原子|能量|密度|重量|物理|守恆")}
+FLAG_WINDOW = 8
 # zh-CN: Taiwan term (in Simplified script) -> mainland term.
 CN_SAFE = {
     "程式设计师": "程序员", "程式码": "代码", "原始码": "源代码", "软体": "软件", "硬体": "硬件",
@@ -183,6 +186,12 @@ def fix(text: str, lang: str | None, protect=()) -> tuple[str, list[str]]:
     return _restore(out, kept), changes
 
 
+def _right_sense(view: str, term: str, at: int) -> bool:
+    """A flagged term used in the sense the output language spells it that way."""
+    rx = FLAG_UNLESS.get(term)
+    return bool(rx and rx.search(view[max(0, at - FLAG_WINDOW):at + len(term) + FLAG_WINDOW]))
+
+
 def check(view: str, lang: str | None) -> list[dict]:
     """Issues in the scan view (quotes, URLs and protected names already removed)."""
     if not lang:
@@ -196,7 +205,7 @@ def check(view: str, lang: str | None) -> list[dict]:
         if src in view:
             out.append({"code": "locale_term", "level": "strong", "detail": f"{src} → {safe[src]}"})
     for src, dst in flag.items():
-        if src in view:
+        if any(not _right_sense(view, src, m.start()) for m in re.finditer(re.escape(src), view)):
             out.append({"code": "locale_term", "level": "weak", "detail": f"{src} → {dst}"})
     if lang == "en":
         for stem, us, ending in US_SPELLING:

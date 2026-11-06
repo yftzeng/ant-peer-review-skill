@@ -66,7 +66,9 @@ REVISE_RULES = (
     "goal at work (an expert who wants to rebut) is no defect. Then rewrite each post: keep the "
     "person's take, add no fact that is not in the sources above, and no experience, habit or "
     "plan of the person's that their take does not state. Length is no defect: cut only filler "
-    "and repetition, never background a reader needs. A source line the readers saw at the end "
+    "and repetition, never background a reader needs. A point a reader finds late moves up; when a "
+    "reader finds too many terms, the terms the point does not need are dropped before any is "
+    "explained. A source line the readers saw at the end "
     "is added after the post; do not write it into the text.")
 
 

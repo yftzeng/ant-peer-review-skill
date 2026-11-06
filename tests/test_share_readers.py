@@ -210,7 +210,8 @@ def test_an_empty_analysis_is_asked_again_then_fails(tmp_path):
 # @S-share-024
 def test_a_distilled_post_names_its_subject_in_the_output_language():
     assert "term the checked claims use" in DISTILL_RULES
-    assert "background" in DISTILL_RULES
+    assert "takeaway and the hook in the opening lines" in DISTILL_RULES
+    assert "background a reader needs before the take" not in DISTILL_RULES
 
 
 # @S-share-021
@@ -222,6 +223,7 @@ def test_readers_read_the_post_with_its_source_line_and_length_is_no_defect(tmp_
     p = [c for c in b.calls if c["task"] == "reader"][0]["prompt"]
     assert "延伸自：Title https://ex.example/a" in p and "延伸自：Title\n" in p
     assert "length is no defect" in readers.REVISE_RULES.lower()
+    assert "moves up" in readers.REVISE_RULES and "dropped before any is explained" in readers.REVISE_RULES
 
 
 # @S-share-019
