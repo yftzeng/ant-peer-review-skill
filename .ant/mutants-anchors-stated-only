@@ -1,0 +1,4 @@
+# rule dropped
+@@ src/ant_peer_review/share.py
+-     "that support the thesis; they may name the subject; each states only what the article says "
++     "that support the thesis; they may name the subject; each states what it likes "

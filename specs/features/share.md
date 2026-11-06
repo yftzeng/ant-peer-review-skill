@@ -131,7 +131,8 @@ Feature: share
           with its status and reason, and a suggested direction ("oppose or middle" here: a red line is confirmed)
     And   it returns the article's purpose, the subject (a one-line topic and 2-4 terms a reader needs), each claim with an action
           (keep, strengthen, qualify, drop, correct, avoid), a direction (reinforce, oppose or middle) with its reason,
-          a thesis someone could dispute, at least one anchor (which may name the subject) and the origin
+          a thesis someone could dispute, at least one anchor (which may name the subject; it states only what the article
+          says, and an inference is marked as one) and the origin
           (the article's author and the creators of the work it reports, their organizations, sites and publications);
           an unsupported claim marked keep becomes drop, and the analysis is written to share-analysis.md
     And   each analysis row names the checked claims it covers by id, and its status is the fact-check's status, never the model's
@@ -281,3 +282,4 @@ Feature: share
 - 2026-11-06 · +S-share-027 · decision: none -- live reruns (vault particles): the analysis call was stopped by the safety classifier in five of six tries, about 1 to 1.8 USD a deliver, while the writing call never was; user: 按你建議 (reuse the analysis, --fresh-analysis to redo it)
 - 2026-11-06 · ~S-share-017 · decision: none -- live rerun (vault particles): the analysis listed "vault（穹窿體）" and "cryo-EM（冷凍電子顯微鏡）", the post wrote "穹窿體（vault）" as S-share-024 asks, and failed missing_subject
 - 2026-11-06 · ~S-share-012 · decision: none -- two vault-particles reruns wrote "圖一攤開就看得出不對" and "結構圖可以直接檢查，所以很快就被發現", which the article does not say; judged in the same judge call (user: 按你建議)
+- 2026-11-06 · ~S-share-014 · decision: none -- the vault-particles analysis wrote the anchor "圖譜能直接檢查，所以很快被發現", which the article does not say, and two posts repeated it; user: 按你建議

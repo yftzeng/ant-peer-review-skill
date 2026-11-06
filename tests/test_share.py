@@ -595,3 +595,9 @@ def test_folded_post_opens_with_a_headline(tmp_path):
     asks = [c["prompt"] for c in b2.calls if c["task"] == "share_rewrite"]
     assert not any("no_headline" in a for a in asks)
 
+
+# @S-share-014
+def test_anchors_state_only_what_the_article_says():
+    from ant_peer_review.share import ANALYSIS_SYSTEM
+    assert "only what the article says" in ANALYSIS_SYSTEM and "mark an inference" in ANALYSIS_SYSTEM
+
