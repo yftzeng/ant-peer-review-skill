@@ -232,6 +232,14 @@ Feature: share
     And   a Facebook post longer than its fold whose first line runs past 40 units (one CJK character or one word each) is a
           must-fix "no_headline" and is rewritten; a post that fits before the fold, and an X post, are not checked for one
 
+  @S-share-027
+  Scenario: delivering again reuses the share analysis made from the same inputs
+    Given a distill run whose share analysis was written
+    When  it is delivered again
+    Then  no analysis call is made and the posts are written from share-analysis.json
+    And   "--fresh-analysis" makes one; so does a changed input (the person's own take, the article, the checked claims);
+          an analysis written before its inputs were recorded is reused as it is
+
   @S-share-025
   Scenario: a writer that returns no post is asked once more, then fails out loud
     Given a share run whose writing call returns no post for any key, or a refusal
@@ -266,3 +274,4 @@ Feature: share
 - 2026-11-06 · ~S-share-024 +S-share-026 · decision: none -- user: share posts had no proper headline; posts follow the inverted pyramid, the headline and lede state the core fact precisely and briefly, no clickbait
 - 2026-11-06 · ~S-share-024 · decision: none -- the order "evidence by importance, background last" was in the spec but not yet in the writing rules (1867037)
 - 2026-11-06 · ~S-share-023 · decision: none -- live reruns (vault particles) failed twice with "the share analysis came back empty": the CLI's safety classifier had stopped the call and a fallback model finished it; the run was refused but the message hid it. The fallback output is still not kept (user: 按你建議)
+- 2026-11-06 · +S-share-027 · decision: none -- live reruns (vault particles): the analysis call was stopped by the safety classifier in five of six tries, about 1 to 1.8 USD a deliver, while the writing call never was; user: 按你建議 (reuse the analysis, --fresh-analysis to redo it)

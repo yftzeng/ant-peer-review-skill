@@ -4,6 +4,7 @@ was reviewed and fact-checked first; every post passes the writing gate."""
 from __future__ import annotations
 
 import difflib
+import hashlib
 import json
 import re
 import unicodedata
@@ -171,7 +172,7 @@ def dropped_numbers(analysis: dict) -> set[str]:
 
 
 def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: str, lang: str,
-                    t: T) -> dict:
+                    t: T, fresh: bool = False) -> dict:
     """S-share-014: purpose, claim actions, direction, thesis, anchors, names; one call.
     Writes share-analysis.md (and .json). Raises BackendError when the call fails."""
     from .deliver import share_digest
@@ -186,10 +187,17 @@ def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: s
               f"Article excerpt:\n{prompts.untrusted(article[:8000])}\n\n"
               "References (may be the subject's own description, not neutral evidence):\n"
               f"{prompts.untrusted(refs[:6000]) if refs.strip() else '(none)'}")
+    system = ANALYSIS_SYSTEM.format(language=outlang.guide(lang))
+    # S-share-027: the same inputs reuse the analysis already written
+    basis = hashlib.sha256(f"{system}\n{prompt}".encode("utf-8")).hexdigest()[:16]
+    done = run.path("share-analysis.json")
+    if not fresh and done.exists():
+        old = read_json(done)
+        if old.get("basis", basis) == basis:
+            return old
     for _ in range(2):            # S-share-023: an empty analysis is asked once more
         res = backend.run(writer, task="share_analysis", schema=ANALYSIS_SCHEMA, effort="high",
-                          timeout=900, prompt=prompt,
-                          system=ANALYSIS_SYSTEM.format(language=outlang.guide(lang)))
+                          timeout=900, prompt=prompt, system=system)
         d = res.data or {}
         if str(d.get("purpose", "")).strip() or str(d.get("thesis", "")).strip():
             break
@@ -202,7 +210,7 @@ def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: s
          "why": str(d.get("why", "")).strip(), "thesis": str(d.get("thesis", "")).strip(),
          "anchors": [str(x).strip() for x in d.get("anchors") or [] if str(x).strip()],
          "subject": {"topic": str((d.get("subject") or {}).get("topic", "")).strip(), "terms": []},
-         "origin": [str(x).strip() for x in d.get("origin") or [] if str(x).strip()]}
+         "origin": [str(x).strip() for x in d.get("origin") or [] if str(x).strip()], "basis": basis}
     gone = {n.lower() for n in a["origin"]}    # a name in both lists stays out of the post
     a["subject"]["terms"] = [x for x in (str(y).strip() for y in (d.get("subject") or {}).get("terms") or [])
                              if x and x.lower() not in gone][:4]
@@ -296,13 +304,15 @@ def plan(intake: dict) -> list[tuple[str, str]]:
 
 
 def write_shares(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
-                 home: Path | None, lang: str = "en") -> tuple[list[str], dict]:
+                 home: Path | None, lang: str = "en",
+                 fresh_analysis: bool = False) -> tuple[list[str], dict]:
     """(written files, file -> failed checks): one writing call per output language.
     Raises BackendError when the first call fails."""
     intake = read_json(run.path("00-intake.json"))
     langs = outlang.of(intake, lang)
     share = intake["share"]
-    analysis = analyse_article(run, backend, models[0], cons, share.get("take", ""), lang, t) \
+    analysis = analyse_article(run, backend, models[0], cons, share.get("take", ""), lang, t,
+                               fresh=fresh_analysis) \
         if share.get("angle") == "distill" else None
     mix = readers.ensure_mix(run, backend, models, lang)
     written, failed, shown, notes = [], {}, {}, []

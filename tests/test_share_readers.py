@@ -3,7 +3,7 @@ import pytest
 
 from ant_peer_review import readers
 from ant_peer_review.backends.base import BackendError
-from ant_peer_review.jsonio import append_jsonl, read_json
+from ant_peer_review.jsonio import append_jsonl, read_json, write_json
 from ant_peer_review.share import DISTILL_RULES, dropped_numbers
 from ant_peer_review.ui import ScriptedIO
 from helpers import ScriptBackend
@@ -272,3 +272,30 @@ def test_a_writer_that_returns_no_post_fails_out_loud(tmp_path, reply):
     assert tasks.count("share") == 2 and "reader" not in tasks
     assert any("✗" in s and "no post" in s for s in said)
     assert any("refus" in s for s in said) == (reply == "refused")
+
+
+# @S-share-027
+def test_delivering_again_reuses_the_analysis(tmp_path):
+    from ant_peer_review.deliver import deliver
+    from test_decision import M, TH
+    run, store = distill_run(tmp_path)
+    decide(run, store, ScriptBackend(handlers(share_analysis=ANALYSIS, share=posts(x_insight="流程越短，出錯越少。"))))
+    assert read_json(run.path("share-analysis.json"))["basis"]
+
+    def again(**kw):
+        b = ScriptBackend(handlers(share_analysis=ANALYSIS, share=posts(x_insight="流程越短，出錯越少。")))
+        deliver(run, b, M, "en", TH, [], say=lambda s: None, home=store.home, **kw)   # as decide
+        return [c["task"] for c in b.calls].count("share_analysis"), b
+    n, b = again()
+    assert n == 0 and any(c["task"] == "share" for c in b.calls)
+    assert again(fresh_analysis=True)[0] == 1
+    intake = read_json(run.path("00-intake.json"))
+    intake["share"]["take"] = "交接越少越好"
+    write_json(run.path("00-intake.json"), intake)
+    assert again()[0] == 1                          # the take changed: a new analysis
+    assert again()[0] == 0
+    legacy = read_json(run.path("share-analysis.json"))
+    legacy.pop("basis")
+    write_json(run.path("share-analysis.json"), legacy)
+    assert again()[0] == 0                          # written before inputs were recorded
+

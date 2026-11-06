@@ -1,0 +1,24 @@
+# never reused
+@@ src/ant_peer_review/share.py
+-     if not fresh and done.exists():
++     if False:
+# reused even when fresh
+@@ src/ant_peer_review/share.py
+-     if not fresh and done.exists():
++     if done.exists():
+# reused whatever the inputs
+@@ src/ant_peer_review/share.py
+-         if old.get("basis", basis) == basis:
++         if True:
+# legacy file recomputed
+@@ src/ant_peer_review/share.py
+-         if old.get("basis", basis) == basis:
++         if old.get("basis") == basis:
+# flag not passed through
+@@ src/ant_peer_review/deliver.py
+-                                                              lang, fresh_analysis=fresh_analysis)
++                                                              lang)
+# CLI flag dropped
+@@ src/ant_peer_review/cli.py
+-             fresh_analysis=args.fresh_analysis)
++             fresh_analysis=False)

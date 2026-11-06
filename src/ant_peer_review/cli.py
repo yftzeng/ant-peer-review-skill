@@ -106,6 +106,8 @@ def build_parser() -> argparse.ArgumentParser:
     dl.add_argument("run")
     dl.add_argument("--reply", help="as for decide (default all)")
     dl.add_argument("--readers", help=readers_help)
+    dl.add_argument("--fresh-analysis", action="store_true",
+                    help="share runs: analyse the article again instead of reusing share-analysis.json")
 
     c = sub.add_parser("config", parents=[common], help="change saved settings")
     c.add_argument("what", choices=["models", "backend", "lang", "show"])
@@ -550,7 +552,8 @@ def cmd_deliver(args, io, store, cfg) -> int:
         io.say(f"error: {e}")
         return EXIT_USAGE
     deliver(run, ctx.backend, ctx.models, ctx.lang, cfg.grade_thresholds,
-            list(STYLES) if styles is None else styles, say=io.say, home=store.home)
+            list(STYLES) if styles is None else styles, say=io.say, home=store.home,
+            fresh_analysis=args.fresh_analysis)
     return EXIT_OK
 
 

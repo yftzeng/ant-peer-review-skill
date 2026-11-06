@@ -376,7 +376,7 @@ def write_finals(run: Run, backend: Backend, models: list[str], t: T, lang: str)
 
 
 def deliver(run: Run, backend: Backend, models: list[str], lang: str, thresholds: dict,
-            styles: list[str], say=print, home=None) -> dict:
+            styles: list[str], say=print, home=None, fresh_analysis: bool = False) -> dict:
     t = T(lang)
     cons = read_json(run.path("05-consensus.json"))
     intake = read_json(run.path("00-intake.json"))
@@ -389,7 +389,7 @@ def deliver(run: Run, backend: Backend, models: list[str], lang: str, thresholds
         from .share import write_shares
         try:
             out["shares"], out["gate_failed"] = write_shares(run, backend, models, cons, t, home,
-                                                             lang)
+                                                             lang, fresh_analysis=fresh_analysis)
         except BackendError as e:
             say("  ✗ " + t("deliver.reply_failed", reason=str(e)[:200], run=run.id))
             return out

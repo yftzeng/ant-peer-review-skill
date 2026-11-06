@@ -203,3 +203,16 @@ def test_deliver_rewrites_outputs(env):
     assert not run.path("reply-socratic.md").exists()
     assert run.path("audit.md").read_text() == before
 
+
+
+# @S-share-027
+def test_deliver_fresh_analysis_flag(env, monkeypatch):
+    import ant_peer_review.deliver as dmod
+    _, _, run = new_run(env)
+    cli.main(["decide", run.id, "--yes", "--choice", "A", "--reply", "none"], io=NoAskIO(), store=env)
+    seen = []
+    monkeypatch.setattr(dmod, "deliver", lambda *a, **k: seen.append(k.get("fresh_analysis")))
+    assert cli.main(["deliver", run.id, "--reply", "none"], io=NoAskIO(), store=env) == 0
+    assert cli.main(["deliver", run.id, "--reply", "none", "--fresh-analysis"], io=NoAskIO(), store=env) == 0
+    assert seen == [False, True]
+
