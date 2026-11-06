@@ -212,6 +212,7 @@ def test_a_distilled_post_names_its_subject_in_the_output_language():
     assert "term the checked claims use" in DISTILL_RULES
     assert "takeaway and the hook in the opening lines" in DISTILL_RULES
     assert "background a reader needs before the take" not in DISTILL_RULES
+    assert "evidence in order of importance; background last" in DISTILL_RULES
 
 
 # @S-share-021

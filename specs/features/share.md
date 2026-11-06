@@ -262,3 +262,4 @@ Feature: share
 - 2026-11-06 · +S-share-025 · decision: none -- live rerun (vault particles): the writing call came back with no post and deliver printed "分享文：—" as if it had worked, leaving the old file in place
 - 2026-11-06 · ~S-share-017 · decision: none -- live rerun (vault particles): the fix-up wrote 電鏡 as 電子顯微鏡 (S-output-language-003), then the subject check looked for the analysis's "冷凍電鏡（cryo-EM）" and failed the post
 - 2026-11-06 · ~S-share-024 +S-share-026 · decision: none -- user: share posts had no proper headline; posts follow the inverted pyramid, the headline and lede state the core fact precisely and briefly, no clickbait
+- 2026-11-06 · ~S-share-024 · decision: none -- the order "evidence by importance, background last" was in the spec but not yet in the writing rules (1867037)

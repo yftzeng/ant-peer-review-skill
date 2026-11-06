@@ -41,8 +41,8 @@ DISTILL_RULES = (
     "analysis names them, so a reader who never saw the article knows what this is about; "
     "related people and products may be named. Name the subject with the term the checked claims use "
     "in the output language, the original term once in parentheses. Put the takeaway and the hook in the "
-    "opening lines, before the fold; then only the background a reader needs to follow it; then the "
-    "evidence. Do not name the original creators, companies "
+    "opening lines, before the fold; then the evidence in order of importance; background last, "
+    "only what a reader needs to follow it. Do not name the original creators, companies "
     "or sites (the analysis lists them as origin), nor the article's author. No self-evident truths: "
     "say something a reasonable expert could dispute. Do not mention the article's title or "
     "link: a source line is added after the post.")

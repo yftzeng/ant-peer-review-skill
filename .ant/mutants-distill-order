@@ -1,0 +1,4 @@
+# old order back
+@@ src/ant_peer_review/share.py
+-     "opening lines, before the fold; then the evidence in order of importance; background last, "
++     "opening lines, before the fold; then the background; then the evidence by importance, "
