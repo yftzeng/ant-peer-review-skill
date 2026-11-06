@@ -160,6 +160,8 @@ def test_hollow_contrast_only():
     assert "hollow_contrast" not in codes(rule_check("瓶頸是 3 秒的查詢，不是機器。"))
     assert "hollow_contrast" in codes(rule_check("我覺得不必禁止它改做法，該禁止的是它沒先講就改。"), "strong")
     assert "hollow_contrast" not in codes(rule_check("不必背公式，要記的是 3 個數字。"))
+    assert "hollow_contrast" in codes(rule_check("要看這一步出錯時多快會被發現，不是看點子聰不聰明。"), "strong")
+    assert "hollow_contrast" not in codes(rule_check("要看 3 秒的查詢，不是看機器。"))
     for text in ("我還是會去，不是因為怕。", "但是很多人，不是每個人都懂。"):   # 還是 / 但是 are words
         assert "hollow_contrast" not in codes(rule_check(text)), text
 
@@ -206,7 +208,7 @@ def test_staging_tells_in_both_languages():
              "同一個專案裡剛好有三種結果。成功的那次很快。": "run_up", "幾個但書。這是預印本。": "run_up",
              "這是我看一個實驗室的紀錄後想到的。": "this_is_recap",
              "AI 偏離標準做法的情況出現了三次，三次結局都不一樣。第一次成功。": "run_up",
-             "最後兩點限制。這是預印本。": "run_up",
+             "最後兩點限制。這是預印本。": "run_up", "同一個專案裡剛好有兩個對照。第一個成功。": "run_up",
              "「先照正常做法來」聽起來會壓掉 AI 的創意，可是這次加速來自偏離。": "straw_man"}
     for text, code in cases.items():
         assert code in codes(rule_check(text), "strong"), text

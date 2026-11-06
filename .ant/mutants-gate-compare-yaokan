@@ -1,0 +1,8 @@
+# 要看 contrast dropped
+@@ src/ant_peer_review/gate.py
+-                       r"要看([^。！？\n，,]{1,40})[，,]\s*(?:而)?不是看[^。！？\n]{1,40}",
++                       r"(?!x)x",
+# 對照 dropped
+@@ src/ant_peer_review/gate.py
+- |原因|做法|限制|提醒|對照|对照|例子|案例|情況|情况)[。：]|"
++ |原因|做法|限制|提醒)[。：]|"
