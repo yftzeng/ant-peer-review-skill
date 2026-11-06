@@ -53,6 +53,8 @@ Feature: writing gate
     Given reviewers opus and sonnet, and a judge verdict failing "filler" with the quoted sentence
     When  the gate judges a text written by opus
     Then  sonnet judges it, the failure counts as a strong tell with that quote as the reason, and a failure without a quote is ignored
+    And   the judge also checks "lecturing", a weak tell: it fails when the post closes on three or more sentences in a row
+          that tell the reader what to do
 
   @S-writing-gate-007
   Scenario: replies to the author pass the gate
@@ -142,7 +144,9 @@ Feature: writing gate
     Then  it is a strong tell "quote_then_this" (the English "This is what… / This is when…" read into Chinese)
     And   "研究團隊借助 Claude 解析結構時，提出一個簡單原則：「除非行不通，否則先照正常做法來。」",
           the title form "「除非行不通，否則先照正常做法」- 研究團隊引導 Claude 的核心原則" and "他說「好」，這是第一次" are not
-    And   the edit is told to say who said it and when first, then the quote
+    And   so is the quote still hanging when only the "這是" goes: "「…」這句話是一個研究團隊對 Claude 說的。" and
+          "「…」一個研究團隊用 Claude 解析結構，在處理資料的階段，對 AI 說了這句話。"; "「好。」他說完就走了。" is not
+    And   the edit is told to say who said it and when first, then the quote, and the share writer is told the same
 
   @S-writing-gate-019
   Scenario: a sweeping claim is strong, an error that acts by itself is weak
@@ -170,3 +174,4 @@ Feature: writing gate
 - 2026-11-06 · ~S-writing-gate-014 +S-writing-gate-017 · decision: none -- user evaluated four de-AI tools on the vault-particles post: all cut the announced "先補一點背景"; Chinese checks for 進行+verb, the 隨著…發展 opener and stacked 的 borrowed from Humanizer-zh (MIT); semicolons chaining clauses are our own rule
 - 2026-11-06 · +S-writing-gate-018 · decision: none -- user: the vault-particles post opened "「除非行不通…」這是一個研究團隊…時" and passed; a hanging quote explained by 這是 reads as translated "This is when…"
 - 2026-11-06 · ~S-writing-gate-014 +S-writing-gate-019 · decision: none -- live share rerun (vault particles): "先說清楚成果的範圍。", "代價最高的錯誤都是悄悄發生的" and "聽起來會壓掉 AI 的創意，可是" passed; user: add them. Not taken: an intensifier stronger than its basis ("遠大於"), since the source said "far outweighed" and a regex against the analysis would have flagged a faithful line
+- 2026-11-06 · ~S-writing-gate-006 ~S-writing-gate-018 · decision: none -- user tried eight de-AI tools on the vault-particles post: none rewrote the hanging-quote opening the way asked, two only dropped the 這是 ("這句話是…說的", "…說了這句話"); user also found the newest post more machine-like for its closing run of orders; user: do it

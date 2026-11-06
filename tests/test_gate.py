@@ -1,6 +1,6 @@
 import json
 
-from ant_peer_review.gate import (EDIT_RULES, autofix, checks_md, judge, judge_model, needs_edit,
+from ant_peer_review.gate import (EDIT_RULES, JUDGE_SYSTEM, autofix, checks_md, judge, judge_model, needs_edit,
                                   rule_check, run_gate, verify_facts)
 from ant_peer_review.i18n import T
 from ant_peer_review.platforms import count, load_platforms
@@ -99,6 +99,11 @@ def test_judge_other_model_and_quotes():
     assert b.calls[0]["model"] == "sonnet"
     assert [(i["code"], i["level"]) for i in got["a"]] == [("judge:filler", "strong")]
     assert "它提供了很多有價值的內容" in got["a"][0]["detail"]
+    assert "lecturing" in JUDGE_SYSTEM
+    b = ScriptBackend({("*", "judge"): {"verdicts": [{"key": "a", "checks": [
+        {"name": "lecturing", "pass": False, "evidence": "它提供了很多有價值的內容"}]}]}})
+    got = judge(b, "sonnet", {"a": text}, voice="")
+    assert [(i["code"], i["level"]) for i in got["a"]] == [("judge:lecturing", "weak")]
 
 
 # @S-writing-gate-008
@@ -253,13 +258,17 @@ def test_chinese_phrasing_tells_are_weak():
 def test_quote_then_this_is_strong():
     for text in ("「除非行不通，否則先照正常做法來。」這是一個研究團隊用 Claude 解析結構時說的話。",
                  "背景如下。「先照正常做法來」這就是他們的原則。", "“先照正常做法来”这是团队说的话。",
+                 "「除非行不通，否則先照正常做法來。」這句話是一個研究團隊對 Claude 說的。",
+                 "「除非行不通，否則先照正常做法來。」一個研究團隊用 Claude 解析結構，在處理資料的階段，對 AI 說了這句話。",
                  "「先照正常做法來」，這是研究團隊的原則。"):
         assert "quote_then_this" in codes(rule_check(text), "strong"), text
     for text in ("研究團隊借助 Claude 解析結構時，提出一個簡單原則：「除非行不通，否則先照正常做法來。」",
                  "「除非行不通，否則先照正常做法」- 研究團隊引導 Claude 的核心原則",
-                 "他說「好」，這是第一次。", "他說「好」這是第一次。"):
+                 "他說「好」，這是第一次。", "他說「好」這是第一次。", "「好。」他說完就走了。"):
         assert "quote_then_this" not in codes(rule_check(text)), text
     assert "who said it" in EDIT_RULES
+    from ant_peer_review.share import SYSTEM as SHARE_SYSTEM
+    assert "who said it" in SHARE_SYSTEM
 
 
 # @S-writing-gate-019

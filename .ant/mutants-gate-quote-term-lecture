@@ -1,0 +1,24 @@
+# 這句話是 no longer covered
+@@ src/ant_peer_review/gate.py
+-                              r"(?:(?:這|这|那)(?:句|段|番)?(?:話|话)?(?:就|正|便)?是|"
++                              r"(?:(?:這|这|那)(?:就|正|便)?是|"
+# …說了這句話 no longer covered
+@@ src/ant_peer_review/gate.py
+-                              r"[^。！？「」“”\n]{0,80}?(?:說|说)了(?:這|这)(?:句|段|番)(?:話|话))")
++                              r"(?!x)x)")
+# any 說 after a quote counts
+@@ src/ant_peer_review/gate.py
+-                              r"[^。！？「」“”\n]{0,80}?(?:說|说)了(?:這|这)(?:句|段|番)(?:話|话))")
++                              r"[^。！？「」“”\n]{0,80}?(?:說|说))")
+# lecturing strong
+@@ src/ant_peer_review/gate.py
+-                 "over_enthusiasm": WEAK, "hook": WEAK, "lecturing": WEAK}
++                 "over_enthusiasm": WEAK, "hook": WEAK, "lecturing": STRONG}
+# 電鏡 not replaced
+@@ src/ant_peer_review/outlang.py
+-     "激活": "啟用", "電鏡": "電子顯微鏡",
++     "激活": "啟用",
+# share writer not told
+@@ src/ant_peer_review/share.py
+- "comments. Introduce a quote with who said it and when, then the quote, never the quote "
++ "comments. Introduce a quote, then the quote, never the quote "
