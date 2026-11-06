@@ -1,0 +1,8 @@
+# whole string again
+@@ src/ant_peer_review/share.py
+-                     if not has_term(m, low)]       # S-share-017
++                     if m.lower() not in low]       # S-share-017
+# any part is enough
+@@ src/ant_peer_review/share.py
+-     return bool(parts) and all(p in low for p in parts)
++     return any(p in low for p in parts)

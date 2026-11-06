@@ -482,6 +482,26 @@ def test_distilled_post_without_its_subject_fails(tmp_path):
     assert "GPT-6 Astra" in sp and "Example Lab" not in sp
 
 
+# @S-share-017
+def test_a_parenthesised_term_is_met_in_either_order(tmp_path):
+    run, store = distill_run(tmp_path)
+    analysis = dict(ANALYSIS, subject={"topic": "vault particles",
+                                       "terms": ["vault（穹窿體）", "cryo-EM（冷凍電子顯微鏡）"]})
+    swapped = "穹窿體（vault）的結構，用冷凍電子顯微鏡（cryo-EM）解出。修的是推理迴圈。"
+    half = "穹窿體的結構，用冷凍電子顯微鏡（cryo-EM）解出。修的是推理迴圈。"
+    b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
+                       ("*", "share_analysis"): analysis,
+                       ("*", "share"): posts(x_insight=swapped, instagram_insight=half),
+                       ("*", "share_rewrite"): posts(instagram_insight=swapped)})
+    decide(run, store, b)
+    ask = next(c for c in b.calls if c["task"] == "share_rewrite")["prompt"]
+    reasons = {ln.split(": fix ", 1)[0][6:]: ln for ln in ask.splitlines()
+               if ln.startswith("- key ") and ": fix " in ln}
+    assert "x-insight" not in reasons                               # swapped order is met
+    assert "missing_subject: vault（穹窿體）" in reasons["instagram-insight"]   # a part missing fails
+    assert "cryo-EM" not in reasons["instagram-insight"]
+
+
 # @S-share-015
 def test_first_target_is_the_article_rest_are_references(tmp_path):
     from ant_peer_review.jsonio import write_text_atomic
@@ -560,7 +580,8 @@ def test_folded_post_opens_with_a_headline(tmp_path):
     sys_ = next(c for c in b.calls if c["task"] == "share")["system"]
     assert "inverted pyramid" in sys_ and "clickbait" in sys_
     ask = next(c for c in b.calls if c["task"] == "share_rewrite")["prompt"]
-    reasons = {ln.split(": fix ", 1)[0][6:]: ln for ln in ask.splitlines() if ln.startswith("- key ")}
+    reasons = {ln.split(": fix ", 1)[0][6:]: ln for ln in ask.splitlines()
+               if ln.startswith("- key ") and ": fix " in ln}
     assert "no_headline" in reasons["facebook-insight"]
     assert "no_headline" not in reasons.get("x-insight", "")
     fb = run.path("share-facebook-insight.md").read_text()

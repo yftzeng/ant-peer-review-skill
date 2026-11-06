@@ -158,6 +158,8 @@ Feature: share
     Then  it fails with must-fix "missing_subject GPT-6 Astra" and "missing_subject MATH-500" and is rewritten;
           a term without Latin letters or digits ("權重") is left to the judge, since another output language words it differently
     And   a term is looked for as the output language's fix-up writes it: "冷凍電鏡（cryo-EM）" is met by "冷凍電子顯微鏡（cryo-EM）" in zh-TW
+    And   a term with a parenthesis is met when each of its parts appears, in either order: "vault（穹窿體）" is met by
+          "穹窿體（vault）", and missing either part still fails
     And   the writing rules say: no original creators, companies or sites; open with the topic and the main subject
 
   @S-share-018
@@ -275,3 +277,4 @@ Feature: share
 - 2026-11-06 · ~S-share-024 · decision: none -- the order "evidence by importance, background last" was in the spec but not yet in the writing rules (1867037)
 - 2026-11-06 · ~S-share-023 · decision: none -- live reruns (vault particles) failed twice with "the share analysis came back empty": the CLI's safety classifier had stopped the call and a fallback model finished it; the run was refused but the message hid it. The fallback output is still not kept (user: 按你建議)
 - 2026-11-06 · +S-share-027 · decision: none -- live reruns (vault particles): the analysis call was stopped by the safety classifier in five of six tries, about 1 to 1.8 USD a deliver, while the writing call never was; user: 按你建議 (reuse the analysis, --fresh-analysis to redo it)
+- 2026-11-06 · ~S-share-017 · decision: none -- live rerun (vault particles): the analysis listed "vault（穹窿體）" and "cryo-EM（冷凍電子顯微鏡）", the post wrote "穹窿體（vault）" as S-share-024 asks, and failed missing_subject

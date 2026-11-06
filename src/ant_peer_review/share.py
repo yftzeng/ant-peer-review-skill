@@ -171,6 +171,12 @@ def dropped_numbers(analysis: dict) -> set[str]:
     return set(_NUM.findall(gone)) - set(_NUM.findall(kept))
 
 
+def has_term(term: str, low: str) -> bool:
+    """S-share-017: "vault（穹窿體）" is met by "穹窿體（vault）": every part, in either order."""
+    parts = [p.strip().lower() for p in re.split(r"[（）()]", term) if p.strip()]
+    return bool(parts) and all(p in low for p in parts)
+
+
 def analyse_article(run: Run, backend: Backend, writer: str, cons: dict, take: str, lang: str,
                     t: T, fresh: bool = False) -> dict:
     """S-share-014: purpose, claim actions, direction, thesis, anchors, names; one call.
@@ -432,7 +438,7 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
             out += [{"code": "name_leak", "level": "hard", "detail": n} for n in names
                     if n.lower() in low]
             out += [{"code": "missing_subject", "level": "hard", "detail": m} for m in must
-                    if m.lower() not in low]       # S-share-017
+                    if not has_term(m, low)]       # S-share-017
             out += [{"code": "dropped_claim", "level": "hard", "detail": n}
                     for n in sorted(dropped) if re.search(rf"(?<![\d.,]){re.escape(n)}(?![\d])", text)]
         else:
