@@ -294,7 +294,7 @@ def test_share_intake_asks_angle_and_distill_rules(env):
     assert f"[x] {t('share.style.insight')}" in styles and t("share.style.question") in styles
     assert t("share.style.summary") not in styles and t("share.style.pick") not in styles
     intake = read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))
-    assert intake["share"]["angle"] == "distill" and intake["share"]["credit"] is False
+    assert intake["share"]["angle"] == "distill" and intake["share"]["credit"] is True
     assert "1) [x] Facebook" in text and "2) [ ] Threads" in text
     assert "recommended" not in t("share.credit.yes").lower()
     assert "stance" not in intake["share"] and intake["share"]["styles"] == {"threads": ["insight"]}
@@ -381,7 +381,7 @@ def test_angle_from_arguments(env):
     cli.main(["new", "--yes", "--backend", "fake", "--purpose", "share", "--target", TEXT,
               "--platform", "x", "--angle", "distill"], io=NoAskIO(), store=env)
     share = read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))["share"]
-    assert share["angle"] == "distill" and share["credit"] is False
+    assert share["angle"] == "distill" and share["credit"] is True
     for flag, want in (("--credit", True), ("--no-credit", False)):
         cli.main(["new", "--yes", "--backend", "fake", "--purpose", "share", "--target", TEXT,
                   "--platform", "x", "--angle", "distill", flag], io=NoAskIO(), store=env)

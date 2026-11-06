@@ -46,9 +46,9 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--platform", help="share: facebook,threads,instagram,x,linkedin,line (default: facebook)")
     n.add_argument("--angle", help="share: comment (default; reuse, extend or critique the "
                    "article) or distill (no names; the underlying logic, developed on your own)")
-    n.add_argument("--credit", action="store_true",
-                   help="share, distill: end the posts with a source line (default: none)")
-    n.add_argument("--no-credit", action="store_true", help=argparse.SUPPRESS)  # the old default
+    n.add_argument("--no-credit", action="store_true",
+                   help="share, distill: no source line at the end of the posts (default: one)")
+    n.add_argument("--credit", action="store_true", help=argparse.SUPPRESS)  # the old opt-in
     n.add_argument("--stance", help="share: recommend (default), extend, reserved, rebut")
     n.add_argument("--take", help="share: your own experience or view, the only one the posts may use")
     n.add_argument("--share-style", help="share: e.g. x=summary+pick,linkedin=insight "
@@ -317,7 +317,7 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
     if args.target or args.yes:
         try:
             share = parse_share(args.platform, args.stance, args.take, args.share_style,
-                                store.home, args.angle, args.credit and not args.no_credit) \
+                                store.home, args.angle, not args.no_credit) \
                 if args.purpose == "share" else None
             from .outlang import parse as parse_langs
             intake = build_intake_from_args(args.purpose or "audit", args.target, args.audience,

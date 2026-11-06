@@ -461,5 +461,6 @@
   "readers.v.not_met": "没达到",
   "readers.r.accept": "接受",
   "readers.r.reject": "驳回",
-  "readers.r.partly": "部分同意"
+  "readers.r.partly": "部分同意",
+  "readers.set_by_you": "由你指定"
 }

@@ -65,7 +65,9 @@ REVISE_RULES = (
     "never trading a heavier reader's goal for a lighter one's; a point that is the reader's "
     "goal at work (an expert who wants to rebut) is no defect. Then rewrite each post: keep the "
     "person's take, add no fact that is not in the sources above, and no experience, habit or "
-    "plan of the person's that their take does not state.")
+    "plan of the person's that their take does not state. Length is no defect: cut only filler "
+    "and repetition, never background a reader needs. A source line the readers saw at the end "
+    "is added after the post; do not write it into the text.")
 
 
 def parse_mix(spec: str) -> dict[str, int]:
@@ -129,6 +131,9 @@ def propose_mix(run: Run, backend: Backend, model: str, lang: str) -> dict:
 
 
 def mix_lines(t: T, mix: dict) -> list[str]:
+    if mix["set_by"] == "user" and not any(mix["why"].values()):
+        return [f"- {t('readers.set_by_you')}"] + [f"- {t('readers.' + p)} {mix['weights'][p]}%"
+                                                  for p in PERSONAS]
     b = mix["basis"]
     lines = [f"- {t('readers.basis')}: {b['stage'] or '—'} · {b['maturity'] or '—'} · "
              f"{b['media'] or '—'}"]

@@ -190,7 +190,7 @@ def build_intake_from_args(purpose: str, targets: list[str], audience: str | Non
 
 
 def parse_share(platforms: str | None, stance: str | None, take: str | None,
-                styles: str | None, home, angle: str | None = None, credit: bool = False) -> dict:
+                styles: str | None, home, angle: str | None = None, credit: bool = True) -> dict:
     """--platform x,linkedin --stance recommend --take ... --share-style x=summary+pick
     --angle comment|distill --credit"""
     from .share import ANGLES, DISTILL_STYLES, STANCES
@@ -308,7 +308,7 @@ def ask_share(io: IO, t: T, home, make_voice=None) -> dict:
         del out["stance"]
         out["credit"] = radio(io, t, t("share.credit"), [("yes", t("share.credit.yes")),
                                                          ("no", t("share.credit.no"))],
-                              default="no") == "yes"
+                              default="yes") == "yes"
     return out
 
 

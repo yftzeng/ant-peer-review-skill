@@ -456,7 +456,9 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
     reader_model = judge_model(models, writer)
     results, rounds = readers.review_loop(   # S-share-020..021
         results, gate,
-        read=lambda batch: readers.read_posts(backend, reader_model, batch, mix, lang),
+        read=lambda batch: readers.read_posts(   # as posted: with the source line
+            backend, reader_model, {k: v + credit.get(k.split("-", 1)[0], "") for k, v in batch.items()},
+            mix, lang),
         rewrite=lambda todo, reps: readers.revise(backend, writer, system, prompt, todo, reps, mix))
     write_text_atomic(run.path(outlang.file_name("readers.md", lang, langs)),
                       readers.readers_md(t, mix, rounds))

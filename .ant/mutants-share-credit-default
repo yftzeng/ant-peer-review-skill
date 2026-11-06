@@ -1,0 +1,13 @@
+# source line by default; readers see it; set-by-you (S-share-010, 013, 019, 021)
+@@ src/ant_peer_review/intake.py
+-                               default="yes") == "yes"
++                               default="no") == "yes"
+@@ src/ant_peer_review/cli.py
+- not args.no_credit)
++ args.credit and not args.no_credit)
+@@ src/ant_peer_review/share.py
+-             backend, reader_model, {k: v + credit.get(k.split("-", 1)[0], "") for k, v in batch.items()},
++             backend, reader_model, dict(batch),
+@@ src/ant_peer_review/readers.py
+-     if mix["set_by"] == "user" and not any(mix["why"].values()):
++     if False:

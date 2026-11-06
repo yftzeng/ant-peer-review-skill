@@ -89,8 +89,8 @@ Feature: share
     When  the user chooses purpose "share", enters a text, keeps the output language and picks the angle "distill"
     Then  the angle question lists "comment" (論評此文) and "distill" (概念提純), before the platforms
     And   no stance is asked, each platform's style checkbox offers only "insight" and "question" (insight preselected),
-          a question asks whether to end with a source line (no by default, neither answer marked as recommended),
-          and 00-intake.json holds share {angle: "distill", credit: false} with no stance
+          a question asks whether to end with a source line (yes by default, neither answer marked as recommended),
+          and 00-intake.json holds share {angle: "distill", credit: true} with no stance
     And   with no voice file at all, Facebook alone is ticked in the platform checkbox
 
   @S-share-011
@@ -116,8 +116,8 @@ Feature: share
   @S-share-013
   Scenario: the angle and the source line from arguments
     When  "ant-peer-review new --yes --purpose share --target <text> --platform x --angle distill" runs
-    Then  00-intake.json holds share {angle: "distill", credit: false, styles {x: ["insight"]}} and no stance;
-          with "--credit" credit is true, and "--no-credit" is still accepted and keeps it false
+    Then  00-intake.json holds share {angle: "distill", credit: true, styles {x: ["insight"]}} and no stance;
+          with "--no-credit" credit is false, and "--credit" is still accepted and keeps it true
     And   without --angle the angle is "comment"; "--angle rant" is refused with the allowed values
     And   without --platform the platforms are ["facebook"]
 
@@ -177,7 +177,8 @@ Feature: share
     And   the user confirms them or types "public=25,beginner=30,expert=30,business=15"; share-readers.json holds the weights,
           the reasons and who set them
     And   with --yes, or deliver alone, the proposal is used unless --readers is given; weights that do not sum to 100 or
-          name an unknown reader are a usage error; a failed call gives 25 each and says so
+          name an unknown reader are a usage error; a failed call gives 25 each and says so; a mix given with --readers
+          shows "set by you" in readers.md instead of empty reasons
 
   @S-share-020
   Scenario: each reader reports whether its goal was met, not how to edit
@@ -193,6 +194,8 @@ Feature: share
     When  the writer revises
     Then  one call rules on every reader point (accept, reject, partly, with a reason) and rewrites the posts, the rewritten
           posts pass the writing gate, and the readers read them again
+    And   the readers read each post with the source line it will carry; the writer's rules say length is no defect:
+          cut only filler and repetition, never background a reader needs
     And   after the second round the last revision passes the gate and is final; when every reader says met the loop stops
     And   share-readers.md lists the weights and reasons, each round's verdict per reader and post, and the rulings
 
@@ -235,3 +238,4 @@ Feature: share
 - 2026-11-06 · S-share-018 unchanged in steps: casual posts now keep 。 at a sentence end (S-writing-gate-016) · decision: none -- see writing-gate
 - 2026-11-06 · +S-share-019..024 · decision: none -- live distill run (vault particles): the analysis came back empty, so the post jumped to the take with no background and an English term; user: weigh four readers (public, beginner, expert, business) from the topic's stage, maturity and media spread, confirm the mix, then let each reader report only whether its goal was met, rule on the reports, de-AI before each review and at the end, at most two rounds
 - 2026-11-06 · ~S-share-018 · decision: none -- user: zh-TW Facebook posts read oddly with half-width marks; without a voice of the user's own, zh-TW posts use full-width punctuation (reverses the 2026-11-03 default for zh-TW only)
+- 2026-11-06 · ~S-share-010 ~S-share-013 ~S-share-019 ~S-share-021 · decision: none -- live rerun (vault particles): readers outside the field could not tell what the post was about; user: give them the original article as a reference point, so a distilled post ends with the source line by default (reverses 2026-11-03); no length limit, only no AI tone or filler

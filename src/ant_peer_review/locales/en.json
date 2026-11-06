@@ -461,5 +461,6 @@
   "readers.v.not_met": "not met",
   "readers.r.accept": "accept",
   "readers.r.reject": "reject",
-  "readers.r.partly": "partly"
+  "readers.r.partly": "partly",
+  "readers.set_by_you": "Set by you"
 }

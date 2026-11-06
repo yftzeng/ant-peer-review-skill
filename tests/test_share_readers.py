@@ -211,3 +211,24 @@ def test_an_empty_analysis_is_asked_again_then_fails(tmp_path):
 def test_a_distilled_post_names_its_subject_in_the_output_language():
     assert "term the checked claims use" in DISTILL_RULES
     assert "background" in DISTILL_RULES
+
+
+# @S-share-021
+def test_readers_read_the_post_with_its_source_line_and_length_is_no_defect(tmp_path):
+    run, store = distill_run(tmp_path)
+    b = ScriptBackend(handlers(share_analysis=ANALYSIS,
+                               share=posts(x_insight="流程越短，出錯越少。", instagram_insight="交接本身就是風險。")))
+    decide(run, store, b)
+    p = [c for c in b.calls if c["task"] == "reader"][0]["prompt"]
+    assert "延伸自：Title https://ex.example/a" in p and "延伸自：Title\n" in p
+    assert "length is no defect" in readers.REVISE_RULES.lower()
+
+
+# @S-share-019
+def test_a_mix_given_with_readers_says_set_by_you(tmp_path):
+    from ant_peer_review.i18n import T
+    run, store = share_run(tmp_path, ["x"], {"x": ["summary"]})
+    readers.ensure_mix(run, ScriptBackend(handlers()), ["opus", "sonnet"], "en",
+                       spec="public=25,beginner=30,expert=30,business=15")
+    md = readers.readers_md(T("en"), read_json(run.path("readers.json")), [])
+    assert "set by you" in md.lower() and "— —" not in md
