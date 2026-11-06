@@ -391,7 +391,8 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
                                        info["author"], info["organization"]]) if len(n) >= 2]
     dropped = dropped_numbers(analysis) if distill else set()
     # Terms spelled the same in every output language; the judge covers the rest.
-    must = [m for m in ((analysis or {}).get("subject") or {}).get("terms", [])
+    # S-share-017: looked for as the fix-up writes it (冷凍電鏡 is 冷凍電子顯微鏡 in zh-TW)
+    must = [outlang.fix(m, lang)[0] for m in ((analysis or {}).get("subject") or {}).get("terms", [])
             if re.search(r"[A-Za-z0-9]", m)]
     credit = {}
     if distill and share.get("credit", True) and info["title"]:

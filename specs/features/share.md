@@ -157,6 +157,7 @@ Feature: share
     When  the writer returns a post that says "一個小模型的數學基準" and names none of them
     Then  it fails with must-fix "missing_subject GPT-6 Astra" and "missing_subject MATH-500" and is rewritten;
           a term without Latin letters or digits ("權重") is left to the judge, since another output language words it differently
+    And   a term is looked for as the output language's fix-up writes it: "冷凍電鏡（cryo-EM）" is met by "冷凍電子顯微鏡（cryo-EM）" in zh-TW
     And   the writing rules say: no original creators, companies or sites; open with the topic and the main subject
 
   @S-share-018
@@ -249,3 +250,4 @@ Feature: share
 - 2026-11-06 · ~S-share-010 ~S-share-013 ~S-share-019 ~S-share-021 · decision: none -- live rerun (vault particles): readers outside the field could not tell what the post was about; user: give them the original article as a reference point, so a distilled post ends with the source line by default (reverses 2026-11-03); no length limit, only no AI tone or filler
 - 2026-11-06 · ~S-share-021 ~S-share-024 · decision: none -- live rerun (vault particles): "background before the take" pushed the point to the last two paragraphs (beginner: only the end was usable) and the writer answered "too many terms" by explaining each one; user agreed: point first, then needed background, then evidence
 - 2026-11-06 · +S-share-025 · decision: none -- live rerun (vault particles): the writing call came back with no post and deliver printed "分享文：—" as if it had worked, leaving the old file in place
+- 2026-11-06 · ~S-share-017 · decision: none -- live rerun (vault particles): the fix-up wrote 電鏡 as 電子顯微鏡 (S-output-language-003), then the subject check looked for the analysis's "冷凍電鏡（cryo-EM）" and failed the post

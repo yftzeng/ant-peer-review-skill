@@ -457,10 +457,12 @@ def test_analysis_rows_cite_claim_ids_and_merge_near_duplicates(tmp_path):
 def test_distilled_post_without_its_subject_fails(tmp_path):
     run, store = distill_run(tmp_path)
     analysis = dict(ANALYSIS, subject={"topic": "editing neural network weights with an LLM",
-                                       "terms": ["GPT-6 Astra", "MATH-500", "權重", "Example Lab"]},
+                                       "terms": ["GPT-6 Astra", "MATH-500", "權重", "Example Lab",
+                                                 "冷凍電鏡（cryo-EM）"]},
                     origin=["Example Lab"])
     vague = "一個小模型的數學基準大幅進步，修的是推理迴圈。你怎麼看？"
-    good = "GPT-6 Astra 直接改權重，讓小模型的 MATH-500 從 7.9% 升到 48.1%。修的是推理迴圈。"
+    good = ("GPT-6 Astra 直接改權重，讓小模型的 MATH-500 從 7.9% 升到 48.1%。修的是推理迴圈，"
+            "用冷凍電鏡（cryo-EM）看。")
     b = ScriptBackend({("*", "summary"): SUMMARY, ("*", "judge"): {"verdicts": []},
                        ("*", "share_analysis"): analysis,
                        ("*", "share"): posts(x_insight=vague, instagram_insight=good),
@@ -469,8 +471,10 @@ def test_distilled_post_without_its_subject_fails(tmp_path):
     ask = next(c for c in b.calls if c["task"] == "share_rewrite")["prompt"]
     assert "missing_subject: GPT-6 Astra" in ask and "missing_subject: MATH-500" in ask
     assert "missing_subject: Example Lab" not in ask              # origin wins over a term
+    assert "missing_subject: 冷凍電鏡" not in ask                 # looked for as zh-TW writes it
     assert "missing_subject: 權重" not in ask and "instagram-insight" not in ask.split("missing_subject")[0][-200:]
     assert run.path("share-x-insight.md").read_text().strip().startswith("GPT-6 Astra")
+    assert "冷凍電子顯微鏡（cryo-EM）" in run.path("share-instagram-insight.md").read_text()
     sys_ = next(c for c in b.calls if c["task"] == "share")["system"]
     assert "topic and the main subject" in sys_
     sp = next(c for c in b.calls if c["task"] == "share")["prompt"]

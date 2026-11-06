@@ -1,0 +1,4 @@
+# the term looked for as the analysis spells it
+@@ src/ant_peer_review/share.py
+-     must = [outlang.fix(m, lang)[0] for m in ((analysis or {}).get("subject") or {}).get("terms", [])
++     must = [m for m in ((analysis or {}).get("subject") or {}).get("terms", [])
