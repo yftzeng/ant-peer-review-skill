@@ -234,3 +234,20 @@ def test_a_mix_given_with_readers_says_set_by_you(tmp_path):
                        spec="public=25,beginner=30,expert=30,business=15")
     md = readers.readers_md(T("en"), read_json(run.path("readers.json")), [])
     assert "set by you" in md.lower() and "— —" not in md
+
+
+# @S-share-025
+@pytest.mark.parametrize("reply", [{"posts": []}, "refused"])
+def test_a_writer_that_returns_no_post_fails_out_loud(tmp_path, reply):
+    from ant_peer_review.backends.base import Result
+    from ant_peer_review.deliver import deliver
+    from test_decision import M, TH
+    run, store = share_run(tmp_path, ["x"], {"x": ["summary"]})
+    out = Result(model="opus", model_id="x", data=None, refused=True) if reply == "refused" else reply
+    b = ScriptBackend(handlers(share=out))
+    said = []
+    deliver(run, b, M, "en", TH, [], say=said.append, home=store.home)
+    tasks = [c["task"] for c in b.calls]
+    assert tasks.count("share") == 2 and "reader" not in tasks
+    assert any("✗" in s and "no post" in s for s in said)
+    assert any("refus" in s for s in said) == (reply == "refused")

@@ -1,0 +1,10 @@
+# a writer with no post retries once, then fails (S-share-025)
+@@ src/ant_peer_review/share.py
+-     for _ in range(2):          # S-share-025: no post at all is asked once more, then fails
++     for _ in range(1):          # S-share-025: no post at all is asked once more, then fails
+@@ src/ant_peer_review/share.py
+-         if texts:
++         if True:
+@@ src/ant_peer_review/share.py
+-         raise BackendError("the writer returned no post" + (" (refused)" if res.refused else ""))
++         raise BackendError("the writer returned no post")

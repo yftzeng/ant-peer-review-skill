@@ -375,8 +375,16 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
     if distill:
         system = f"{system}\n\n{DISTILL_RULES}"
     writer = models[0]
-    res = backend.run(writer, task="share", system=system, prompt=prompt, schema=schema,
-                      effort="medium", timeout=600)
+    keys = {f"{p}-{s}" for p, s in pairs}
+    for _ in range(2):          # S-share-025: no post at all is asked once more, then fails
+        res = backend.run(writer, task="share", system=system, prompt=prompt, schema=schema,
+                          effort="medium", timeout=600)
+        texts = {x["key"]: str(x["text"]).strip() for x in (res.data or {}).get("posts", [])
+                 if x.get("key") in keys and str(x.get("text", "")).strip()}
+        if texts:
+            break
+    else:
+        raise BackendError("the writer returned no post" + (" (refused)" if res.refused else ""))
     # Names a distilled post must not carry: the origin, the author and the site.
     names = [n for n in dict.fromkeys([*((analysis or {}).get("origin") or []),
                                        info["author"], info["organization"]]) if len(n) >= 2]
@@ -391,9 +399,6 @@ def _shares_in(run: Run, backend: Backend, models: list[str], cons: dict, t: T,
             lead = CREDIT.get(lang, CREDIT['en'])
             lead = lead.replace("：", ": ") if punct.get(p) == "casual" else lead
             credit[p] = f"\n\n{lead}{info['title']}{link}"
-    keys = {f"{p}-{s}" for p, s in pairs}
-    texts = {x["key"]: str(x["text"]).strip() for x in (res.data or {}).get("posts", [])
-             if x.get("key") in keys and str(x.get("text", "")).strip()}
 
     def check(key: str, text: str) -> list[dict]:
         p = key.split("-", 1)[0]

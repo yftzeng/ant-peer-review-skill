@@ -219,6 +219,12 @@ Feature: share
     Then  the writing rules say to name the subject with the term the checked claims use in the output language, the original
           term once in parentheses, and to put the takeaway and the hook in the opening lines (before the fold), then only the
           background a reader needs to follow it, then the evidence
+  @S-share-025
+  Scenario: a writer that returns no post is asked once more, then fails out loud
+    Given a share run whose writing call returns no post for any key, or a refusal
+    When  the posts are written
+    Then  the call is made once more; still nothing, it raises a backend error naming the refusal if there was one,
+          deliver prints the failure instead of "分享文：—", and no reader is asked
 ```
 
 ## Must NOT
@@ -242,3 +248,4 @@ Feature: share
 - 2026-11-06 · ~S-share-018 · decision: none -- user: zh-TW Facebook posts read oddly with half-width marks; without a voice of the user's own, zh-TW posts use full-width punctuation (reverses the 2026-11-03 default for zh-TW only)
 - 2026-11-06 · ~S-share-010 ~S-share-013 ~S-share-019 ~S-share-021 · decision: none -- live rerun (vault particles): readers outside the field could not tell what the post was about; user: give them the original article as a reference point, so a distilled post ends with the source line by default (reverses 2026-11-03); no length limit, only no AI tone or filler
 - 2026-11-06 · ~S-share-021 ~S-share-024 · decision: none -- live rerun (vault particles): "background before the take" pushed the point to the last two paragraphs (beginner: only the end was usable) and the writer answered "too many terms" by explaining each one; user agreed: point first, then needed background, then evidence
+- 2026-11-06 · +S-share-025 · decision: none -- live rerun (vault particles): the writing call came back with no post and deliver printed "分享文：—" as if it had worked, leaving the old file in place
