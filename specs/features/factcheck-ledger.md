@@ -115,6 +115,12 @@ Feature: fact-check ledger
     When  the claim "MATH-500 從 7.9% 提升到 48.1%" is checked
     Then  the prompt holds the paragraphs of R1 that share the claim's numbers and terms, labelled as the author's own source, not neutral evidence
     And   a source the checker cites with that URL is kept even when its own tools did not return it, because the run fetched it
+
+  @S-factcheck-ledger-018
+  Scenario: a malformed URL in a tool result is skipped, never ends the run
+    Given tool results containing "`https://host.example:8443`", "https://bad.example:99999/x" and "https://real.example/page"
+    When  the checker cites "https://real.example/page" and "https://host.example:8443"
+    Then  the claim is checked without an error and both cited sources are kept
 ```
 
 ## Must NOT
@@ -127,3 +133,4 @@ Feature: fact-check ledger
 - 2026-10-22 · +S-factcheck-ledger-012..015 · decision: none -- K-Dense paper-lookup: resolve identifiers against authoritative APIs and check retraction notices; opt-in per run (user)
 - 2026-10-26 · +S-factcheck-ledger-016 · decision: none -- user: 按你建議 (grade claim sources as the company profile grades competitor evidence: the checker names the kind, code checks the host, one outlet is one source)
 - 2026-11-03 · +S-factcheck-ledger-017 · decision: none -- with S-source-acquisition-050: the cited source reaches the checker without depending on the model to fetch it
+- 2026-11-07 · +S-factcheck-ledger-018 · decision: none -- bug: a backtick-wrapped URL with a port (`…:8443`) raised ValueError in norm_url and ended two runs

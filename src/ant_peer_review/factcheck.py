@@ -105,7 +105,7 @@ def context_for(run: Run, anchor: str) -> str:
     return ""
 
 
-_URL_RE = re.compile(r"https?://[^\s\"'<>\\\]\[)(]+", re.I)
+_URL_RE = re.compile(r"https?://[^\s\"'`<>\\\]\[)(]+", re.I)
 
 
 def norm_url(url: str) -> str | None:
@@ -113,12 +113,13 @@ def norm_url(url: str) -> str | None:
     from urllib.parse import urlsplit
     try:
         p = urlsplit(url.strip().rstrip(".,;:"))
+        port = p.port  # S-factcheck-ledger-018: a bad port raises here
     except ValueError:
         return None
     if p.scheme.lower() not in ("http", "https") or not p.hostname:
         return None
     path = p.path.rstrip("/")
-    return f"{p.hostname.lower()}{(':' + str(p.port)) if p.port else ''}{path}" + \
+    return f"{p.hostname.lower()}{(':' + str(port)) if port else ''}{path}" + \
         (f"?{p.query}" if p.query else "")
 
 
