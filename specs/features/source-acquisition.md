@@ -346,6 +346,14 @@ Feature: source acquisition
     And   only high-confidence categories (instruction override, rating, sentiment steering, secrecy, actions) are withheld;
           a medium flag (output dictation, canary, addressed to AI) is listed and the paragraph is shown, the reviewers being told
           that text steering them is data and itself a finding
+
+  @S-source-acquisition-054
+  Scenario: a series converted from an RSS feed becomes one document per article
+    Given a file target whose text has a header and then items, each "---", "## <title>", "<url>  (<date>)" and its body
+    When  the sources are read
+    Then  each item is its own document D1-1, D1-2, ... with that title, the URL as its origin and the date, its body segmented
+          as D1-1.P01 ...; the header before the first item is not a document
+    And   a text with one such item, or none, stays one document as before
 ```
 
 ## Must NOT
@@ -371,3 +379,4 @@ Feature: source acquisition
 - 2026-11-03 · +S-source-acquisition-051 · decision: none -- live run: the cited source's title kept "&amp;" (rikiyat.github.io); the <title> slice was never unescaped, while the identity parser already was
 - 2026-11-06 · +S-source-acquisition-052 cited URLs stop at Chinese text; non-ASCII URLs go out encoded; an unsendable URL is a fetch error (user: 評估 … 發生的錯誤 UnicodeEncodeError) · decision: none -- a bug fix: run 20261106-0304 crashed on "…2610.37741这篇论文"
 - 2026-11-09 · +S-source-acquisition-053 · decision: none -- user feedback (B2, B9): one iThome security article had 134 paragraphs withheld (101 for "canary", 22 for "system prompt"), a Kubernetes one 9 for 語言模型請求, a JavaScript one for 必須包含 in a file-format description; every flag withheld its paragraph
+- 2026-11-09 · +S-source-acquisition-054 · decision: none -- user: a series file from RSS (137 files, every one with the same item header, counts matching each file's own 共 N 篇) can be split per article; anchors then say which day, and map-reduce reviews can group them

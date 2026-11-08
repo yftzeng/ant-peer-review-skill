@@ -321,6 +321,35 @@ def _fetch_item(run: Run, crawler: Crawler, idx: int, url: str, renderer=None,
     return item
 
 
+# S-source-acquisition-054: an RSS series converted to one file ("---", "## title", "url  (date)")
+SERIES_ITEM = re.compile(r"^---[ \t]*\n## (.+?)[ \t]*\n(https?://\S+)[ \t]+\((\d{4}-\d\d-\d\d)[^)\n]*\)[ \t]*\n",
+                         re.M)
+
+
+def split_series(md: str) -> list[dict]:
+    """[{title, url, date, body}] when the text holds two or more series items, else []."""
+    hits = list(SERIES_ITEM.finditer(md))
+    if len(hits) < 2:
+        return []
+    ends = [h.start() for h in hits[1:]] + [len(md)]
+    return [{"title": h.group(1).strip(), "url": h.group(2), "date": h.group(3),
+             "body": md[h.end():e].strip()} for h, e in zip(hits, ends)]
+
+
+def _series_docs(run: Run, idx: int, md: str) -> dict | None:
+    items = split_series(md)
+    if not items:
+        return None
+    recs = []
+    for k, it in enumerate(items, 1):
+        doc_id = f"D{idx}-{k}"
+        rec = _doc_record(run, doc_id, redact(it["url"]), it["title"], it["body"],
+                          it["body"].encode("utf-8"), f"{doc_id}.md", [])
+        rec["date"] = it["date"]
+        recs.append(rec)
+    return {"docs": recs, "series": len(recs)}
+
+
 def _path_item(run: Run, idx: int, value: str) -> dict:
     p = Path(value).expanduser()
     if p.is_symlink():
@@ -340,6 +369,10 @@ def _path_item(run: Run, idx: int, value: str) -> dict:
     if not p.exists():
         raise ConvertError("not_found", value)
     d = convert_file(p)
+    series = _series_docs(run, idx, d.markdown)
+    if series:
+        _store_raw(run, f"D{idx}{p.suffix or '.txt'}", d.raw)   # the file as given stays
+        return series
     doc_id = f"D{idx}"
     ext = p.suffix.lstrip(".") or "txt"
     return {"docs": [_doc_record(run, doc_id, p.name, d.title, d.markdown, d.raw,
@@ -367,6 +400,10 @@ def _feed_item(run: Run, crawler: Crawler, idx: int, target: dict, renderer=None
 
 def _text_item(run: Run, idx: int, value: str, pasted_for: str = "") -> dict:
     """Free text; pasted_for is the URL the user pasted it from (D-0001, step 4)."""
+    series = _series_docs(run, idx, value)
+    if series:
+        _store_raw(run, f"D{idx}.txt", value.encode("utf-8"))
+        return series
     doc_id = f"D{idx}"
     first = value.strip().splitlines()[0].lstrip("#").strip()[:60] if value.strip() else "text"
     item = {"docs": [_doc_record(run, doc_id, redact(pasted_for), first, value.strip(),
