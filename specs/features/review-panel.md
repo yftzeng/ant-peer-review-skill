@@ -197,6 +197,14 @@ Feature: review panel
     And   with both flagging it at high, no objection and no unsupported claim, it is "confirmed"
     And   every reviewer prompt says: before calling two passages contradictory, compare their time and scope (a later snapshot,
           a part added afterwards); what you cannot see (a file, a repository) is unverifiable, never an error
+
+  @S-review-panel-030
+  Scenario: the editor's review context reaches the reviewers as trusted text, apart from the piece
+    When  "new --yes --target <text> --context 'The source is an RSS feed that strips 。「」 and dashes'" runs
+          (or --context <file>, whose text is read)
+    Then  00-intake.json holds the context, every review and cross-review prompt shows it as the editor's trusted context outside
+          the untrusted piece, it is not part of the piece's segments or its injection scan, and the reviewers are told not to
+          ask the author to fix what it explains
 ```
 
 ## Must NOT
@@ -219,3 +227,4 @@ Feature: review panel
 - 2026-11-09 · +S-review-panel-027 · decision: none -- user feedback (B10): four runs where both reviewers refused still produced a total of 0.0 and fail after the later phases ran, $42 in all
 - 2026-11-09 · +S-review-panel-028 · decision: none -- user feedback (B2, B9): reviewers listed "a key section is broken" (major) for a withheld paragraph, and one raised a PR landmine from withheld content
 - 2026-11-09 · +S-review-panel-029 · decision: none -- user feedback (B1, B7, B8): 5 of 14 iThome reports needed a ruling with no reviewer flagging hallucination; a 75.6 work failed on two medium flags whose own comment said fixable, not fabricated; a Day 30 snapshot was read as contradicting earlier days
+- 2026-11-09 · +S-review-panel-030 · decision: none -- user feedback (I1, B9): a note about the RSS source written into the target was flagged as steering the reviewers and still listed as a major issue; the editor needs a trusted channel

@@ -129,6 +129,12 @@ Feature: cli
     Given a decided run
     When  "ant-peer-review deliver <run> --reply critical" runs
     Then  review.md is written again and reply-critical.md is written, and the chosen plan is unchanged
+
+  @S-cli-021
+  Scenario: a review-only run stops at the report
+    When  "new --yes --backend fake --target <text> --no-revision" runs
+    Then  the run ends "done" with exit code 0 after the report: no revision plans, no re-review and no decision to make,
+          and 00-intake.json holds no_revision
 ```
 
 ## Must NOT
@@ -144,3 +150,4 @@ Feature: cli
 - 2026-10-22 · +S-cli-015 · decision: none -- K-Dense paper-lookup: confirm a plan before work exceeds a bound; one run per article multiplies cost
 - 2026-10-25 · +S-cli-016..019 · decision: none -- user: the article list is paged with counts, sorted oldest first; after a review the user can pick more articles without the intake questions, and an article reviewed before is marked but can be re-reviewed
 - 2026-10-25 · ~S-cli-002 +S-cli-020 · decision: none -- user: audit / review / reply outputs; decide now writes them, deliver rewrites them (also for runs decided before this)
+- 2026-11-09 · +S-cli-021 · decision: none -- user feedback (I2, B4): judging needs the score and the issues only; the revision and re-review cost opus and sonnet calls, and the original could only be adopted as a manual final

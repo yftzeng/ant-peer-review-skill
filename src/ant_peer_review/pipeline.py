@@ -316,6 +316,9 @@ def ph_report(run: Run, ctx: Ctx) -> None:
 
 
 def ph_revision(run: Run, ctx: Ctx) -> None:
+    if read_json(run.path("00-intake.json")).get("no_revision"):   # S-cli-021
+        ctx.say(ctx.t("run.review_only"))
+        return
     if read_json(run.path("00-intake.json")).get("purpose") == "share":
         ctx.say(ctx.t("share.no_revision"))  # the article is someone else's: nothing to revise
         return
@@ -327,6 +330,8 @@ def ph_revision(run: Run, ctx: Ctx) -> None:
 
 
 def ph_decision(run: Run, ctx: Ctx) -> None:
+    if read_json(run.path("00-intake.json")).get("no_revision"):   # the report is the result
+        return
     if not ctx.interactive:  # S-decision-014: a share run has no plan to choose
         share = read_json(run.path("00-intake.json"), default={}).get("purpose") == "share"
         ctx.say(ctx.t("decide.hint_share" if share else "decide.hint", run=run.id))

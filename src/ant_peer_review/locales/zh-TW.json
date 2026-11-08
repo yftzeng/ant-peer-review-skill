@@ -178,6 +178,7 @@
   "decide.hint": "審稿完成。定稿請執行：ant-peer-review decide {run} --choice A|B|manual [--rule <紅線>=confirmed|dismissed]",
   "run.resume_hint": "續跑：ant-peer-review resume {run}",
   "run.paused": "已暫停（{reason}）。續跑：ant-peer-review resume {run}",
+  "run.review_only": "只審稿（--no-revision）：不產生修訂稿，報告就是結果。",
   "run.unreviewable": "無法審稿：所有審稿者都拒答（{models}），不產出分數與等級。重試：ant-peer-review resume {run}",
   "run.interrupted": "已中斷，進度已存。續跑：ant-peer-review resume {run}",
   "report.rl.advisory": "警示（不否決）",

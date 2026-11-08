@@ -57,6 +57,10 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--audience", help="e.g. expertise=expert+scholar,purpose=trend,lens=custom:regulators "
                         "(several values per layer joined with +)")
     n.add_argument("--brand", help="brand name for the Style Guide")
+    n.add_argument("--context", help="trusted note for the reviewers, text or a file: the source "
+                   "(e.g. an RSS feed that strips punctuation) or the setting; not part of the piece")
+    n.add_argument("--no-revision", action="store_true",
+                   help="review only: stop at the report, no revision plans or decision")
     n.add_argument("--weights", help="e.g. macro=30,accuracy=40,micro=10,impact=20")
     n.add_argument("--academic", action="store_true",
                    help="also verify DOIs and arXiv ids against doi.org, Crossref and arXiv")
@@ -331,12 +335,26 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
             return EXIT_USAGE
         if args.brand:
             intake["brand"] = args.brand
+        apply_run_flags(intake, args)
     else:
         # Ask everything first: leaving midway must not leave an empty run behind.
-        return start_runs(io, store, ctx, interactive_intakes(io, store, ctx))
+        return start_runs(io, store, ctx, [apply_run_flags(it, args)
+                                           for it in interactive_intakes(io, store, ctx)])
     intakes = split_feeds(io, ctx.t, intake, store, interactive=not args.yes,
                           limit=args.feed_limit, reviewers=len(ctx.models))
     return start_runs(io, store, ctx, intakes)
+
+
+def apply_run_flags(intake: dict, args) -> dict:
+    """--context (S-review-panel-030) and --no-revision (S-cli-021)."""
+    from .intake import existing_path
+    note = (getattr(args, "context", None) or "").strip()
+    if note:
+        p = existing_path(note)
+        intake["context"] = (p.read_text(encoding="utf-8") if p and p.is_file() else note).strip()
+    if getattr(args, "no_revision", False):
+        intake["no_revision"] = True
+    return intake
 
 
 def interactive_intakes(io: IO, store: Store, ctx: Ctx) -> list[dict]:

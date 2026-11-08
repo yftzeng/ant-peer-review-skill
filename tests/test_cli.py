@@ -216,3 +216,36 @@ def test_deliver_fresh_analysis_flag(env, monkeypatch):
     assert cli.main(["deliver", run.id, "--reply", "none", "--fresh-analysis"], io=NoAskIO(), store=env) == 0
     assert seen == [False, True]
 
+
+
+# @S-cli-021
+def test_review_only_run_stops_at_the_report(env):
+    code = cli.main(["new", "--yes", "--backend", "fake", "--target", TEXT, "--no-revision"],
+                    io=NoAskIO(), store=env)
+    run = list_runs(env.runs_dir)[-1]
+    assert code == cli.EXIT_OK and run.is_finished()
+    assert read_json(run.path("00-intake.json"))["no_revision"] is True
+    assert list(run.root.glob("06-report.v*.md")) and not run.path("07-revision").exists()
+    assert not run.path("08-decision.json").exists()
+
+
+# @S-review-panel-030
+def test_editor_context_is_trusted_and_apart_from_the_piece(env, tmp_path):
+    from ant_peer_review import prompts
+    note = "The source is an RSS feed that strips 。「」 and dashes."
+    cli.main(["new", "--yes", "--backend", "fake", "--target", TEXT, "--context", note,
+              "--no-revision"], io=NoAskIO(), store=env)
+    run = list_runs(env.runs_dir)[-1]
+    intake = read_json(run.path("00-intake.json"))
+    assert intake["context"] == note
+    assert "RSS" not in str(read_json(run.path("01-sources/segments.json")))
+    p = prompts.review_prompt(intake, read_json(run.path("02-rubric.json")), "<untrusted_content>x</untrusted_content>")
+    assert note in p and p.index(note) < p.index("<untrusted_content>")
+    assert "trusted" in p and "do not ask the author" in p.lower()
+    d = prompts.debate_prompt({"issues": []}, [], [], "x", context=note)
+    assert note in d
+    f = tmp_path / "ctx.md"
+    f.write_text("From a file: RSS strips punctuation.", encoding="utf-8")
+    cli.main(["new", "--yes", "--backend", "fake", "--target", TEXT, "--context", str(f),
+              "--no-revision"], io=NoAskIO(), store=env)
+    assert read_json(list_runs(env.runs_dir)[-1].path("00-intake.json"))["context"].startswith("From a file")

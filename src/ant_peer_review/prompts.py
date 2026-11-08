@@ -110,6 +110,14 @@ def review_system(lang: str, seat: str | None = None) -> str:
             + SHARED_RULES.format(lang_name=LANG_NAMES.get(lang, lang)))
 
 
+def context_block(note: str) -> str:
+    """S-review-panel-030: the editor's own note, trusted, kept apart from the piece."""
+    if not (note or "").strip():
+        return ""
+    return ("\nReview context from the editor (trusted; about the source or the setting, not part of "
+            "the piece). Do not ask the author to fix what it explains:\n" + note.strip() + "\n")
+
+
 def review_prompt(intake: dict, rubric: dict, article: str, style_guide: str = "") -> str:
     red = "\n".join(f"- {k}: {v}" for k, v in RED_LINE_TEXT.items())
     sg = f"\nBrand style guide to enforce:\n{neutralize(style_guide)}\n" if style_guide else ""
@@ -119,7 +127,7 @@ def review_prompt(intake: dict, rubric: dict, article: str, style_guide: str = "
                    "judge whether it is accurate and fit to pass on; it will not be revised)")
     return f"""Purpose of the piece: {purpose}
 Audience card: {audience_block(intake)}
-
+{context_block(intake.get("context", ""))}
 Scoring rubric (score each dimension 0-100 using its bands):
 {rubric_block(rubric)}
 {sg}
@@ -184,9 +192,10 @@ def debate_system(lang: str, seat: str | None = None) -> str:
             "you have a view on.\n\n" + SHARED_RULES.format(lang_name=LANG_NAMES.get(lang, lang)))
 
 
-def debate_prompt(own: dict, others: list[dict], ledger: list[dict], article: str) -> str:
+def debate_prompt(own: dict, others: list[dict], ledger: list[dict], article: str,
+                  context: str = "") -> str:
     facts = [{"id": c["id"], "text": c["text"], "status": c["status"]} for c in ledger]
-    return f"""Your own round-1 issues (for duplicate_of):
+    return f"""{context_block(context)}Your own round-1 issues (for duplicate_of):
 {json.dumps([{'id': i['id'], 'observation': i['observation'], 'anchor': i['anchor']} for i in own.get('issues', [])], ensure_ascii=False)}
 
 Fact-check results so far:

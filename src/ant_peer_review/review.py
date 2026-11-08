@@ -126,6 +126,7 @@ def run_debate(run: Run, backend: Backend, models: list[str], lang: str, *,
         return {}
     ledger = read_ledger_safe(run)
     article = article_view(run)
+    intake = read_json(run.path("00-intake.json"), default={})
     existing = load_records(run, "04-debate")
     todo = [m for m in active if existing.get(m, {}).get("status") not in (OK, REFUSED)]
     seats = prompts.assign_seats(models)
@@ -133,7 +134,8 @@ def run_debate(run: Run, backend: Backend, models: list[str], lang: str, *,
     def one(m: str) -> dict:
         system = prompts.debate_system(lang, seats.get(m))
         others = debate_targets({k: reviews[k] for k in active}, m)
-        prompt = prompts.debate_prompt(reviews[m]["data"], others, ledger, article)
+        prompt = prompts.debate_prompt(reviews[m]["data"], others, ledger, article,
+                                       context=intake.get("context", ""))
         rec = _record(m, backend, lambda: backend.run(m, task="debate", system=system,
                                                       prompt=prompt, schema=DEBATE))
         write_json(run.path(f"04-debate/{m}.json"), rec)
