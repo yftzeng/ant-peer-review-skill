@@ -48,7 +48,7 @@ Feature: decision
 
   @S-decision-007
   Scenario: a ruling prompt says what is being ruled and on which text
-    Given red line "hallucination" needs a ruling because claim C09 at D1.P52.S1 is unsupported and no reviewer flagged it
+    Given red line "hallucination" needs a ruling because claim C09 at D1.P52.S1 is unsupported and opus flagged it only at low severity
     When  the editor is asked to rule
     Then  the prompt shows what the red line means, what confirming and dismissing each do, why a ruling is needed,
           the article title and URL, the original sentence at D1.P52.S1, the checker's reason and sources,
@@ -120,3 +120,4 @@ Feature: decision
 - 2026-11-02 · ~S-decision-011 · decision: none -- replies are written in the chosen output language (S-output-language-005), not the article's
 - 2026-11-06 · +S-decision-014 a share run's hint names no plan choice (user: <A|B|manual> 是什麼？ …; 修正) · decision: none -- the hint only; decide already ignored --choice for a share run
 - 2026-11-09 · +S-decision-015 · decision: none -- user feedback (B3, run 9170): a dismissed ruling was recorded but ignored, because a ruling applied only to needs_ruling; the report still said confirmed and fail
+- 2026-11-09 · ~S-decision-007 · decision: none -- with S-review-panel-029 an unsupported claim no reviewer flags is advisory and asks no ruling; the ruling example now has a low-severity flag

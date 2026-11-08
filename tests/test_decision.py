@@ -105,6 +105,12 @@ def _unsupported_number(run):
 def test_ruling_prompt_shows_context(tmp_path):
     run, store = setup(tmp_path)
     _unsupported_number(run)
+    rec = read_json(run.path("03-reviews/opus.json"))
+    for rl in rec["data"]["red_lines"]:
+        if rl["key"] == "hallucination":
+            rl.update(flag=True, severity="low", comment="maybe")
+    write_json(run.path("03-reviews/opus.json"), rec)
+    write_report(run, compute_consensus(run, M, TH), lang="en")
     io = ScriptedIO(["2", "2"])  # dismiss, then choose B
     decide(run, store, io)
     out = io.text
@@ -114,7 +120,7 @@ def test_ruling_prompt_shows_context(tmp_path):
                  "Title",                             # the article
                  "D1.P03.S1", "Revenue grew 40% in 2025.",   # where, and the original sentence
                  "The filing says 12%.", "https://example.org/filing",  # checker reason, source
-                 "opus: not flagged", "sonnet: not flagged"):   # every reviewer's verdict
+                 "opus: flagged (low) — maybe", "sonnet: not flagged"):   # every reviewer's verdict
         assert want in out, want
     assert read_json(run.path("08-decision.json"))["rulings"] == {"hallucination": "dismissed"}
 

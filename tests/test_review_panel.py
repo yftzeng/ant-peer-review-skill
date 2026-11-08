@@ -247,10 +247,12 @@ def test_unsupported_proper_noun_only_warns():
     rl = synth(reviews, ledger=[noun])["red_lines"]["hallucination"]
     assert rl["status"] == "advisory" and rl["evidence"] == []
     assert [w["claim"] for w in rl["warnings"]] == ["C09"]
-    # a number still asks for a ruling: only names and translations are demoted
+    # a number is still evidence (names and translations are demoted); with no reviewer
+    # flagging it, it advises and asks no ruling (S-review-panel-029)
     num = dict(noun, id="C01", type="number")
     rl = synth(reviews, ledger=[noun, num])["red_lines"]["hallucination"]
-    assert rl["status"] == "needs_ruling" and [e["claim"] for e in rl["evidence"]] == ["C01"]
+    assert rl["status"] == "advisory" and rl["factcheck_only"]
+    assert [e["claim"] for e in rl["evidence"]] == ["C01"]
 
 
 def _process_md(tmp_path, models, reviews, debates=(), ledger=()):
@@ -368,3 +370,32 @@ def test_withheld_paragraphs_never_count_against_the_author():
     assert [f["anchor"] for f in u] == ["D1.P05.S1"] and u[0]["withheld"] == "D1.P05"
     assert cons["red_lines"]["pr_landmine"]["status"] == "advisory"
     assert synth(reviews)["red_lines"]["pr_landmine"]["status"] == "confirmed"
+
+
+
+def _flag(model, sev):
+    d = review_data(flags=["hallucination"])
+    for rl in d["red_lines"]:
+        if rl["key"] == "hallucination":
+            rl["severity"] = sev
+    return ok(model, d)
+
+
+# @S-review-panel-029
+def test_hallucination_vetoes_on_evidence_or_high_agreement_only():
+    from ant_peer_review import prompts
+    claim = {"id": "C01", "anchor": "D1.P02.S1", "text": "Revenue grew 40%", "type": "number",
+             "status": "unsupported", "sources": [{"url": "https://reg.example/f", "grade": "A"}]}
+    plain = {"opus": ok("opus", review_data()), "sonnet": ok("sonnet", review_data())}
+    rl = synth(plain, ledger=[claim])["red_lines"]["hallucination"]
+    assert rl["status"] == "advisory" and rl["factcheck_only"] is True
+    low = {"opus": _flag("opus", "low"), "sonnet": ok("sonnet", review_data())}
+    assert synth(low, ledger=[claim])["red_lines"]["hallucination"]["status"] == "needs_ruling"
+    med = {"opus": _flag("opus", "medium"), "sonnet": _flag("sonnet", "medium")}
+    cons = synth(med)
+    assert cons["red_lines"]["hallucination"]["status"] == "needs_ruling" and cons["grade"] != "fail"
+    high = {"opus": _flag("opus", "high"), "sonnet": _flag("sonnet", "high")}
+    assert synth(high)["red_lines"]["hallucination"]["status"] == "confirmed"
+    one = {"opus": _flag("opus", "medium"), "sonnet": ok("sonnet", review_data())}
+    assert synth(one, ledger=[claim])["red_lines"]["hallucination"]["status"] == "confirmed"
+    assert "time and scope" in prompts.SHARED_RULES and "unverifiable, never an error" in prompts.SHARED_RULES

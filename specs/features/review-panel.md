@@ -186,6 +186,17 @@ Feature: review panel
     Then  the first finding is listed for a human to check ("withheld"), not among the scored findings; the red line is advisory;
           without the paragraph withheld the red line would be confirmed
     And   every reviewer prompt says a withheld paragraph is the tool's decision, not a fault of the text
+
+  @S-review-panel-029
+  Scenario: the hallucination red line vetoes on evidence or on high-severity agreement, never on medium agreement alone
+    Given the ledger holds an unsupported claim backed by an A or B source and no reviewer flags "hallucination"
+    Then  "hallucination" is "advisory", marked as raised by the fact-check with no reviewer flagging it, and no ruling is asked;
+          the report says so
+    And   with the same claim and a reviewer flagging it at low severity, it "needs_ruling"
+    And   with both reviewers flagging it at medium and no unsupported claim, it "needs_ruling", not "confirmed"
+    And   with both flagging it at high, no objection and no unsupported claim, it is "confirmed"
+    And   every reviewer prompt says: before calling two passages contradictory, compare their time and scope (a later snapshot,
+          a part added afterwards); what you cannot see (a file, a repository) is unverifiable, never an error
 ```
 
 ## Must NOT
@@ -207,3 +218,4 @@ Feature: review panel
 - 2026-11-02 · ~S-review-panel-026 · decision: none -- live audit: 29 rows of half-width parentheses and one lone buzzword drowned the signal; list only what the gate would edit
 - 2026-11-09 · +S-review-panel-027 · decision: none -- user feedback (B10): four runs where both reviewers refused still produced a total of 0.0 and fail after the later phases ran, $42 in all
 - 2026-11-09 · +S-review-panel-028 · decision: none -- user feedback (B2, B9): reviewers listed "a key section is broken" (major) for a withheld paragraph, and one raised a PR landmine from withheld content
+- 2026-11-09 · +S-review-panel-029 · decision: none -- user feedback (B1, B7, B8): 5 of 14 iThome reports needed a ruling with no reviewer flagging hallucination; a 75.6 work failed on two medium flags whose own comment said fixable, not fabricated; a Day 30 snapshot was read as contradicting earlier days

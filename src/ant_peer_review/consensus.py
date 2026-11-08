@@ -167,10 +167,18 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
                 (warns if c.get("type") in WARN_ONLY_CLAIMS or not is_evidence(c)
                  else evidence).append(
                     {"claim": c["id"], "text": c["text"]})
+        factcheck_only = False
         if not supporters and not evidence:
             status = "advisory" if advisory or warns else "clear"
         elif k == "hallucination" and evidence and supporters:
             status = "confirmed"          # evidence first: the ledger outranks an objection
+        elif k == "hallucination" and evidence:
+            # S-review-panel-029: the fact-check alone advises; a low flag beside it asks a human
+            status = "needs_ruling" if advisory else "advisory"
+            factcheck_only = not advisory
+        elif k == "hallucination" and not (sev >= RL_SEV["high"] and len(supporters) >= 2
+                                           and not disputes):
+            status = "needs_ruling"       # agreement at medium is not proof of fabrication
         elif len(supporters) >= 2 and not disputes:
             status = "confirmed"
         else:
@@ -183,7 +191,7 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
         red[k] = {"status": status, "supporters": supporters, "dissent": disputes,
                   "severity": [s for s, v in RL_SEV.items() if v == sev][0],
                   "comments": comments, "evidence": evidence, "warnings": warns,
-                  "human_ruling": ruled}
+                  "human_ruling": ruled, "factcheck_only": factcheck_only}
 
     # ---- scores ----------------------------------------------------------------
     scores = {}

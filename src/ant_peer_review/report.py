@@ -216,7 +216,8 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
         if v.get("warnings"):
             comment += " ⚠ " + "; ".join(f"{e['claim']}: {e['text']}" for e in v["warnings"])
         dissent = "; ".join(f"{d['model']}: {d['evidence']}" for d in v["dissent"])
-        status = t("report.rl." + v["status"]) + (" ✋" if v.get("human_ruling") else "")
+        status = t("report.rl." + v["status"]) + (" ✋" if v.get("human_ruling") else "") + \
+            (f" ({t('report.rl.factcheck_only')})" if v.get("factcheck_only") else "")
         L.append(f"| {t('redline.' + k)} | {status} | {v['severity']} | "
                  f"{', '.join(v['supporters'])} | {cell(dissent)} | {cell(comment)} |")
     L.append("")
