@@ -96,6 +96,7 @@
   "report.grade.revise": "需修改",
   "report.grade.fail": "不合格",
   "report.provisional": "暂定：红线待裁决",
+  "report.unreviewed": "未审：{n} 篇被审稿者拒答，等级为暂定",
   "report.scurve_scored": "阶段已验证，已计入 Impact",
   "report.scurve_not_scored": "阶段未验证，不计分（权重回归 Impact）",
   "report.split_scores": "reviewer 分数差距达 25 以上的维度",

@@ -18,7 +18,8 @@ from .workspace import Run
 OK, REFUSED, FAILED = "ok", "refused", "failed"
 
 
-def article_view(run: Run) -> str:
+def article_view(run: Run, keep=None) -> str:
+    """keep(doc, paragraph_id) -> bool limits the view (D-0002 parts, the debate's anchors)."""
     segs = read_json(run.path("01-sources/segments.json"), default={})
     scan = read_json(run.path("01-sources/injection-scan.json"), default={})
     manifest = read_json(run.path("01-sources/manifest.json"), default={"items": []})
@@ -28,6 +29,10 @@ def article_view(run: Run) -> str:
         origins = {"D1": "(draft)"}  # drafting: the piece is the draft, not the materials
     parts = []
     for doc, doc_segs in segs.items():
+        if keep is not None:
+            doc_segs = [x for x in doc_segs if keep(doc, x["id"])]
+            if not doc_segs:
+                continue
         parts.append(f"## Document {doc} {origins.get(doc, '')}".rstrip() + "\n\n"
                      + prompt_view(doc_segs, scan.get("withheld", {})))
     return "\n\n".join(parts)
@@ -75,22 +80,78 @@ def _parallel(models: list[str], fn) -> dict[str, dict]:
 
 def run_round1(run: Run, backend: Backend, models: list[str], lang: str, *,
                style_guide: str = "", say=print) -> dict[str, dict]:
+    from . import mapreduce as mr
     intake = read_json(run.path("00-intake.json"))
     rubric = read_json(run.path("02-rubric.json"))
-    article = article_view(run)
+    segs = read_json(run.path("01-sources/segments.json"), default={})
     existing = load_records(run, "03-reviews")
     todo = [m for m in models if existing.get(m, {}).get("status") not in (OK, REFUSED)]
     seats = prompts.assign_seats(models)
-    prompt = prompts.review_prompt(intake, rubric, article, style_guide)
+    parts = mr.plan_parts(segs)
+    in_parts = mr.total_chars(segs) > mr.MAPREDUCE_CHARS and len(parts) > 1   # D-0002
 
-    def one(m: str) -> dict:
-        say(f"  … {m} ({seats[m]})")
-        system = prompts.review_system(lang, seats[m])
+    def call(m: str, system: str, view: str, note: str = "") -> dict:
+        prompt = note + prompts.review_prompt(intake, rubric, view, style_guide)
         rec = _record(m, backend, lambda: backend.run(m, task="review", system=system,
                                                       prompt=prompt, schema=REVIEW))
-        rec["seat"] = seats[m]
         if rec["status"] == OK:
             rec["data"] = _clean_review(rec["data"])
+        return rec
+
+    def by_parts(m: str, system: str) -> dict:
+        """S-review-panel-031..032: map, retry refused parts by article, then reduce."""
+        done, skipped = [], []
+        for part in parts:
+            rec = mr.cache(run, m, part["id"]) or mr.cache(run, m, part["id"], call(
+                m, system, article_view(run, mr.keep_for(part)), mr.part_note(part, len(parts))))
+            if rec["status"] == FAILED:
+                return rec
+            if rec["status"] == OK:
+                done.append((part, rec["data"]))
+                continue
+            singles = [dict(part, id=f"{part['id']}.{k}", docs=[d], ids=None,
+                            chars=mr.seg_chars(segs.get(d, [])))
+                       for k, d in enumerate(part["docs"], 1)] if len(part["docs"]) > 1 else []
+            if not singles:
+                skipped += [mr.skipped_entry(run, d, part["chars"]) for d in part["docs"]]
+            for one in singles:
+                r = mr.cache(run, m, one["id"]) or mr.cache(run, m, one["id"], call(
+                    m, system, article_view(run, mr.keep_for(one)), mr.part_note(part, len(parts))))
+                if r["status"] == FAILED:
+                    return r
+                if r["status"] == OK:
+                    done.append((one, r["data"]))
+                else:
+                    skipped.append(mr.skipped_entry(run, one["docs"][0], one["chars"]))
+        total = sum(p["chars"] for p in parts) or 1
+        info = {"parts": [{"id": p["id"], "docs": p["docs"], "chars": p["chars"]} for p, _ in done],
+                "skipped": skipped}
+        if not done or sum(x["chars"] for x in skipped) / total > mr.MOST:
+            return {"model": m, "status": REFUSED, "reason": "most_parts_refused",
+                    "detail": f"{len(skipped)} article(s) refused", "backend": backend.name,
+                    "mapreduce": info}
+        titles = {d["doc"]: d.get("title", "") for it in read_json(
+            run.path("01-sources/manifest.json"), default={"items": []})["items"]
+            for d in it.get("docs", [])}
+        red = _record(m, backend, lambda: backend.run(
+            m, task="review_reduce", system=mr.REDUCE_SYSTEM + prompts.SHARED_RULES.format(
+                lang_name=prompts.LANG_NAMES.get(lang, lang)),
+            prompt=mr.reduce_prompt(rubric, done, titles), schema=mr.REDUCE))
+        info["reduce"] = red["status"]
+        return {"model": m, "status": OK, "data": mr.merge(done, red.get("data"), rubric),
+                "backend": backend.name, "mapreduce": info}
+
+    def one(m: str) -> dict:
+        say(f"  … {m} ({seats[m]})" + (f" · {len(parts)} parts" if in_parts else ""))
+        system = prompts.review_system(lang, seats[m])
+        if in_parts:
+            rec = by_parts(m, system)
+        else:
+            rec = call(m, system, article_view(run))
+            if rec["status"] == REFUSED and len(parts) > 1:      # a refusal loses only what was refused
+                say(f"  … {m}: refused as a whole, retrying in {len(parts)} parts")
+                rec = by_parts(m, system)
+        rec["seat"] = seats[m]
         write_json(run.path(f"03-reviews/{m}.json"), rec)
         say(f"  {'✓' if rec['status'] == OK else '✗'} {m}: {rec['status']}"
             + (f" ({rec.get('reason')})" if rec["status"] != OK else ""))
@@ -126,6 +187,11 @@ def run_debate(run: Run, backend: Backend, models: list[str], lang: str, *,
         return {}
     ledger = read_ledger_safe(run)
     article = article_view(run)
+    if any(reviews[m].get("mapreduce") for m in active):   # S-review-panel-033: anchored text only
+        anchors = {".".join(str(a).split(".")[:2]) for m in active
+                   for t in debate_targets({k: reviews[k] for k in active}, m)
+                   for a in ([t["anchor"]] if "anchor" in t else t.get("anchors", []))}
+        article = article_view(run, keep=lambda doc, sid: sid in anchors)
     intake = read_json(run.path("00-intake.json"), default={})
     existing = load_records(run, "04-debate")
     todo = [m for m in active if existing.get(m, {}).get("status") not in (OK, REFUSED)]

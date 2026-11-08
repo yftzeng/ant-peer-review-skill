@@ -96,6 +96,7 @@
   "report.grade.revise": "Needs revision",
   "report.grade.fail": "Fail",
   "report.provisional": "provisional: red lines await a ruling",
+  "report.unreviewed": "Not reviewed: {n} article(s) a reviewer refused; the grade is provisional",
   "report.scurve_scored": "stage verified, included in Impact",
   "report.scurve_not_scored": "stage not verified, not scored (weight returned to Impact)",
   "report.split_scores": "Dimensions where reviewers' scores differ by 25 or more",

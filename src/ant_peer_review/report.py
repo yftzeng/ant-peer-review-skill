@@ -65,6 +65,15 @@ def ledger_status(t: T, c: dict) -> str:
     return c["status"] + (f" · {t('strength.' + c['strength'])}" if c.get("strength") else "")
 
 
+def unreviewed_lines(t: T, cons: dict) -> list[str]:
+    """S-review-panel-032: every article a reviewer refused, so the grade is provisional."""
+    if not cons.get("skipped_docs"):
+        return []
+    return ["", f"**{t('report.unreviewed', n=len(cons['skipped_docs']))}**", ""] + [
+        f"- {x['doc']} {cell(x.get('title') or '')} {x.get('url') or ''}".rstrip()
+        for x in cons["skipped_docs"]]
+
+
 def latest_version(run: Run) -> int:
     vs = [int(m.group(1)) for p in run.root.glob("06-report.v*.json")
           if (m := re.match(r"06-report\.v(\d+)\.json$", p.name))]
@@ -176,6 +185,7 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
             grade += f" ({t('report.provisional')})"
         L.append("")
         L.append(f"**{t('report.total')}: {cons['total']}  ·  {t('report.grade')}: {grade}**")
+        L += unreviewed_lines(t, cons)
         if cons.get("impact_s_curve"):
             s = cons["impact_s_curve"]
             L.append("")

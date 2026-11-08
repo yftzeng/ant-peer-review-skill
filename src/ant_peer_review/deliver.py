@@ -13,7 +13,7 @@ from .gate import (EDIT_RULES, _scan_view, autofix, checks_md, judge, judge_mode
                    rule_check, run_gate, with_header)
 from .i18n import T
 from .jsonio import read_json, write_text_atomic
-from .report import cell, latest_version, process_section
+from .report import cell, latest_version, process_section, unreviewed_lines
 from .schemas import STR, arr, obj
 from .workspace import Run
 
@@ -206,6 +206,7 @@ def render_review(run: Run, cons: dict, t: T, thresholds: dict, summary: dict | 
         L += [f"**{t('review.verdict.' + verdict(cons))}** — {t('report.total')} {cons['total']} · "
               f"{t('report.grade')} {t('report.grade.' + cons['grade'])}"
               + (f" ({t('report.provisional')})" if cons.get("provisional") else ""), ""]
+        L += unreviewed_lines(t, cons)[1:] + ([""] if cons.get("skipped_docs") else [])
     L += [
          f"## {t('review.summary')}", ""]
     if summary is None:

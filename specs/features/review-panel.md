@@ -205,6 +205,32 @@ Feature: review panel
     Then  00-intake.json holds the context, every review and cross-review prompt shows it as the editor's trusted context outside
           the untrusted piece, it is not part of the piece's segments or its injection scan, and the reviewers are told not to
           ask the author to fix what it explains
+
+  @S-review-panel-031
+  Scenario: a long target is reviewed in parts, then in one series-level pass
+    Given a series of 12 articles, D1-1 to D1-12, of more than 80,000 characters in all
+    When  the review runs
+    Then  each reviewer reviews three parts (D1-1..D1-5, D1-6..D1-10, D1-11..D1-12), each prompt holding only that part's text
+          and saying which part of how many it is, then makes one "review_reduce" call that sees the parts' maps, scores and
+          issues but not the text
+    And   its review record has one score per dimension: macro from the series-level call, the others the parts' scores
+          weighted by characters; issues and claims from every part and the series-level call with part-prefixed ids
+          (G2-I1, G2-K1, S-I1), the issues' claim ids renamed alike; a red line flagged in any part is flagged, at its highest severity
+    And   a target of 80,000 characters or less is reviewed in one call, as before
+
+  @S-review-panel-032
+  Scenario: a refusal loses only what was refused
+    Given a series whose single review call a reviewer refuses, and whose article D1-7 that reviewer refuses on its own as well
+    When  the review runs
+    Then  that reviewer is retried in parts; the refused part D1-6..D1-10 is retried one article at a time; D1-7 is skipped
+    And   the consensus lists D1-7 with its title and URL as not reviewed, the report and review.md show the grade as provisional
+          and list the unreviewed articles
+    And   a reviewer whose skipped articles hold more than half of the characters counts as refused (S-review-panel-027 applies)
+
+  @S-review-panel-033
+  Scenario: in a run reviewed in parts, the cross-review sees only the paragraphs the findings point to
+    When  the debate runs after a review in parts
+    Then  each debate prompt holds the paragraphs anchored by the findings it answers, not the whole text
 ```
 
 ## Must NOT
@@ -228,3 +254,4 @@ Feature: review panel
 - 2026-11-09 · +S-review-panel-028 · decision: none -- user feedback (B2, B9): reviewers listed "a key section is broken" (major) for a withheld paragraph, and one raised a PR landmine from withheld content
 - 2026-11-09 · +S-review-panel-029 · decision: none -- user feedback (B1, B7, B8): 5 of 14 iThome reports needed a ruling with no reviewer flagging hallucination; a 75.6 work failed on two medium flags whose own comment said fixable, not fabricated; a Day 30 snapshot was read as contradicting earlier days
 - 2026-11-09 · +S-review-panel-030 · decision: none -- user feedback (I1, B9): a note about the RSS source written into the target was flagged as steering the reviewers and still listed as a major issue; the editor needs a trusted channel
+- 2026-11-09 · +S-review-panel-031..033 · decision: D-0002 -- user: a target too large for one call should be reviewed by map-reduce or divide and conquer; four refused series lost every article ($42)

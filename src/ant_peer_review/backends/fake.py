@@ -125,6 +125,10 @@ class FakeBackend(Backend):
             "s_curve": {"stage": "growth", "evidence_query": "topic adoption", "fit_note": "ok"},
         }
 
+    def _review_reduce(self, model, ids, paras, bias, prompt):
+        return {"orientation": f"[fake:{model}] The whole piece, from its parts.",
+                "macro": {"score": float(70 + bias), "rationale": "fake"}, "issues": []}
+
     def _factcheck(self, *a):
         return {"status": "supported", "reason": "fake",
                 "sources": [{"url": "https://example.org/fake-source",

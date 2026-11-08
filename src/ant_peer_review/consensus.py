@@ -219,10 +219,14 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
     grade = grade_for(total, thresholds)
     if any(v["status"] == "confirmed" for v in red.values()):
         grade = "fail"
-    provisional = any(v["status"] == "needs_ruling" for v in red.values())
+    # S-review-panel-032: articles a reviewer refused are listed, and the grade is provisional
+    skipped = list({x["doc"]: x for m in active for x in
+                    (reviews[m].get("mapreduce") or {}).get("skipped", [])}.values())
+    provisional = any(v["status"] == "needs_ruling" for v in red.values()) or bool(skipped)
     split_scores = [k for k, v in scores.items() if v["spread"] >= 25]
 
     return {"provenance": provenance, "active": active, "warnings": warnings,
             "scores": scores, "impact_s_curve": impact_note, "total": total, "grade": grade,
             "provisional": provisional, "split_scores": split_scores, "red_lines": red,
+            "skipped_docs": skipped, "partial": bool(skipped),
             "findings": findings, "unverified_findings": unverified}
