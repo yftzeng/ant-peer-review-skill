@@ -136,3 +136,30 @@ def test_snapshot_changes_with_status():
     a = [dict(CLAIM)]
     b = [dict(CLAIM, status="supported")]
     assert snapshot(a) != snapshot(b)
+
+
+# @S-factcheck-ledger-019
+def test_self_reported_claims_are_not_searched_or_counted_as_unverified(tmp_path):
+    from ant_peer_review import prompts
+    from ant_peer_review.deliver import render_review
+    from ant_peer_review.i18n import T
+    from ant_peer_review.schemas import CLAIM_TYPES
+    assert "self_report" in CLAIM_TYPES
+    assert "self_report" in prompts.review_prompt({"purpose": "audit", "audience": {}},
+                                                  {"dimensions": []}, "x")
+    run = make_run(tmp_path)
+    write_ledger(run, [dict(CLAIM, id="C01", text="the repo has 1,240 tests and 312 commits",
+                            type="self_report")])
+    b = ScriptBackend({("sonnet", "factcheck"): search_result("supported", ["https://a.example"],
+                                                              ["https://a.example"])})
+    run_checks(run, b, "sonnet", "en", say=lambda *_: None)
+    c = read_ledger(run)[0]
+    assert b.calls == [] and (c["status"], c["reason"]) == ("cannot_verify", "self_reported")
+    assert not is_retryable(c)
+    write_json(run.path("03-reviews/opus.json"), ok("opus", review_data()))
+    write_json(run.path("03-reviews/sonnet.json"), ok("sonnet", review_data()))
+    cons = compute_consensus(run, ["opus", "sonnet"], TH)
+    write_report(run, cons, lang="en")
+    review = render_review(run, cons, T("en"), TH, None)
+    row = next(ln for ln in review.splitlines() if ln.startswith("| Fact-check"))
+    assert "self-reported 1" in row and "✓ pass" in row and "cannot verify" not in row

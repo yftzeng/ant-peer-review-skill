@@ -163,8 +163,9 @@ def checks(run: Run, cons: dict, t: T, thresholds: dict) -> list[str]:
         row(t("redline." + k), status, t("report.rl." + v["status"]), why)
     ledger = read_ledger(run)
     counts: dict[str, int] = {}
-    for c in ledger:
-        counts[c["status"]] = counts.get(c["status"], 0) + 1
+    for c in ledger:   # S-factcheck-ledger-019: self-reported apart from "cannot verify"
+        k = "self_reported" if c.get("reason") == "self_reported" else c["status"]
+        counts[k] = counts.get(k, 0) + 1
     status = "fail" if counts.get("unsupported") else \
         "borderline" if counts.get("partly") or counts.get("cannot_verify") else "pass"
     row(t("review.factcheck"), status,

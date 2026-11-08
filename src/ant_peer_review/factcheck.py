@@ -215,6 +215,10 @@ def run_checks(run: Run, backend: Backend, checker: str, lang: str, *,
         for i, c in enumerate(ledger):
             if not is_retryable(c) or c["type"] == "citation":  # citations: scholarly.py
                 continue
+            if c["type"] == "self_report":   # S-factcheck-ledger-019: only the author's files show it
+                ledger[i] = dict(c, status="cannot_verify", reason="self_reported", sources=[])
+                write_ledger(run, ledger)
+                continue
             say(f"  … {c['id']} {c['text'][:70]}")
             ledger[i] = check_claim(backend, checker, c, context_for(run, c["anchor"]), lang,
                                     cited=cited)

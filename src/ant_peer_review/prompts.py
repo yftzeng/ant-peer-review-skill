@@ -142,6 +142,8 @@ Do the following, in order:
    the requested action; severity; and claim_ids for any fact claims it relies on.
 4. claims: extract checkable facts - dates, figures, laws and regulations, proper nouns, quotes
    attributed to people - with ids K1, K2, ... and their anchor. Only claims that matter.
+   A fact about the author's own work that only their files can show (line numbers, commits,
+   test or CI counts, internal figures) has type "self_report".
 5. sensitivity: stereotypes, extreme statements, unverified allegations or leaks.
 6. red_lines: one entry for EACH of these keys, flag true/false, severity, anchors, comment.
    A red line is a veto: flag true with severity medium or high only when the line is really

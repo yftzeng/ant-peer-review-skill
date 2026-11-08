@@ -282,6 +282,7 @@
   "report.claim.partly": "partly supported",
   "report.claim.unsupported": "unsupported",
   "report.claim.cannot_verify": "cannot verify",
+  "report.claim.self_reported": "self-reported",
   "report.claim.pending": "pending",
   "report.process.sep": "; ",
   "report.process.comma": ", ",

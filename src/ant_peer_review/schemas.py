@@ -71,7 +71,7 @@ SEVERITY = {"type": "string", "enum": ["critical", "major", "minor"]}
 LEVEL = {"type": "string", "enum": ["macro", "meso", "micro"]}
 RED_LINES = ["illegal", "hallucination", "pr_landmine", "plagiarism",
              "sensitive_politics", "human_rights"]
-CLAIM_TYPES = ["date", "number", "law", "proper_noun", "quote", "s_curve_stage", "other"]
+CLAIM_TYPES = ["date", "number", "law", "proper_noun", "quote", "s_curve_stage", "self_report", "other"]
 S_STAGES = ["startup", "tipping_point", "growth", "saturation"]
 FACT_STATUS = ["supported", "partly", "unsupported", "cannot_verify"]
 

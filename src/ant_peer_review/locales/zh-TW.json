@@ -282,6 +282,7 @@
   "report.claim.partly": "部分有依據",
   "report.claim.unsupported": "找不到依據",
   "report.claim.cannot_verify": "無法查證",
+  "report.claim.self_reported": "自述（需看 repo）",
   "report.claim.pending": "待查",
   "report.process.sep": "；",
   "report.process.comma": "、",

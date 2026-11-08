@@ -121,6 +121,15 @@ Feature: fact-check ledger
     Given tool results containing "`https://host.example:8443`", "https://bad.example:99999/x" and "https://real.example/page"
     When  the checker cites "https://real.example/page" and "https://host.example:8443"
     Then  the claim is checked without an error and both cited sources are kept
+
+  @S-factcheck-ledger-019
+  Scenario: a claim about the author's own work is self-reported, not unverified
+    Given a ledger with claim "the repo has 1,240 tests and 312 commits" of type "self_report" and an ordinary number claim
+    When  the claims are checked
+    Then  the self-reported claim gets no checker call and is "cannot_verify" with reason "self_reported", never retried
+    And   review.md's fact-check row counts it as self-reported, apart from "cannot verify", and it alone does not make the row borderline
+    And   the review prompt asks reviewers to type such claims (the author's own lines, commits, test or CI counts, internal figures)
+          as "self_report"
 ```
 
 ## Must NOT
@@ -134,3 +143,4 @@ Feature: fact-check ledger
 - 2026-10-26 · +S-factcheck-ledger-016 · decision: none -- user: 按你建議 (grade claim sources as the company profile grades competitor evidence: the checker names the kind, code checks the host, one outlet is one source)
 - 2026-11-03 · +S-factcheck-ledger-017 · decision: none -- with S-source-acquisition-050: the cited source reaches the checker without depending on the model to fetch it
 - 2026-11-07 · +S-factcheck-ledger-018 · decision: none -- bug: a backtick-wrapped URL with a port (`…:8443`) raised ValueError in norm_url and ended two runs
+- 2026-11-09 · +S-factcheck-ledger-019 · decision: none -- user feedback (I3): 38 of 53 claims in one series were unverifiable, mostly the author's own repo line numbers, commits and CI counts; they were searched for and counted as unverified
