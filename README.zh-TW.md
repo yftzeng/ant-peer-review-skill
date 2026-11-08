@@ -97,7 +97,7 @@ ant-peer-review decide <run-id> --yes --choice B --rule pr_landmine=dismissed
 | `ant-peer-review rerun <run> --from review` | 從指定階段重跑。 |
 | `ant-peer-review factcheck <run> --continue` | 補查還沒驗證的事實。中途停下時，可選「下次再繼續」或「終止並完成」。選「終止並完成」時，只有事實真的有變化才會產生新版報告並附變更紀錄，而且不會重新呼叫 reviewer。 |
 | `ant-peer-review runs` | 列出所有工作和各自的下一個階段。 |
-| `ant-peer-review runs --summary` | 每個工作一列：總分、等級、成立的紅線、問題數。加上 `--format csv --out f.csv` 可匯出試算表。 |
+| `ant-peer-review runs --summary` | 每個工作一列：總分、等級、成立的紅線、問題數、花費（美元）與耗時（分鐘）；每次模型呼叫都記在該工作的 `costs.jsonl`。加上 `--format csv --out f.csv` 可匯出試算表。 |
 | `ant-peer-review recheck <run> --target <修改版> [--response 回覆.md]` | 對照前一輪的發現複審作者的修改版，沿用同一組 reviewer 和評分標準。先只憑修改版逐條判定，之後才看作者回覆。報告會多一張修改對照表。 |
 
 ## 資料存放位置

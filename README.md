@@ -92,7 +92,7 @@ Every run lives in its own folder, with `state.json` recording each phase's inpu
 | `ant-peer-review rerun <run> --from review` | Redo the run from a chosen phase. |
 | `ant-peer-review factcheck <run> --continue` | Retry unverified claims. When it stops, choose **continue another time** or **stop and finalize**. Finalize writes the next report version, with a changelog, only if facts changed. No reviewer is called again. |
 | `ant-peer-review runs` | List runs and the next phase of each. |
-| `ant-peer-review runs --summary` | One row per run (total, grade, red lines, findings); `--format csv --out f.csv` for spreadsheets. |
+| `ant-peer-review runs --summary` | One row per run (total, grade, red lines, findings, cost in USD and minutes; every model call is logged in the run's `costs.jsonl`); `--format csv --out f.csv` for spreadsheets. |
 | `ant-peer-review recheck <run> --target <revised> [--response reply.md]` | Check an author's revision against that run's findings, with the same reviewers and rubric. Each finding is judged from the revised text first, and only then compared with the author's reply. The report adds a revision check table. |
 
 ## Where things are stored

@@ -44,6 +44,13 @@ Feature: run workspace
     Given a file already exists at a raw-source path
     When  the workspace is asked to write a raw source there again
     Then  the write is refused and the original bytes are unchanged
+
+  @S-run-workspace-007
+  Scenario: every model call's cost and every phase's time are recorded
+    Given a backend whose review calls cost 1.25 USD each, fact-check calls 0.5 and the rest nothing reported
+    When  a run goes through the pipeline and then decide
+    Then  costs.jsonl holds one line per call with its phase, task, model and cost (null when the backend reports none),
+          every phase in state.json has its seconds, and "runs --summary" adds cost_usd (the sum) and minutes columns
 ```
 
 ## Must NOT
@@ -51,3 +58,4 @@ Feature: run workspace
 
 ## Revisions
 - 2026-10-22 · +S-run-workspace-001..006 +N-run-workspace-001 · decision: none -- first spec, decisions live in docs/DESIGN.md §1
+- 2026-11-09 · +S-run-workspace-007 · decision: none -- user feedback (B5): only review and debate recorded cost_usd; the fact-check (16.5 min) and revision (14 min) had none, so batch costs could not be estimated

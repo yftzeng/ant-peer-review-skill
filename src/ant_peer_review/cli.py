@@ -14,7 +14,7 @@ from .decision import Postponed, run_decision
 from .i18n import T
 from .intake import (ask_audience, ask_fact_sources, ask_output_langs, ask_purpose, ask_share,
                      build_intake_from_args, collect_targets, parse_share)
-from .jsonio import read_json, write_json
+from .jsonio import read_json, read_jsonl, write_json
 from .lessons import add_lesson, all_lessons, archive_lesson, lessons_for, promote_if_repeated
 from .onboarding import banner, choose_backend, choose_lang, choose_models, effective_models, first_use
 from .pipeline import Ctx, run_pipeline
@@ -275,11 +275,15 @@ def make_ctx(args, io: IO, store: Store, cfg: Config, *, models=None, backend=No
                interactive=not args.yes, options=options)
 
 
-def run_ctx(args, io: IO, store: Store, cfg: Config, run: Run) -> Ctx:
-    """A resumed run uses the models/backend/lang recorded at creation (N-run-workspace-001)."""
+def run_ctx(args, io: IO, store: Store, cfg: Config, run: Run, phase: str = "") -> Ctx:
+    """A resumed run uses the models/backend/lang recorded at creation (N-run-workspace-001).
+    Its calls are metered into the run's costs.jsonl (S-run-workspace-007)."""
+    from .backends.meter import Meter
     models, backend, lang = run.settings()
-    return make_ctx(args, io, store, cfg, models=models, backend=backend,
-                    lang=args.lang or lang)
+    ctx = make_ctx(args, io, store, cfg, models=models, backend=backend,
+                   lang=args.lang or lang)
+    ctx.backend = Meter(ctx.backend, run, phase)
+    return ctx
 
 
 def finish(status: str) -> int:
@@ -489,7 +493,7 @@ def cmd_rerun(args, io, store, cfg) -> int:
 
 def cmd_factcheck(args, io, store, cfg) -> int:
     run = find_run(store, args.run)
-    ctx = run_ctx(args, io, store, cfg, run)
+    ctx = run_ctx(args, io, store, cfg, run, "factcheck")
     if args.yes:
         from .factcheck import pick_checker, run_checks
         from .refresh import finalize_factcheck
@@ -512,7 +516,7 @@ def cmd_factcheck(args, io, store, cfg) -> int:
 
 def cmd_decide(args, io, store, cfg) -> int:
     run = find_run(store, args.run)
-    ctx = run_ctx(args, io, store, cfg, run)
+    ctx = run_ctx(args, io, store, cfg, run, "decision")
     rulings = {}
     for r in args.rule:
         k, _, v = r.partition("=")
@@ -558,7 +562,7 @@ def parse_styles(value: str | None) -> list[str] | None:
 def cmd_deliver(args, io, store, cfg) -> int:
     from .deliver import STYLES, deliver
     run = find_run(store, args.run)
-    ctx = run_ctx(args, io, store, cfg, run)
+    ctx = run_ctx(args, io, store, cfg, run, "decision")
     if not run.path("08-decision.json").exists():
         io.say(ctx.t("deliver.undecided", run=run.id))
         return EXIT_USAGE
@@ -660,13 +664,17 @@ def summary_row(r) -> dict:
     cons = read_json(r.path("05-consensus.json"), default={})
     red = [k for k, s in meta.get("red_lines", {}).items() if s == "confirmed"]
     nxt = r.first_incomplete()
+    costs = [x.get("cost_usd") for x in read_jsonl(r.path("costs.jsonl"))] \
+        if r.path("costs.jsonl").exists() else []
+    spend = {"cost_usd": round(sum(c for c in costs if c), 4),          # S-run-workspace-007
+             "minutes": round(sum(p.get("seconds", 0) for p in r.state()["phases"].values()) / 60, 1)}
     if r.state()["phases"]["review"]["status"] == "unreviewable":   # S-review-panel-027
         return {"run": r.id, "title": title, "report": "", "total": "", "grade": "unreviewable",
-                "red_lines": "", "findings": "", "next": "review"}
+                "red_lines": "", "findings": "", "next": "review", **spend}
     return {"run": r.id, "title": title, "report": f"v{v}" if v else "",
             "total": meta.get("total", ""), "grade": meta.get("grade", ""),
             "red_lines": " ".join(red), "findings": len(cons.get("findings", []))
-            if cons else "", "next": nxt or "done"}
+            if cons else "", "next": nxt or "done", **spend}
 
 
 def cmd_recheck(args, io, store, cfg) -> int:
@@ -700,7 +708,8 @@ def cmd_runs(args, io, store, cfg) -> int:
         import csv
         import io as _io
         rows = summary_rows(store)
-        cols = ["run", "title", "report", "total", "grade", "red_lines", "findings", "next"]
+        cols = ["run", "title", "report", "total", "grade", "red_lines", "findings", "next",
+                "cost_usd", "minutes"]
         if args.format == "csv":
             buf = _io.StringIO()
             w = csv.DictWriter(buf, fieldnames=cols)

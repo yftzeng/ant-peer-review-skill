@@ -96,3 +96,45 @@ def test_resume_settings_come_from_state_not_current_config(tmp_path):
     store.save_config(Config(models=["opus", "fable"], backend="claude-cli"))
     models, backend, lang = Run(run.root).settings()
     assert models == ["opus", "sonnet"] and backend == "claude-cli" and lang == "en"
+
+
+# @S-run-workspace-007
+def test_every_call_cost_and_phase_time_recorded(tmp_path):
+    import sys
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
+    import ant_peer_review.cli as cli
+    from ant_peer_review.backends.base import Result
+    from ant_peer_review.decision import run_decision
+    from ant_peer_review.jsonio import read_jsonl
+    from ant_peer_review.pipeline import Ctx, run_pipeline
+    from ant_peer_review.store import Config, Store
+    from ant_peer_review.ui import ScriptedIO
+    from helpers import ScriptBackend, make_run, review_data
+
+    def paid(data, usd):
+        return lambda p: Result(model="", model_id="", data=data, cost_usd=usd)
+    run = make_run(tmp_path)
+    for ph in ("intake", "sources", "rubric"):
+        run.mark(ph, "done")
+    b = ScriptBackend({("*", "review"): paid(review_data(claims=[{}]), 1.25),
+                       ("*", "factcheck"): paid({"status": "cannot_verify", "reason": "no_source",
+                                                 "sources": []}, 0.5),
+                       ("*", "debate"): {"responses": []},
+                       ("*", "revise_a"): {"paragraphs": [], "corrections": []},
+                       ("*", "revise_b"): {"headline_options": [], "paragraphs": [], "notes": ""},
+                       ("*", "rereview"): {"verdicts": []}})
+    store = Store(tmp_path / "home")
+    ctx = Ctx(io=ScriptedIO([]), store=store, cfg=Config(), backend=b, models=["opus", "sonnet"],
+              lang="en", interactive=False)
+    run_pipeline(run, ctx)
+    lines = read_jsonl(run.path("costs.jsonl"))
+    assert {"phase", "task", "model", "cost_usd"} <= set(lines[0])
+    assert sum(x["cost_usd"] for x in lines if x["task"] == "review") == 2.5
+    assert any(x["phase"] == "factcheck" and x["cost_usd"] == 0.5 for x in lines)
+    assert any(x["cost_usd"] is None for x in lines)                  # debate reports no cost
+    st = run.state()["phases"]
+    assert all("seconds" in st[ph] for ph in ("review", "factcheck", "debate", "report"))
+    row = cli.summary_row(run)
+    fc = [x for x in lines if x["task"] == "factcheck"]
+    assert fc and all(x["cost_usd"] == 0.5 for x in fc)
+    assert row["cost_usd"] == 2.5 + 0.5 * len(fc) and isinstance(row["minutes"], float)

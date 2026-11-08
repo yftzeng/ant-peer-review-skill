@@ -1,6 +1,8 @@
 """Runs the phases of one run in order, skipping what is done and unchanged."""
 from __future__ import annotations
 
+import time
+
 from dataclasses import dataclass, field
 
 from . import prompts
@@ -359,33 +361,39 @@ PHASE_FUNCS = {
 
 def run_pipeline(run: Run, ctx: Ctx) -> str:
     """Returns 'done', 'paused' or 'interrupted'."""
+    from .backends.meter import Meter
+    ctx.backend = Meter(ctx.backend, run)          # S-run-workspace-007
     while True:
         try:
             for ph in PHASES:
                 if not run.needs_run(ph):
                     continue
                 ctx.say(phase_line(ctx.t("run.phase_start", phase=ph)))
+                prev = run.state()["phases"][ph].get("seconds", 0)
+                t0 = time.monotonic()
+                spent = lambda: round(prev + time.monotonic() - t0, 1)
                 run.mark(ph, "running")
+                ctx.backend.phase = ph
                 try:
                     PHASE_FUNCS[ph](run, ctx)
                 except BackendError as e:
-                    run.mark(ph, "pending")
+                    run.mark(ph, "pending", seconds=spent())
                     ctx.say(f"  ✗ {e}")
                     ctx.say(ctx.t("run.resume_hint", run=run.id))
                     return "paused"
                 except Unreviewable as e:
-                    run.mark(ph, "unreviewable")
+                    run.mark(ph, "unreviewable", seconds=spent())
                     ctx.say(ctx.t("run.unreviewable", models=str(e), run=run.id))
                     return "unreviewable"
                 except Stop as e:
-                    run.mark(ph, "pending")
+                    run.mark(ph, "pending", seconds=spent())
                     ctx.say(ctx.t("run.paused", reason=str(e), run=run.id))
                     return "paused"
                 except KeyboardInterrupt:
-                    run.mark(ph, "pending")
+                    run.mark(ph, "pending", seconds=spent())
                     ctx.say(ctx.t("run.interrupted", run=run.id))
                     return "interrupted"
-                run.mark(ph, "done")
+                run.mark(ph, "done", seconds=spent())
             ctx.say(ctx.t("run.done", path=str(run.root)))
             if feed_of(run):
                 ctx.say(ctx.t("run.more_hint", run=run.id))
