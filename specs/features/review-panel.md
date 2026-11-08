@@ -170,6 +170,14 @@ Feature: review panel
     Then  an "AI writing tells" section lists D1.P02 with its tells, D1.P03 is not listed, half-width punctuation is never listed, a paragraph with a single weak tell is not listed,
           and the section says these are signals of style, not proof of authorship; no red line or score changes
     And   review.md has a checks row for it with the count, never "fail"
+
+  @S-review-panel-027
+  Scenario: when every reviewer refuses, the run is unreviewable, not scored
+    Given both reviewers answer the review with a refusal
+    When  the run goes on
+    Then  it stops after the review as "unreviewable": no fact-check, debate, consensus or report, no score and no grade,
+          and "runs --summary" shows "unreviewable" in place of a grade
+    And   with one refusal and one review the run goes on as before
 ```
 
 ## Must NOT
@@ -189,3 +197,4 @@ Feature: review panel
 - 2026-10-26 · +S-review-panel-025 · decision: none -- user: 按你建議 (a single C-grade page may no longer confirm a veto)
 - 2026-11-02 · +S-review-panel-026 · decision: none -- user: evaluate AI-writing tells in audits; listed as style signals only (humanizer: judging by feel is near chance, several tells together are the safeguard)
 - 2026-11-02 · ~S-review-panel-026 · decision: none -- live audit: 29 rows of half-width parentheses and one lone buzzword drowned the signal; list only what the gate would edit
+- 2026-11-09 · +S-review-panel-027 · decision: none -- user feedback (B10): four runs where both reviewers refused still produced a total of 0.0 and fail after the later phases ran, $42 in all

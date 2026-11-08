@@ -325,3 +325,25 @@ def test_report_lists_ai_writing_tells_as_signals(tmp_path):
     row = next(ln for ln in review.splitlines() if ln.startswith("| AI writing tells"))
     assert "fail" not in row and "1" in row
 
+
+
+# @S-review-panel-027
+def test_every_reviewer_refusing_makes_the_run_unreviewable(tmp_path):
+    import ant_peer_review.cli as cli
+    from ant_peer_review.pipeline import Ctx, run_pipeline
+    from ant_peer_review.store import Config, Store
+    from ant_peer_review.ui import ScriptedIO
+    run = make_run(tmp_path)
+    for ph in ("intake", "sources", "rubric"):
+        run.mark(ph, "done")
+    refuse = Result(model="", model_id="", data=None, refused=True, refusal_detail="policy")
+    b = ScriptBackend({("*", "review"): refuse})
+    store = Store(tmp_path / "home")
+    ctx = Ctx(io=ScriptedIO([]), store=store, cfg=Config(), backend=b, models=["opus", "sonnet"],
+              lang="en", interactive=False)
+    assert run_pipeline(run, ctx) == "unreviewable"
+    assert {c["task"] for c in b.calls} == {"review"}
+    assert not run.path("05-consensus.json").exists() and not list(run.root.glob("06-report*"))
+    assert cli.finish("unreviewable") == cli.EXIT_PAUSED
+    row = cli.summary_row(run)
+    assert row["grade"] == "unreviewable" and row["total"] == ""

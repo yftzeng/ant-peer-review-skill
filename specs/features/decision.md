@@ -99,6 +99,13 @@ Feature: decision
     Given a non-interactive share run that reached the decision phase, and an audit run that did
     When  the decision phase pauses
     Then  the share run's hint reads "ant-peer-review decide <run> --yes" with no --choice (there is no plan to adopt: the posts are the output), and the audit run's hint still names --choice A|B|manual
+
+  @S-decision-015
+  Scenario: a human ruling decides a red line whatever the panel concluded
+    Given a red line both reviewers flag at medium, so it is confirmed and the grade is fail
+    When  "decide --rule pr_landmine=dismissed" runs
+    Then  the red line is "dismissed" with human_ruling, the grade follows the score again, and the new report and
+          review.md show it as dismissed by a human ruling, not "CONFIRMED" or a veto
 ```
 
 ## Must NOT
@@ -112,3 +119,4 @@ Feature: decision
 - 2026-11-02 · ~S-decision-009 · decision: none -- review.md gains a checks row for the article's AI writing tells (S-review-panel-026)
 - 2026-11-02 · ~S-decision-011 · decision: none -- replies are written in the chosen output language (S-output-language-005), not the article's
 - 2026-11-06 · +S-decision-014 a share run's hint names no plan choice (user: <A|B|manual> 是什麼？ …; 修正) · decision: none -- the hint only; decide already ignored --choice for a share run
+- 2026-11-09 · +S-decision-015 · decision: none -- user feedback (B3, run 9170): a dismissed ruling was recorded but ignored, because a ruling applied only to needs_ruling; the report still said confirmed and fail

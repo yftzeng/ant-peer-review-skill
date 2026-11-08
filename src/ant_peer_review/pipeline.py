@@ -33,6 +33,10 @@ class Stop(Exception):
     """Pause the run cleanly (resume later)."""
 
 
+class Unreviewable(Stop):
+    """S-review-panel-027: every reviewer refused; nothing to score."""
+
+
 @dataclass
 class Ctx:
     io: IO
@@ -230,7 +234,9 @@ def ph_review(run: Run, ctx: Ctx) -> None:
     sg = guide_text(ctx.store, intake.get("brand") or "default")
     retry = lambda: run_round1(run, ctx.backend, ctx.models, ctx.lang, style_guide=sg,
                                say=ctx.say)
-    _handle_failures(run, ctx, retry(), "review", retry)
+    records = _handle_failures(run, ctx, retry(), "review", retry)
+    if records and all(records.get(m, {}).get("status") == "refused" for m in ctx.models):
+        raise Unreviewable(", ".join(ctx.models))
 
 
 def ph_factcheck(run: Run, ctx: Ctx) -> None:
@@ -362,6 +368,10 @@ def run_pipeline(run: Run, ctx: Ctx) -> str:
                     ctx.say(f"  ✗ {e}")
                     ctx.say(ctx.t("run.resume_hint", run=run.id))
                     return "paused"
+                except Unreviewable as e:
+                    run.mark(ph, "unreviewable")
+                    ctx.say(ctx.t("run.unreviewable", models=str(e), run=run.id))
+                    return "unreviewable"
                 except Stop as e:
                     run.mark(ph, "pending")
                     ctx.say(ctx.t("run.paused", reason=str(e), run=run.id))

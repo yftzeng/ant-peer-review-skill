@@ -177,6 +177,7 @@
   "decide.hint": "Review done. To finish, run: ant-peer-review decide {run} --choice A|B|manual [--rule <red_line>=confirmed|dismissed]",
   "run.resume_hint": "Resume with: ant-peer-review resume {run}",
   "run.paused": "Paused ({reason}). Resume with: ant-peer-review resume {run}",
+  "run.unreviewable": "Not reviewable: every reviewer refused ({models}); no score or grade. Retry with: ant-peer-review resume {run}",
   "run.interrupted": "Interrupted; progress saved. Resume with: ant-peer-review resume {run}",
   "report.rl.advisory": "Advisory (no veto)",
   "dim.macro": "Structure and logic (Macro)",

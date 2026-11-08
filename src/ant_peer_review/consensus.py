@@ -163,7 +163,7 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
             status = "confirmed"
         else:
             status = "needs_ruling"
-        if k in rulings and status == "needs_ruling":
+        if k in rulings:     # S-decision-015: the human ruling is final, whatever the panel said
             status = {"confirmed": "confirmed", "dismissed": "dismissed"}[rulings[k]]
             ruled = True
         else:

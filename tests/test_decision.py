@@ -172,3 +172,22 @@ def test_share_run_hint_has_no_plan_choice(tmp_path):
         assert want in Ctx.io.text and (avoid is None or avoid not in Ctx.io.text), Ctx.io.text
     for lang in ("en", "zh-CN"):
         assert T(lang)("decide.hint_share", run="x") != "decide.hint_share"
+
+
+# @S-decision-015
+def test_human_ruling_overrides_a_confirmed_red_line(tmp_path):
+    run, store = setup(tmp_path, flags_opus=["pr_landmine"])
+    write_json(run.path("03-reviews/sonnet.json"), ok("sonnet", review_data(flags=["pr_landmine"])))
+    cons = compute_consensus(run, M, TH)
+    assert cons["red_lines"]["pr_landmine"]["status"] == "confirmed" and cons["grade"] == "fail"
+    decide(run, store, None, choice="A", rulings={"pr_landmine": "dismissed"})
+    cons = read_json(run.path("05-consensus.json"))
+    rl = cons["red_lines"]["pr_landmine"]
+    assert rl["status"] == "dismissed" and rl["human_ruling"] and cons["grade"] != "fail"
+    from ant_peer_review.report import latest_version
+    md = run.path(f"06-report.v{latest_version(run)}.md").read_text()
+    assert "Dismissed ✋" in md and "CONFIRMED" not in md
+    from ant_peer_review.deliver import render_review
+    from ant_peer_review.i18n import T
+    review = render_review(run, cons, T("en"), TH, None)
+    assert "| Dismissed |" in review and "veto: —" in review and "**Pass**" in review

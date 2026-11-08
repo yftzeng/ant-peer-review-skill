@@ -279,7 +279,8 @@ def run_ctx(args, io: IO, store: Store, cfg: Config, run: Run) -> Ctx:
 
 
 def finish(status: str) -> int:
-    return {"done": EXIT_OK, "paused": EXIT_PAUSED, "interrupted": EXIT_INTERRUPTED}[status]
+    return {"done": EXIT_OK, "paused": EXIT_PAUSED, "unreviewable": EXIT_PAUSED,
+            "interrupted": EXIT_INTERRUPTED}[status]
 
 
 def _delete_menu(io: IO, t: T, pending: list[Run]) -> None:
@@ -627,23 +628,27 @@ def cmd_lessons(args, io, store, cfg) -> int:
 
 
 def summary_rows(store: Store) -> list[dict]:
+    return [summary_row(r) for r in list_runs(store.runs_dir)]
+
+
+def summary_row(r) -> dict:
     from .report import latest_version
-    rows = []
-    for r in list_runs(store.runs_dir):
-        intake = read_json(r.path("00-intake.json"), default={})
-        first = (intake.get("targets") or [{}])[0]
-        title = first.get("title") or (first.get("value", "").strip().splitlines() or [""])[0]
-        title = title.lstrip("# ").strip()[:60]
-        v = latest_version(r)
-        meta = read_json(r.path(f"06-report.v{v}.json"), default={}) if v else {}
-        cons = read_json(r.path("05-consensus.json"), default={})
-        red = [k for k, s in meta.get("red_lines", {}).items() if s == "confirmed"]
-        nxt = r.first_incomplete()
-        rows.append({"run": r.id, "title": title, "report": f"v{v}" if v else "",
-                     "total": meta.get("total", ""), "grade": meta.get("grade", ""),
-                     "red_lines": " ".join(red), "findings": len(cons.get("findings", []))
-                     if cons else "", "next": nxt or "done"})
-    return rows
+    intake = read_json(r.path("00-intake.json"), default={})
+    first = (intake.get("targets") or [{}])[0]
+    title = first.get("title") or (first.get("value", "").strip().splitlines() or [""])[0]
+    title = title.lstrip("# ").strip()[:60]
+    v = latest_version(r)
+    meta = read_json(r.path(f"06-report.v{v}.json"), default={}) if v else {}
+    cons = read_json(r.path("05-consensus.json"), default={})
+    red = [k for k, s in meta.get("red_lines", {}).items() if s == "confirmed"]
+    nxt = r.first_incomplete()
+    if r.state()["phases"]["review"]["status"] == "unreviewable":   # S-review-panel-027
+        return {"run": r.id, "title": title, "report": "", "total": "", "grade": "unreviewable",
+                "red_lines": "", "findings": "", "next": "review"}
+    return {"run": r.id, "title": title, "report": f"v{v}" if v else "",
+            "total": meta.get("total", ""), "grade": meta.get("grade", ""),
+            "red_lines": " ".join(red), "findings": len(cons.get("findings", []))
+            if cons else "", "next": nxt or "done"}
 
 
 def cmd_recheck(args, io, store, cfg) -> int:
