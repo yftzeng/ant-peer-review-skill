@@ -124,6 +124,7 @@
   "report.action": "Requested action",
   "report.disagreements": "Disagreements (unresolved)",
   "report.unverified": "Findings set aside: they rest on unverified facts",
+  "report.withheld_anchor": "rests on a paragraph the injection scan withheld: check it by hand",
   "report.ledger": "Fact-check ledger",
   "strength.strong": "strong sources",
   "strength.single": "a single source",

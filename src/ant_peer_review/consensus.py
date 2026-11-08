@@ -55,8 +55,14 @@ def grade_for(total: float, thresholds: dict[str, float]) -> str:
 
 def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dict],
                ledger: list[dict], intake: dict, models: list[str],
-               thresholds: dict[str, float], rulings: dict[str, str] | None = None) -> dict:
+               thresholds: dict[str, float], rulings: dict[str, str] | None = None,
+               withheld: set[str] | frozenset = frozenset()) -> dict:
+    """withheld: paragraph ids the injection scan kept from the reviewers (S-review-panel-028)."""
     rulings = rulings or {}
+
+    def hidden(anchor: str) -> str | None:
+        pid = ".".join(str(anchor).split(".")[:2])
+        return pid if pid in withheld else None
     active = [m for m in models if reviews.get(m, {}).get("status") == "ok"]
     n = len(active)
     from .prompts import assign_seats
@@ -115,7 +121,10 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
         refs = [ref_to_claim.get(f"{issues[g]['model']}:{k}")
                 for g in members for k in issues[g].get("claim_ids", [])]
         weak = [c["id"] for c in refs if c and c["status"] == "cannot_verify"]
-        if weak:
+        if hidden(f["anchor"]):     # the reviewers could not read it: a human checks, no score
+            f["withheld"] = hidden(f["anchor"])
+            unverified.append(f)
+        elif weak:
             f["unverified_claims"] = sorted(set(weak))
             unverified.append(f)
         else:
@@ -137,6 +146,9 @@ def synthesize(*, rubric: dict, reviews: dict[str, dict], debates: dict[str, dic
             for rl in reviews[m]["data"].get("red_lines", []):
                 if rl["key"] == k and rl.get("flag"):
                     s = RL_SEV.get(rl.get("severity", "none"), 0)
+                    anchors = rl.get("anchors") or []
+                    if anchors and all(hidden(x) for x in anchors):
+                        s = min(s, VETO_MIN_SEV - 1)   # resting on withheld text only: advisory
                     # Only a medium/high flag supports a veto; low is advisory.
                     (flaggers if s >= VETO_MIN_SEV else advisory).append(m)
                     sev = max(sev, s)

@@ -178,6 +178,14 @@ Feature: review panel
     Then  it stops after the review as "unreviewable": no fact-check, debate, consensus or report, no score and no grade,
           and "runs --summary" shows "unreviewable" in place of a grade
     And   with one refusal and one review the run goes on as before
+
+  @S-review-panel-028
+  Scenario: a withheld paragraph never counts against the author
+    Given a finding anchored to a withheld paragraph, another finding elsewhere, and a red line both reviewers flag only on that paragraph
+    When  the consensus is computed
+    Then  the first finding is listed for a human to check ("withheld"), not among the scored findings; the red line is advisory;
+          without the paragraph withheld the red line would be confirmed
+    And   every reviewer prompt says a withheld paragraph is the tool's decision, not a fault of the text
 ```
 
 ## Must NOT
@@ -198,3 +206,4 @@ Feature: review panel
 - 2026-11-02 · +S-review-panel-026 · decision: none -- user: evaluate AI-writing tells in audits; listed as style signals only (humanizer: judging by feel is near chance, several tells together are the safeguard)
 - 2026-11-02 · ~S-review-panel-026 · decision: none -- live audit: 29 rows of half-width parentheses and one lone buzzword drowned the signal; list only what the gate would edit
 - 2026-11-09 · +S-review-panel-027 · decision: none -- user feedback (B10): four runs where both reviewers refused still produced a total of 0.0 and fail after the later phases ran, $42 in all
+- 2026-11-09 · +S-review-panel-028 · decision: none -- user feedback (B2, B9): reviewers listed "a key section is broken" (major) for a withheld paragraph, and one raised a PR landmine from withheld content

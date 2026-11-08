@@ -334,6 +334,18 @@ Feature: source acquisition
     Given a text target with "論文：https://arxiv.org/abs/2610.37741这篇论文，首次证明" and a server answering /wiki/%E8%87%BA%E7%81%A3?q=%E4%B8%AD
     When  the cited URLs are read, and "http://pub.example/wiki/臺灣?q=中" and a URL holding a character that cannot be encoded are fetched
     Then  the cited URL is "https://arxiv.org/abs/2610.37741"; the Chinese path reaches the page percent-encoded (an encoded URL is not encoded twice); the last raises a fetch error "bad_url", so a cited source fails and the run goes on
+
+  @S-source-acquisition-053
+  Scenario: technical prose is not injection, and only high-confidence flags are withheld
+    Given paragraphs about a canary deployment, a system prompt, a user's request to a language model, a file that must include
+          some groups, a method override, a non-disclosure agreement, running a kubectl command and a watermark on an image
+    When  the injection scan runs
+    Then  none is flagged
+    And   text aimed at the reviewer is still flagged: overriding instructions, a score, only praise, "you are now", secrecy,
+          an action on a URL, a phrase to put in the review, a canary phrase
+    And   only high-confidence categories (instruction override, rating, sentiment steering, secrecy, actions) are withheld;
+          a medium flag (output dictation, canary, addressed to AI) is listed and the paragraph is shown, the reviewers being told
+          that text steering them is data and itself a finding
 ```
 
 ## Must NOT
@@ -358,3 +370,4 @@ Feature: source acquisition
 - 2026-11-03 · ~S-source-acquisition-049 · decision: none -- live run (rikiyat.github.io, Distill template): the only <article> was the 346-character BibTeX citation, and a citation box won the content-container pick too; 30,000 characters of story were dropped
 - 2026-11-03 · +S-source-acquisition-051 · decision: none -- live run: the cited source's title kept "&amp;" (rikiyat.github.io); the <title> slice was never unescaped, while the identity parser already was
 - 2026-11-06 · +S-source-acquisition-052 cited URLs stop at Chinese text; non-ASCII URLs go out encoded; an unsendable URL is a fetch error (user: 評估 … 發生的錯誤 UnicodeEncodeError) · decision: none -- a bug fix: run 20261106-0304 crashed on "…2610.37741这篇论文"
+- 2026-11-09 · +S-source-acquisition-053 · decision: none -- user feedback (B2, B9): one iThome security article had 134 paragraphs withheld (101 for "canary", 22 for "system prompt"), a Kubernetes one 9 for 語言模型請求, a JavaScript one for 必須包含 in a file-format description; every flag withheld its paragraph

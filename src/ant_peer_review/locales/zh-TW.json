@@ -124,6 +124,7 @@
   "report.action": "建議修法",
   "report.disagreements": "未解決的分歧",
   "report.unverified": "暫列：依賴未驗證事實的發現",
+  "report.withheld_anchor": "依據的段落被提示注入掃描扣下，請人工確認",
   "report.ledger": "事實查證帳本",
   "strength.strong": "來源充分",
   "strength.single": "單一來源",

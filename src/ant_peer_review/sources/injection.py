@@ -13,9 +13,9 @@ import unicodedata
 
 CATEGORIES = {
     "rating_manipulation": [
-        r"\b(?:give|rate|score|grade)\b[^.\n]{0,40}\b(?:10/10|\d+\s*/\s*\d+|full marks|5 stars|"
-        r"highest|perfect|accept)\b",
-        r"(?:給|打|評)[^。\n]{0,10}(?:滿分|高分|10\s*分|五星)", r"(?:给|打|评)[^。\n]{0,10}(?:满分|高分|10\s*分|五星)",
+        r"\b(?:give|rate|score|grade)\s+(?:this|the|it|my|our)\b[^.\n]{0,30}\b(?:10/10|\d+\s*/\s*\d+|"
+        r"full marks|5 stars|highest|perfect|accept)\b",
+        r"(?:給|打|評|给|评)(?:這篇|这篇|本文|此文|這份|这份|它|我|作者)[^。\n]{0,6}(?:滿分|满分|高分|五星|10\s*分)",
     ],
     "sentiment_steering": [
         r"\b(?:only (?:praise|positive)|do not (?:criticize|mention (?:any )?weakness))",
@@ -24,31 +24,36 @@ CATEGORIES = {
     "output_dictation": [
         r"\b(?:must include|include the (?:exact )?phrase|end (?:your|the) (?:review|answer) with|"
         r"start (?:your|the) (?:review|answer) with)\b",
-        r"(?:必須包含|必须包含|以此結尾|以此结尾|請在(?:回答|評語)中加入)",
+        r"(?:回答|評語|评语|審稿|审稿|評論|评论|回覆|回复)[^。\n]{0,10}(?:必須包含|必须包含)"
+        r"|(?:以此結尾|以此结尾|請在(?:回答|評語|审稿|審稿)中加入|请在(?:回答|评语)中加入)",
     ],
     "canary_check": [
-        r"\b(?:canary|watermark|verification phrase|confirm you (?:have )?read)\b",
+        r"\b(?:canary (?:phrase|token|word|string|code)|verification phrase|confirm you (?:have )?read)\b",
         r"(?:確認已讀|确认已读|暗號|暗号)",
     ],
     "instruction_override": [
         r"\b(?:ignore|disregard|forget)\b[^.\n]{0,30}\b(?:previous|prior|above|earlier|all)\b"
         r"[^.\n]{0,20}\b(?:instructions?|prompts?|rules?)\b",
-        r"\b(?:system prompt|developer message|you are now|new instructions?|override)\b",
+        r"\b(?:ignore|disregard|forget|override|reveal|print)\b[^.\n]{0,20}\b(?:system prompt|developer message)\b",
+        r"\byou are now (?:a|an|the|my)\b", r"\bnew instructions?\s*[:：]",
         r"(?:忽略|無視|无视)[^。\n]{0,10}(?:之前|以上|先前|所有)[^。\n]{0,6}(?:指令|指示|規則|规则)",
         r"</?(?:system|assistant|instructions?)>",
     ],
     "addressed_to_ai": [
-        r"\b(?:(?:ai|llm|language model|reviewer|grader|assistant|chatgpt|claude)s?\b[^.\n]{0,30}"
-        r"\b(?:should|must|reading this))",
-        r"(?:審稿人|审稿人|AI|大模型|語言模型|语言模型)[^。\n]{0,10}(?:請|请|必須|必须|應該|应该)",
+        r"\b(?:ai|llm|language model|reviewer|grader|assistant|chatgpt|claude)s? reading this\b",
+        r"\b(?:dear|attention|note to (?:the )?)\s*(?:ai|llm|reviewer|grader|assistant|model)\b",
+        r"(?:審稿人|审稿人|審稿者|审稿者|評審|评审|AI|大模型|語言模型|语言模型)[，,：:\s]{0,2}(?:你)?"
+        r"(?:請(?!求)|请(?!求)|必須|必须|務必|务必)",
     ],
     "secrecy_request": [
-        r"\b(?:do not (?:disclose|reveal|tell|mention)|silently|without telling|keep this secret)\b",
-        r"(?:不要告訴|不要告诉|不要透露|勿告知|保密)",
+        r"\b(?:do not (?:disclose|reveal|tell)|without telling|keep this secret)\b",
+        r"(?:不要告訴|不要告诉|不要透露|勿告知|(?:請|请|(?<![需不])要)(?:對[^。\n]{0,6})?保密)",
     ],
     "action_request": [
-        r"\b(?:visit|open|fetch|send|post|upload|exfiltrate)\b[^.\n]{0,30}\bhttps?://",
-        r"\b(?:run|execute)\b[^.\n]{0,20}\b(?:code|command|script|shell)\b",
+        r"\b(?:you|reviewer|grader|assistant|ai|llm|model)\b[,:]?\s*(?:please\s+)?(?:must\s+|should\s+)?"
+        r"(?:visit|open|fetch|send|post|upload|exfiltrate)\b[^.\n]{0,30}\bhttps?://",
+        r"\b(?:you|reviewer|grader|assistant|ai|llm|model)\b[,:]?\s*(?:please\s+)?(?:must\s+|should\s+)?"
+        r"(?:run|execute)\b[^.\n]{0,20}\b(?:code|command|script|shell)\b",
     ],
 }
 _COMPILED = {k: [re.compile(p, re.I) for p in v] for k, v in CATEGORIES.items()}
@@ -95,7 +100,7 @@ def scan(segments: list[dict], hidden: list[dict]) -> dict:
             cats = cats + ["format_controls"]
         if cats:
             fid = add(seg["id"], "visible", cats, seg["text"], cf)
-            if set(cats) - {"format_controls"}:
+            if set(cats) & HIGH:   # S-source-acquisition-053: a medium flag is listed, not withheld
                 withheld[seg["id"]] = fid
     for h in hidden:
         cats = categorize(h["text"])

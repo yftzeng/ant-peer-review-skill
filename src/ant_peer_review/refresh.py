@@ -16,7 +16,9 @@ def compute_consensus(run: Run, models: list[str], thresholds: dict[str, float])
                       debates=load_records(run, "04-debate"),
                       ledger=read_ledger(run), intake=read_json(run.path("00-intake.json")),
                       models=models, thresholds=thresholds,
-                      rulings=decision.get("rulings", {}))
+                      rulings=decision.get("rulings", {}),
+                      withheld=set(read_json(run.path("01-sources/injection-scan.json"),
+                                             default={}).get("withheld", {})))
     write_json(run.path("05-consensus.json"), cons)
     return cons
 

@@ -12,9 +12,10 @@ RUB = propose(SKIP)
 INTAKE = {"audience": SKIP}
 
 
-def synth(reviews, debates=None, ledger=(), models=("opus", "sonnet"), rulings=None):
+def synth(reviews, debates=None, ledger=(), models=("opus", "sonnet"), rulings=None, withheld=None):
     return synthesize(rubric=RUB, reviews=reviews, debates=debates or {}, ledger=list(ledger),
-                      intake=INTAKE, models=list(models), thresholds=TH, rulings=rulings)
+                      intake=INTAKE, models=list(models), thresholds=TH, rulings=rulings,
+                      **({"withheld": withheld} if withheld is not None else {}))
 
 
 def deb(model, *responses):
@@ -347,3 +348,23 @@ def test_every_reviewer_refusing_makes_the_run_unreviewable(tmp_path):
     assert cli.finish("unreviewable") == cli.EXIT_PAUSED
     row = cli.summary_row(run)
     assert row["grade"] == "unreviewable" and row["total"] == ""
+
+
+# @S-review-panel-028
+def test_withheld_paragraphs_never_count_against_the_author():
+    from ant_peer_review import prompts
+    assert "withheld" in prompts.SHARED_RULES and "not a fault of the text" in prompts.SHARED_RULES
+    reviews = {"opus": ok("opus", review_data(issues=[{"id": "I1", "anchor": "D1.P05.S1"},
+                                                       {"id": "I2", "anchor": "D1.P02.S1"}],
+                                              flags=["pr_landmine"])),
+               "sonnet": ok("sonnet", review_data(flags=["pr_landmine"]))}
+    for m in reviews:
+        for rl in reviews[m]["data"]["red_lines"]:
+            if rl["key"] == "pr_landmine":
+                rl["anchors"] = ["D1.P05"]
+    cons = synth(reviews, withheld={"D1.P05"})
+    assert [f["anchor"] for f in cons["findings"]] == ["D1.P02.S1"]
+    u = cons["unverified_findings"]
+    assert [f["anchor"] for f in u] == ["D1.P05.S1"] and u[0]["withheld"] == "D1.P05"
+    assert cons["red_lines"]["pr_landmine"]["status"] == "advisory"
+    assert synth(reviews)["red_lines"]["pr_landmine"]["status"] == "confirmed"

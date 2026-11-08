@@ -124,6 +124,7 @@
   "report.action": "建议修法",
   "report.disagreements": "未解决的分歧",
   "report.unverified": "暂列：依赖未验证事实的发现",
+  "report.withheld_anchor": "依据的段落被提示注入扫描扣下，请人工确认",
   "report.ledger": "事实核查账本",
   "strength.strong": "来源充分",
   "strength.single": "单一来源",

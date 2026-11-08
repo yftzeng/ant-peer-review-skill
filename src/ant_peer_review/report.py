@@ -245,8 +245,9 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
         L.append(f"## {t('report.unverified')}")
         L.append("")
         for f in cons["unverified_findings"]:
-            L.append(f"- **{f['id']}** {cell(f['anchor'])}: {cell(f['observation'])} "
-                     f"({', '.join(f['unverified_claims'])})")
+            why = t("report.withheld_anchor") if f.get("withheld") else \
+                ", ".join(f.get("unverified_claims", []))
+            L.append(f"- **{f['id']}** {cell(f['anchor'])}: {cell(f['observation'])} ({why})")
     L.append("")
     L.append(f"## {t('report.ledger')}")
     L.append("")
