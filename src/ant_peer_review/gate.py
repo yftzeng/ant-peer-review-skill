@@ -75,6 +75,13 @@ STAGING = {
                  r"\b(?:some|critics) (?:might|will|may) (?:say|argue)\b|\byou might (?:think|say)\b",
     "this_is_recap": r"(?:這|这)是我(?:在)?(?:看|讀|读|看到|讀到|读到|看完|讀完|读完)[^。！？\n]{1,60}"
                      r"(?:後|后|之後|之后|時|时)(?:想到|想起|的感想|的心得|的體會|的体会)",
+    "apology_trap": r"錯誤已(?:經)?發生|错误已(?:经)?发生|疏失已(?:經)?發生"
+                    r"|(?:如果|若)(?:有|造成|讓|让)[^。！？!?\n]{0,14}?(?:不舒服|不適|不适|冒犯|誤會|误会|困擾|困扰)"
+                    r"|媒體(?:報導|報道)(?:所)?(?:提到|提及|指出)的(?:疑慮|問題)|媒体报道(?:所)?(?:提到|提及|指出)的(?:疑虑|问题)"
+                    r"|(?:讓|让)我們(?:繼續)?向前看|让我们(?:继续)?向前看"
+                    r"|\b(?:mistakes|errors) (?:were|have been) made\b"
+                    r"|\bif (?:anyone|any of you) (?:was|were|felt|has been|have been)[^.!?\n]{0,20}?(?:offended|upset|hurt)"
+                    r"|\bconcerns raised in (?:news|media|press) reports\b|\b(?:let's|let us) move on\b",
     "chatbot_residue": r"希望(?:這|这)?(?:對|对)(?:你|您)有(?:所)?幫助|希望(?:這|这)?(?:對|对)(?:你|您)有(?:所)?帮助|"
                        r"\bI hope this helps\b|\bgreat question\b|\blet me know if\b",
     "metaphor": r"(?:學習|学习|成長|成长|轉型|转型)之?旅|北極星|北极星|飛輪|飞轮|"
@@ -402,7 +409,7 @@ EDIT_RULES = (
     "dropped facts; then write the final text. State points directly instead of patching "
     "phrases: no contrast that knocks down a claim nobody made, no closing line that repeats "
     "the point, no staged opener, no filler connector, no inflated significance, no triad "
-    "unless there are three real items, no dashes, no Markdown, no clauses chained with semicolons, no quote left hanging and then explained with 'this is' (say who said it and when first, then the quote). Claim no more than its cases show: two cases make no 'all'. Priority: accurate, clear, "
+    "unless there are three real items, no dashes, no Markdown, no clauses chained with semicolons, no quote left hanging and then explained with 'this is' (say who said it and when first, then the quote). When the text apologises, own the act in the first person: no 'mistakes were made', no 'if anyone was offended', never place the concern with the press, never hurry to move on. Claim no more than its cases show: two cases make no 'all'. Priority: accurate, clear, "
     "specific, in the person's voice, then stylish. Keep the language and the punctuation "
     "conventions of the text (full-width punctuation in Chinese).")
 

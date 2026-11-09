@@ -305,3 +305,14 @@ def test_clickbait_headline_is_strong():
     got = judge(b, "sonnet", {"a": "研究團隊讓 Claude 先講再改。"}, voice="")
     assert [(i["code"], i["level"]) for i in got["a"]] == [("judge:clickbait", "strong")]
 
+
+# @S-writing-gate-021
+def test_apology_traps_are_strong():
+    for text in ("錯誤已經發生，我們會改進。", "如果造成您的不舒服，我們很抱歉。", "關於媒體報導提到的疑慮，說明如下。",
+                 "讓我們向前看。", "Mistakes were made.", "We apologise if anyone was offended.",
+                 "On the concerns raised in news reports, we answer.", "Let's move on."):
+        assert "apology_trap" in codes(rule_check(text), "strong"), text
+    for text in ("我們會向前看下一季的數字。", "他說「錯誤已經發生」。", "We made a mistake and we are sorry."):
+        assert "apology_trap" not in codes(rule_check(text)), text
+    assert "own the act" in EDIT_RULES
+

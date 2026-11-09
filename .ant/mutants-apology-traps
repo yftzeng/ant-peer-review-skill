@@ -1,0 +1,12 @@
+# 向前看 alone counts
+@@ src/ant_peer_review/gate.py
+-                     r"|(?:讓|让)我們(?:繼續)?向前看|让我们(?:继续)?向前看"
++                     r"|向前看"
+# conditional apology dropped
+@@ src/ant_peer_review/gate.py
+-                     r"|(?:如果|若)(?:有|造成|讓|让)[^。！？!?\n]{0,14}?(?:不舒服|不適|不适|冒犯|誤會|误会|困擾|困扰)"
++                     r"|(?!x)x"
+# rule weak
+@@ src/ant_peer_review/gate.py
+- STAGING_WEAK = {"metaphor"}
++ STAGING_WEAK = {"metaphor", "apology_trap"}

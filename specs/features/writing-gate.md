@@ -168,7 +168,14 @@ Feature: writing gate
     Then  it is a strong tell "clickbait"; the same words in a later line, or inside quotes in the first line, are not
     And   the judge checks "clickbait" too, a strong tell: it fails when the headline or first line withholds the core fact
           to make a reader click, teases, or promises more than the text delivers
-```
+
+  @S-writing-gate-021
+  Scenario: the traps of an apology are strong tells
+    Given texts with "錯誤已經發生", "如果造成您的不舒服，我們很抱歉", "媒體報導提到的疑慮", "讓我們向前看"
+          and "Mistakes were made", "if anyone was offended", "concerns raised in news reports", "let's move on"
+    When  the rule check runs
+    Then  each is a strong tell "apology_trap"
+    And   "我們會向前看下一季的數字" and quoted words are not, and the edit is told to own the act instead
 
 ## Must NOT
 - @N-writing-gate-001 a reply or post that failed the gate is written without a warning header; a revision paragraph that failed is not listed as failed in its plan's checks file
@@ -193,3 +200,4 @@ Feature: writing gate
 - 2026-11-06 · ~S-writing-gate-014 · decision: none -- vault-particles rerun: "…出現了三次，三次結局都不一樣。" and "最後兩點限制。" passed; user: 按你建議
 - 2026-11-06 · ~S-writing-gate-011 ~S-writing-gate-014 · decision: none -- vault-particles rerun: "同一個專案裡剛好有兩個對照。" and "要看這一步出錯時多快會被發現，不是看點子聰不聰明" passed; user: 按你建議
 - 2026-11-06 · ~S-writing-gate-011 · decision: none -- vault-particles rerun headline "AI 能不能即興，要看錯了多快會被發現，不是點子多聰明" passed; user: 按你建議
+- 2026-11-10 · +S-writing-gate-021 · decision: none -- from the user's own notes on apology statements: replies that answer criticism pick these up; clearing ourselves ("nothing was compromised") is left out, since a share post may report it as the article's fact
