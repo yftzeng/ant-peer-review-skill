@@ -176,6 +176,7 @@ Feature: writing gate
     When  the rule check runs
     Then  each is a strong tell "apology_trap"
     And   "我們會向前看下一季的數字" and quoted words are not, and the edit is told to own the act instead
+```
 
 ## Must NOT
 - @N-writing-gate-001 a reply or post that failed the gate is written without a warning header; a revision paragraph that failed is not listed as failed in its plan's checks file
