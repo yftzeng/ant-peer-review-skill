@@ -144,7 +144,7 @@ def test_voice_learned_per_platform(env):
 # @S-share-001
 def test_share_intake_order_and_preselection(env):
     save_voice(env.home, voice("linkedin", insight=3, summary=1))
-    io = ScriptedIO(["3", "Some pasted article text with 2025 numbers.", "/done",
+    io = ScriptedIO(["3", "Some pasted article text with 2025 numbers.", "/done", "",
                      "", "",           # output languages, angle: comment
                      "1", "4", "",     # platforms: untick Facebook, tick X as well, confirm
                      "2",              # X has no voice: borrow LinkedIn's
@@ -171,7 +171,7 @@ def test_share_intake_order_and_preselection(env):
 
 # @S-share-007
 def test_voice_created_inside_the_intake(env):
-    answers = ["3", "Some pasted article text with 2025 numbers.", "/done", "", "",
+    answers = ["3", "Some pasted article text with 2025 numbers.", "/done", "", "", "",
                "1 2", "",                                    # platforms: Threads only
                "1",                                          # create its voice now
                "一篇。", "---", "兩篇。", "---", "三篇。", "/done", "扎實", "賦能",
@@ -187,7 +187,7 @@ def test_voice_created_inside_the_intake(env):
     assert intake["share"]["voices"] == {"threads": "own"}
     assert [t for _, t in CountingFake.calls].count("voice") == 1
 
-    io = ScriptedIO(["3", "Another article, 2026.", "/done", "", "", "1", "", "", "",  # Threads ticked now; Facebook off
+    io = ScriptedIO(["3", "Another article, 2026.", "/done", "", "", "", "1", "", "", "",  # Threads ticked now; Facebook off
                      "6", "",                                # tick "rebuild this voice"
                      "新的一篇。", "/done", "", "",
                      "", "", ""])                            # styles again, fact sources, reader mix
@@ -199,12 +199,12 @@ def test_voice_created_inside_the_intake(env):
 # @S-share-008
 def test_neutral_never_ask_is_remembered(env, tmp_path):
     save_voice(env.home, voice("threads", question=3))
-    io = ScriptedIO(["3", "Article text, 2025.", "/done", "", "", "1 2 4", "",  # X only (Facebook, Threads were ticked)
+    io = ScriptedIO(["3", "Article text, 2025.", "/done", "", "", "", "1 2 4", "",  # X only (Facebook, Threads were ticked)
                      "4", "", "", "", "", ""])                      # never ask; stance, take, style, facts, readers
     cli.main([], io=io, store=env)
     run = list_runs(env.runs_dir)[-1]
     assert read_json(run.path("00-intake.json"))["share"]["voices"] == {"x": "neutral"}
-    io = ScriptedIO(["3", "Article text, 2026.", "/done", "", "", "1 2 4", "", "", "", "", "", ""])
+    io = ScriptedIO(["3", "Article text, 2026.", "/done", "", "", "", "1 2 4", "", "", "", "", "", ""])
     cli.main([], io=io, store=env)
     assert "X/Twitter has no voice of yours" not in io.text and "Post styles for X" in io.text
 
@@ -274,7 +274,7 @@ def test_share_neither_weighs_nor_scores(tmp_path):
 
 # @S-share-010
 def test_share_intake_asks_angle_and_distill_rules(env):
-    io = ScriptedIO(["3", "Some pasted article text with 2025 numbers.", "/done",
+    io = ScriptedIO(["3", "Some pasted article text with 2025 numbers.", "/done", "",
                      "",               # output language
                      "2",              # angle: distill
                      "1", "2", "",     # platforms: Facebook (ticked) off, Threads on

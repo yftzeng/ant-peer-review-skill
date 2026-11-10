@@ -12,8 +12,9 @@ from .backends.base import get_backend
 from .articles import article_key, feed_of, latest_feed_run, oldest_first, reviewed_articles
 from .decision import Postponed, run_decision
 from .i18n import T
-from .intake import (ask_audience, ask_fact_sources, ask_output_langs, ask_purpose, ask_share,
-                     build_intake_from_args, collect_targets, parse_share)
+from .intake import (STATUS_PURPOSES, ask_audience, check_source_status, status_fields, ask_fact_sources, ask_output_langs,
+                     ask_purpose, ask_share, ask_source_status, build_intake_from_args,
+                     collect_targets, parse_share)
 from .jsonio import read_json, read_jsonl, write_json
 from .lessons import add_lesson, all_lessons, archive_lesson, lessons_for, promote_if_repeated
 from .onboarding import banner, choose_backend, choose_lang, choose_models, effective_models, first_use
@@ -53,6 +54,10 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--take", help="share: your own experience or view, the only one the posts may use")
     n.add_argument("--share-style", help="share: e.g. x=summary+pick,linkedin=insight "
                                          "(default: your voice's most used style)")
+    n.add_argument("--source-status", help="audit, share: public (default), preprint, under_review "
+                   "(a manuscript sent to you to review) or embargoed")
+    n.add_argument("--confidential-ok", action="store_true",
+                   help="under_review or embargoed: the editor or the author allowed an outside AI service")
     n.add_argument("--target", action="append", default=[], help="URL, path or text (repeat)")
     n.add_argument("--audience", help="e.g. expertise=expert+scholar,purpose=trend,lens=custom:regulators "
                         "(several values per layer joined with +)")
@@ -127,6 +132,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     rc = sub.add_parser("recheck", parents=[common],
                         help="check an author's revised version against a run's findings")
+    rc.add_argument("--source-status", help="for a run saved without one: public, preprint, "
+                    "under_review or embargoed")
+    rc.add_argument("--confidential-ok", action="store_true",
+                    help="under_review or embargoed: the editor or the author allowed an outside AI service")
     rc.add_argument("run")
     rc.add_argument("--target", required=True, help="the revised version: URL, path or text")
     rc.add_argument("--response", help="file with the author's reply (read only after gate 1)")
@@ -326,6 +335,11 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
     ctx = make_ctx(args, io, store, cfg)
     io.say(banner(ctx.t, ctx.models))
     if args.target or args.yes:
+        status = args.source_status
+        if status is None and not args.yes and (args.purpose or "audit") in STATUS_PURPOSES:
+            status = ask_source_status(io, ctx.t, args.purpose or "audit")   # S-intake-016
+            if status is None:
+                return EXIT_USAGE
         try:
             share = parse_share(args.platform, args.stance, args.take, args.share_style,
                                 store.home, args.angle, not args.no_credit) \
@@ -333,7 +347,10 @@ def cmd_new(args, io: IO, store: Store, cfg: Config) -> int:
             from .outlang import parse as parse_langs
             intake = build_intake_from_args(args.purpose or "audit", args.target, args.audience,
                                             lang=ctx.lang, academic=args.academic, share=share,
-                                            output_langs=parse_langs(args.output_lang, ctx.lang))
+                                            output_langs=parse_langs(args.output_lang, ctx.lang),
+                                            source_status=status,
+                                            confidential_ok=args.confidential_ok
+                                            or (status != args.source_status))
         except ValueError as e:
             io.say(f"error: {e}")
             return EXIT_USAGE
@@ -366,6 +383,11 @@ def interactive_intakes(io: IO, store: Store, ctx: Ctx) -> list[dict]:
     sources and brand, preselected from the checklist."""
     t = ctx.t
     base = {"purpose": ask_purpose(io, t), "targets": collect_targets(io, t), "lang": ctx.lang}
+    if base["purpose"] in STATUS_PURPOSES:      # S-intake-016: before the feed and the analysis
+        status = ask_source_status(io, t, base["purpose"])
+        if status is None:
+            return []
+        base.update(status_fields(status))
     peeks: dict = {}
     groups = split_feeds(io, t, base, store, interactive=True, limit=None,
                          reviewers=len(ctx.models), peeks=peeks)
@@ -688,6 +710,20 @@ def cmd_recheck(args, io, store, cfg) -> int:
     ctx = make_ctx(args, io, store, cfg, models=models, backend=backend, lang=args.lang or lang)
     io.say(banner(ctx.t, ctx.models))
     intake = dict(read_json(parent.path("00-intake.json")))
+    if intake.get("purpose") in STATUS_PURPOSES and ("source_status" not in intake
+                                                       or args.source_status is not None):  # S-intake-016
+        if args.source_status is not None or args.yes:
+            try:
+                check_source_status(intake["purpose"], args.source_status or "", args.confidential_ok)
+            except ValueError as e:
+                io.say(f"error: {e}")
+                return EXIT_USAGE
+            status = args.source_status
+        else:
+            status = ask_source_status(io, ctx.t, intake["purpose"])
+            if status is None:
+                return EXIT_USAGE
+        intake.update(status_fields(status))
     intake["targets"] = [classify_target(args.target)]
     intake["parent"] = parent.id
     run = create_run(store.runs_dir, f"recheck {parent.id[14:]}", models=ctx.models,

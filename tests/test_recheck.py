@@ -17,6 +17,8 @@ RESPONSE = "Dear editor, F01 fixed and F02 fixed. AUTHOR-RESPONSE-MARKER"
 
 def parent_run(home):
     run = make_run(home, text="# Old\n\nOld para one.\n\nOld para two.")
+    write_json(run.path("00-intake.json"), dict(read_json(run.path("00-intake.json")),
+                                                source_status="public"))
     rub = read_json(run.path("02-rubric.json"))
     for d, w in zip(rub["dimensions"], (40, 20, 20, 20)):
         d["weight"] = w
@@ -160,3 +162,37 @@ def test_old_verdict_names_are_read_as_new():
     assert merge_verdicts({"a": "PARTIALLY"}) == ("IMPROVED", "unanimous")
     assert merge_verdicts({"a": "NOT_ADDRESSED", "b": "UNCHANGED"}) == ("UNCHANGED", "unanimous")
     assert merge_verdicts({"a": "MADE_WORSE"}) == ("WORSE", "unanimous")
+
+
+# @S-intake-016
+def test_recheck_of_a_run_without_a_status_asks_for_one(env):
+    store, home, mp = env
+    parent, fids = parent_run(home)
+    old = read_json(parent.path("00-intake.json"))
+    del old["source_status"]
+    write_json(parent.path("00-intake.json"), old)
+    b = backend({"opus": {f: "RESOLVED" for f in fids}, "sonnet": {f: "RESOLVED" for f in fids}})
+    assert run_recheck(store, mp, b, [parent.id, "--target", "# New\n\nRevised.", "--yes"]) == cli.EXIT_USAGE
+    assert run_recheck(store, mp, b, [parent.id, "--target", "# New\n\nRevised.", "--yes",
+                                      "--source-status", "under_review"]) == cli.EXIT_USAGE
+    assert [r.id for r in list_runs(store.runs_dir)] == [parent.id]
+    run_recheck(store, mp, b, [parent.id, "--target", "# New\n\nRevised.", "--yes",
+                               "--source-status", "under_review", "--confidential-ok"])
+    child = [r for r in list_runs(store.runs_dir) if r.id != parent.id][0]
+    intake = read_json(child.path("00-intake.json"))
+    assert intake["source_status"] == "under_review" and intake["source_permission"] is True
+
+
+# @S-intake-016
+def test_recheck_status_flag_overrides_the_inherited_one(env):
+    store, home, mp = env
+    parent, fids = parent_run(home)
+    b = backend({"opus": {f: "RESOLVED" for f in fids}, "sonnet": {f: "RESOLVED" for f in fids}})
+    assert run_recheck(store, mp, b, [parent.id, "--target", "# New\n\nRevised.", "--yes",
+                                      "--source-status", "embargoed"]) == cli.EXIT_USAGE
+    assert run_recheck(store, mp, b, [parent.id, "--target", "# New\n\nRevised.", "--yes",
+                                      "--source-status", ""]) == cli.EXIT_USAGE
+    run_recheck(store, mp, b, [parent.id, "--target", "# New\n\nRevised.", "--yes",
+                               "--source-status", "embargoed", "--confidential-ok"])
+    child = [r for r in list_runs(store.runs_dir) if r.id != parent.id][0]
+    assert read_json(child.path("00-intake.json"))["source_status"] == "embargoed"

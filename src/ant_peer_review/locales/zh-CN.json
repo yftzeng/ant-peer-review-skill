@@ -468,5 +468,18 @@
   "readers.r.accept": "接受",
   "readers.r.reject": "驳回",
   "readers.r.partly": "部分同意",
-  "readers.set_by_you": "由你指定"
+  "readers.set_by_you": "由你指定",
+  "intake.source_status": "来源已经公开了吗？",
+  "intake.source_status.public": "已公开",
+  "intake.source_status.preprint": "预印本（已公开，尚未经同行评审）",
+  "intake.source_status.under_review": "审稿中（别人送来请你审的稿件）",
+  "intake.source_status.embargoed": "禁发期（约定时间前不得发布）",
+  "intake.source_status.warn": "这份文字是保密的：审稿人对期刊有保密义务，许多期刊和科研资助机构也禁止把稿件上传到外部 AI 服务。目前还没有任何内容发送给模型。",
+  "intake.source_status.no_share": "不能分享：帖子会把尚未公开的内容传出去。可以改用“审阅”，或等它公开后再分享。",
+  "intake.source_status.permitted": "编辑或作者是否同意这份文字使用外部 AI 服务？",
+  "intake.source_status.permitted.no": "没有，或不确定：到此为止",
+  "intake.source_status.permitted.yes": "有，而且有书面同意",
+  "intake.source_status.stopped": "已停止，没有创建任何运行。",
+  "report.source_status": "来源状态",
+  "report.source_status.confidential": "保密：公开前请勿转发或引用"
 }

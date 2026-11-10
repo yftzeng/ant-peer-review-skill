@@ -468,5 +468,18 @@
   "readers.r.accept": "接受",
   "readers.r.reject": "駁回",
   "readers.r.partly": "部分同意",
-  "readers.set_by_you": "由你指定"
+  "readers.set_by_you": "由你指定",
+  "intake.source_status": "來源已經公開了嗎？",
+  "intake.source_status.public": "已公開",
+  "intake.source_status.preprint": "預印本（已公開，尚未經同儕審查）",
+  "intake.source_status.under_review": "審稿中（別人送來請你審的稿件）",
+  "intake.source_status.embargoed": "禁發期（約定時間前不得發布）",
+  "intake.source_status.warn": "這份文字是保密的：審稿人對期刊有保密義務，許多期刊和研究經費機構也禁止把稿件上傳到外部 AI 服務。目前還沒有任何內容送給模型。",
+  "intake.source_status.no_share": "不能分享：貼文會把尚未公開的內容傳出去。可以改用「審閱」，或等它公開後再分享。",
+  "intake.source_status.permitted": "編輯或作者是否同意這份文字使用外部 AI 服務？",
+  "intake.source_status.permitted.no": "沒有，或不確定：到此為止",
+  "intake.source_status.permitted.yes": "有，而且有書面同意",
+  "intake.source_status.stopped": "已停止，沒有建立任何執行。",
+  "report.source_status": "來源狀態",
+  "report.source_status.confidential": "保密：公開前請勿轉傳或引用"
 }

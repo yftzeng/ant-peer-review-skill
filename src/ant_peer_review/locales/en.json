@@ -468,5 +468,18 @@
   "readers.r.accept": "accept",
   "readers.r.reject": "reject",
   "readers.r.partly": "partly",
-  "readers.set_by_you": "Set by you"
+  "readers.set_by_you": "Set by you",
+  "intake.source_status": "Is the source public?",
+  "intake.source_status.public": "Public",
+  "intake.source_status.preprint": "Preprint (public, not yet peer reviewed)",
+  "intake.source_status.under_review": "Under review (a manuscript sent to you to review)",
+  "intake.source_status.embargoed": "Embargoed (not to be published before a set time)",
+  "intake.source_status.warn": "This text is confidential: a reviewer owes the journal confidentiality, and many journals and funders forbid uploading a manuscript to an outside AI service. Nothing has been sent to a model yet.",
+  "intake.source_status.no_share": "Sharing it is refused: the posts would spread what is not public yet. Review it with Audit, or share it once it is public.",
+  "intake.source_status.permitted": "Has the editor or the author allowed an outside AI service for this text?",
+  "intake.source_status.permitted.no": "No, or not sure: stop here",
+  "intake.source_status.permitted.yes": "Yes, in writing",
+  "intake.source_status.stopped": "Stopped; no run was created.",
+  "report.source_status": "Source status",
+  "report.source_status.confidential": "confidential: do not share or cite it until it is public"
 }

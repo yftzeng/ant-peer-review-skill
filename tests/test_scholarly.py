@@ -66,11 +66,11 @@ def setup(tmp_path, sources):
 # @S-intake-009
 def test_fact_source_checkbox_after_audience():
     t = T("en")
-    io = ScriptedIO(["1", "some text", "/done", "", "", "", "", "", "", "1", "1", ""])
+    io = ScriptedIO(["1", "some text", "/done", "", "", "", "", "", "", "", "1", "1", ""])
     intake = run_intake_interactive(io, t, "en")
     assert intake["fact_sources"] == ["academic"]
     assert "[ ] Academic identifiers" in io.text
-    io = ScriptedIO(["1", "some text", "/done", "", "", "", "", "", "", "1", ""])
+    io = ScriptedIO(["1", "some text", "/done", "", "", "", "", "", "", "", "1", ""])
     assert run_intake_interactive(io, t, "en")["fact_sources"] == []
     assert build_intake_from_args("audit", ["x"], None, lang="en", academic=True)["fact_sources"] \
         == ["academic"]

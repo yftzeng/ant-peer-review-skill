@@ -21,7 +21,7 @@ def codes(issues):
 # @S-output-language-001
 def test_interactive_intake_asks_output_languages(page_env):  # noqa: F811
     store, base = page_env
-    io = ScriptedIO(["1", base + "/page", "/done", "", "", "", ""])  # langs, card, facts, brand
+    io = ScriptedIO(["1", base + "/page", "/done", "", "", "", "", ""])  # langs, card, facts, brand
     cli.main(["new", "--lang", "zh-TW"], io=io, store=store)
     text = io.text
     i = text.index("English (US)")
@@ -35,7 +35,7 @@ def test_interactive_intake_asks_output_languages(page_env):  # noqa: F811
 
 def test_interactive_intake_ticks_several_in_menu_order(page_env):  # noqa: F811
     store, base = page_env
-    io = ScriptedIO(["1", base + "/page", "/done", "3 1", "", "", "", ""])
+    io = ScriptedIO(["1", base + "/page", "/done", "", "3 1", "", "", "", ""])
     cli.main(["new", "--lang", "zh-TW"], io=io, store=store)
     intake = read_json(list_runs(store.runs_dir)[0].path("00-intake.json"))
     assert intake["output_langs"] == ["en", "zh-TW", "zh-CN"]

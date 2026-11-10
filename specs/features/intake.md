@@ -102,6 +102,26 @@ Feature: intake
     When  the user enters one line of 200 Chinese characters ending with a URL (over 255 bytes, the limit of one path part)
     Then  it is one text target and nothing crashes
     And   the run folder is named after its first words; every check whether typed text is an existing path goes through one helper
+
+  @S-intake-016
+  Scenario: a source under review or embargoed is held back before any model reads it
+    Given the purpose audit or share
+    When  the targets are entered, before the feed, the content analysis or any model call
+    Then  one question asks the source's status: public (default), preprint, under review (a manuscript sent to us to
+          review) or embargoed, and 00-intake.json keeps it; drafting, which works from the user's own materials, is
+          not asked
+    And   under review or embargoed tells the user that reviewers owe the journal confidentiality and that many journals
+          and funders forbid uploading a manuscript to an outside AI service, then asks whether the editor or the author
+          has allowed it, default no; no ends without a run
+    And   share of a source under review or embargoed is refused: the posts would spread what is not public yet
+    And   without prompts, --source-status sets it, under review or embargoed needs --confidential-ok, share of one is a
+          usage error, and an unknown status is a usage error
+    And   the report names the status, and for a confidential one adds that the text is not to be shared or cited until
+          it is public
+    And   the run records the permission given; a recheck of a run saved without a status asks for one the same way
+          (or needs --source-status, and --confidential-ok for a confidential one) before the revised text is read, and
+          --source-status on a recheck replaces the inherited status; targets given on the command line without --yes
+          or --source-status are asked about as in the prompts
 ```
 
 ## Must NOT
@@ -114,3 +134,6 @@ Feature: intake
 - 2026-10-25 · ~S-intake-009 +S-intake-010..014 · decision: none -- user: analyse the targets right after they are entered (identity, content, structure; sample a long or messy text) and use the checklist to preselect the next steps, audience card included, still adjustable
 - 2026-11-03 · +S-intake-015 · decision: none -- live run: a 207-character pasted line crashed intake with OSError ENAMETOOLONG when checked as a path
 - 2026-11-03 · ~S-intake-015 · decision: none -- live run: the same line then crashed slug_for, a second unguarded path check; one helper now, and a test refuses a direct one
+- 2026-11-10 · +S-intake-016 · decision: none -- user: 按你建議 (phase 1 of the legal gap review): reviewer confidentiality and embargoes; the question comes before the content analysis because that analysis already sends the text to a model
+- 2026-11-10 · ~S-intake-016 · decision: none -- security lens: recheck reused an old run's intake and sent a revised manuscript on without the question; the permission is now recorded
+- 2026-11-10 · ~S-intake-016 · decision: none -- review (astra): --target without --yes skipped the question; a recheck's revised text may differ in status from its parent

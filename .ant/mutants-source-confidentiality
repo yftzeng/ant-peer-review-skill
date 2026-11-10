@@ -1,0 +1,52 @@
+# share of a confidential source allowed
+@@ src/ant_peer_review/intake.py
+-     if status in CONFIDENTIAL and purpose == "share":
++     if False:
+# no permission needed
+@@ src/ant_peer_review/intake.py
+-     if status in CONFIDENTIAL and not permitted:
++     if False:
+# interactive share not refused
+@@ src/ant_peer_review/intake.py
+-         io.say(t("intake.source_status.no_share"))
++         return status
+# default permission yes
+@@ src/ant_peer_review/intake.py
+-                 ("yes", t("intake.source_status.permitted.yes"))], default="no")
++                 ("yes", t("intake.source_status.permitted.yes"))], default="yes")
+# asked after the analysis: cli skips the stop
+@@ src/ant_peer_review/cli.py
+-         base.update(status_fields(status))
++         base.update(status_fields("public"))
+# older path ignores the stop
+@@ src/ant_peer_review/pipeline.py
+-     if intake is None:
++     if False:
+# arguments skip the check
+@@ src/ant_peer_review/intake.py
+-         check_source_status(purpose, source_status, confidential_ok)
++         pass
+# report never marks confidential
+@@ src/ant_peer_review/report.py
+-     return line + (f" — {t('report.source_status.confidential')}" if status in CONFIDENTIAL else "")
++     return line
+# older path never asks
+@@ src/ant_peer_review/intake.py
+-     status = ask_source_status(io, t, purpose) if purpose in STATUS_PURPOSES else ""
++     status = "public" if purpose in STATUS_PURPOSES else ""
+# recheck skips the question for an old run
+@@ src/ant_peer_review/cli.py
+-     if intake.get("purpose") in STATUS_PURPOSES and ("source_status" not in intake
++     if False and ("source_status" not in intake
+# permission not recorded
+@@ src/ant_peer_review/intake.py
+-     return {"source_status": status, **({"source_permission": True} if status in CONFIDENTIAL else {})}
++     return {"source_status": status}
+# --target without --yes not asked
+@@ src/ant_peer_review/cli.py
+-         if status is None and not args.yes and (args.purpose or "audit") in STATUS_PURPOSES:
++         if False:
+# recheck flag does not override
+@@ src/ant_peer_review/cli.py
+-                                                        or args.source_status is not None):  # S-intake-016
++                                                        or bool(args.source_status)):  # S-intake-016

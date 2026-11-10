@@ -76,6 +76,8 @@ def ph_intake(run: Run, ctx: Ctx) -> None:
     if not ctx.interactive:
         raise Stop("intake missing: pass --purpose and --target")
     intake = run_intake_interactive(ctx.io, ctx.t, ctx.lang)
+    if intake is None:
+        raise Stop(ctx.t("intake.source_status.stopped"))
     brand = ask_text(ctx.io, ctx.t("intake.brand")).strip()
     if brand:
         intake["brand"] = brand

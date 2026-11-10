@@ -35,6 +35,15 @@ PLACEHOLDER = re.compile(r"TODO|TBD|\{\{|\}\}|<placeholder>|\[insert", re.I)
 _MD_SPECIAL = re.compile(r"([\\`*_\[\]()!#|~])")
 
 
+
+def status_line(t, status: str | None) -> str:
+    """S-intake-016: the source's status; a confidential one says it stays unshared."""
+    if not status:
+        return ""
+    line = f"- {t('report.source_status')}: {cell(t('intake.source_status.' + status))}"
+    from .intake import CONFIDENTIAL
+    return line + (f" — {t('report.source_status.confidential')}" if status in CONFIDENTIAL else "")
+
 def cell(text) -> str:
     """Untrusted text as inert Markdown: HTML escaped, link/image/emphasis syntax escaped."""
     s = "" if text is None else str(text)
@@ -149,6 +158,8 @@ def render(run: Run, cons: dict, *, lang: str, version: int, changelog: list[str
     L.append("")
     L.append(f"- {t('report.run')}: `{run.id}`  ·  {datetime.now():%Y-%m-%d %H:%M}")
     L.append(f"- {t('report.purpose')}: {t('intake.purpose.' + intake['purpose'])}")
+    if line := status_line(t, intake.get("source_status")):
+        L.append(line)
     previous = [r for tgt in intake["targets"] for r in tgt.get("previous_runs", [])]
     if previous:
         L.append(f"- {t('report.rereview', runs=', '.join(f'`{r}`' for r in previous))}")

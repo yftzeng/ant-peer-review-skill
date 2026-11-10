@@ -41,6 +41,50 @@ def classify_target(s: str) -> dict:
     return {"kind": "text", "value": s}
 
 
+SOURCE_STATUSES = ["public", "preprint", "under_review", "embargoed"]
+CONFIDENTIAL = ("under_review", "embargoed")
+STATUS_PURPOSES = ("audit", "share")   # drafting works from the user's own materials
+
+
+def check_source_status(purpose: str, status: str, permitted: bool) -> None:
+    """S-intake-016: the one rule for both the prompts and the arguments; ValueError when the
+    run may not start."""
+    if status not in SOURCE_STATUSES:
+        raise ValueError(f"--source-status must be one of {', '.join(SOURCE_STATUSES)}")
+    if status in CONFIDENTIAL and purpose == "share":
+        raise ValueError("a source under review or embargoed cannot be shared: the posts would "
+                         "spread what is not public yet")
+    if status in CONFIDENTIAL and not permitted:
+        raise ValueError("a source under review or embargoed is confidential; pass "
+                         "--confidential-ok only if the editor or the author allowed an outside AI service")
+
+
+def status_fields(status: str) -> dict:
+    """What 00-intake.json keeps: the status, and the permission a confidential one needed."""
+    return {"source_status": status, **({"source_permission": True} if status in CONFIDENTIAL else {})}
+
+
+def ask_source_status(io: IO, t: T, purpose: str) -> str | None:
+    """S-intake-016: asked right after the targets, before anything reaches a model.
+    Returns the status, or None when the run must not start."""
+    status = radio(io, t, t("intake.source_status"),
+                   [(s, t(f"intake.source_status.{s}")) for s in SOURCE_STATUSES], default="public")
+    if status not in CONFIDENTIAL:
+        return status
+    io.say(t("intake.source_status.warn"))
+    if purpose == "share":
+        io.say(t("intake.source_status.no_share"))
+        return None
+    ok = radio(io, t, t("intake.source_status.permitted"),
+               [("no", t("intake.source_status.permitted.no")),
+                ("yes", t("intake.source_status.permitted.yes"))], default="no")
+    if ok != "yes":
+        io.say(t("intake.source_status.stopped"))
+        return None
+    check_source_status(purpose, status, True)
+    return status
+
+
 def ask_purpose(io: IO, t: T) -> str:
     return radio(io, t, t("intake.purpose"),
                  [(p, t(f"intake.purpose.{p}")) for p in PURPOSES], default="audit")
@@ -175,15 +219,21 @@ def ask_output_langs(io: IO, t: T, default: str, source: str | None = None) -> l
 
 def build_intake_from_args(purpose: str, targets: list[str], audience: str | None,
                            *, lang: str, academic: bool = False, share: dict | None = None,
-                           output_langs: list[str] | None = None) -> dict:
+                           output_langs: list[str] | None = None,
+                           source_status: str | None = None, confidential_ok: bool = False) -> dict:
     if purpose not in PURPOSES:
         raise ValueError(f"purpose must be one of {PURPOSES}")
     if not targets:
         raise ValueError("at least one --target is needed")
+    if purpose in STATUS_PURPOSES:
+        source_status = "public" if source_status is None else source_status
+        check_source_status(purpose, source_status, confidential_ok)
     out = {"purpose": purpose, "targets": [classify_target(x) for x in targets],
            "audience": parse_audience(audience), "lang": lang,
            "output_langs": output_langs or [lang],
            "fact_sources": ["academic"] if academic else []}
+    if purpose in STATUS_PURPOSES:
+        out.update(status_fields(source_status))
     if purpose == "share":
         out["share"] = share or {}
     return out
@@ -312,11 +362,16 @@ def ask_share(io: IO, t: T, home, make_voice=None) -> dict:
     return out
 
 
-def run_intake_interactive(io: IO, t: T, lang: str) -> dict:
+def run_intake_interactive(io: IO, t: T, lang: str) -> dict | None:
+    """None: the source's status stops the run (S-intake-016)."""
     purpose = ask_purpose(io, t)
     targets = collect_targets(io, t)
+    status = ask_source_status(io, t, purpose) if purpose in STATUS_PURPOSES else ""
+    if status is None:
+        return None
     output_langs = ask_output_langs(io, t, lang)
     audience = ask_audience(io, t)
     fact_sources = ask_fact_sources(io, t)
     return {"purpose": purpose, "targets": targets, "audience": audience, "lang": lang,
-            "output_langs": output_langs, "fact_sources": fact_sources}
+            "output_langs": output_langs, "fact_sources": fact_sources,
+            **(status_fields(status) if status else {})}
